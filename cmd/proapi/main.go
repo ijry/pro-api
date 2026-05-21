@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/proapi/proapi/internal/app"
 	"github.com/proapi/proapi/internal/app/config"
 	"github.com/proapi/proapi/internal/observability/logger"
 	"github.com/proapi/proapi/internal/observability/metrics"
@@ -43,7 +44,17 @@ func main() {
 
 	metrics.Init()
 
-	// M0 只起 HTTP server,DB / Redis 在 M1 起业务模块时再接入并存到 app context。
+	ctx := context.Background()
+	application, err := app.SetupBasic(ctx, cfg, log)
+	if err != nil {
+		log.Fatal("setup basic failed", zap.Error(err))
+	}
+
+	// 业务层 Wire(M1-02 ~ M1-13 各自 spec 实施时在这里加):
+	// app.WireAuth(application)
+	// app.WireToken(application)
+	// ...
+
 	engine := server.NewEngine(log)
 	srv := &http.Server{
 		Addr:         cfg.Server.Addr,
@@ -62,9 +73,12 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
 	log.Info("shutting down")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Error("graceful shutdown failed", zap.Error(err))
+	if err := srv.Shutdown(shutCtx); err != nil {
+		log.Error("http server shutdown failed", zap.Error(err))
+	}
+	if err := application.Shutdown(shutCtx); err != nil {
+		log.Error("application shutdown reported errors", zap.Error(err))
 	}
 }

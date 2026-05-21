@@ -9,11 +9,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// NewEngine 构造可启动的 Gin 引擎。后续业务路由在 M1 起按模块注册。
+// NewEngine 构造可启动的 Gin 引擎。本 spec 完成的中间件:
+//
+//	RequestID → AccessLog → Recovery → /healthz → /metrics
+//
+// 业务路由在 M1-02 ~ M1-13 各自 Wire 函数里 register。
 func NewEngine(log *zap.Logger) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(middleware.RequestID(), middleware.Recovery(log))
+	r.Use(
+		middleware.RequestID(),
+		middleware.AccessLog(log),
+		middleware.Recovery(log),
+	)
 
 	r.GET("/healthz", handler.Health)
 	r.GET("/metrics", gin.WrapH(metrics.HTTPHandler()))
