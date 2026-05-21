@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.go text eol=lf
+*.{sh,py,ts,js,vue,json,md,yaml,yml} text eol=lf
+*.{png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,otf,pdf} binary
