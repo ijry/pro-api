@@ -48,6 +48,7 @@ var defaultMessages = map[Lang]map[Code]string{
 		CodeReservationCommitted:  "预扣记录已提交,不可重复操作",
 		CodeChannelDisabled:       "渠道已禁用",
 		CodeChannelMisconfig:      "渠道配置错误",
+		CodeNotFound:              "资源不存在",
 	},
 	LangEN: {
 		CodeInternal:              "Internal error, please retry",
@@ -88,6 +89,7 @@ var defaultMessages = map[Lang]map[Code]string{
 		CodeReservationCommitted:  "Reservation already committed",
 		CodeChannelDisabled:       "Channel disabled",
 		CodeChannelMisconfig:      "Channel misconfigured",
+		CodeNotFound:              "Resource not found",
 	},
 }
 
