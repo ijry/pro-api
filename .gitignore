@@ -25,6 +25,9 @@ dist/
 vendor/
 coverage.out
 coverage.html
+# 不忽略源码目录
+!cmd/proapi/
+!cmd/proapi/**
 
 # 环境变量
 .env
