@@ -77,7 +77,7 @@ func SetupBasic(ctx context.Context, cfg *config.Config, log *zap.Logger) (*Appl
 	}
 	app.Tokenize = tr
 
-	sett, err := setting.New(setting.Config{
+	sett, err := setting.New(ctx, setting.Config{
 		DB:    db,
 		Cache: rdb,
 		Log:   log,

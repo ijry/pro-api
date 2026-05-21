@@ -228,7 +228,8 @@ func (s *store) invalidateLocal(key string) {
 }
 
 // New 启动一个 Store 实例并订阅 Pub/Sub 失效。
-func New(cfg Config) (Store, error) {
+// ctx 用于初始化阶段(订阅 Subscribe);后台 goroutine 内部用独立 context。
+func New(ctx context.Context, cfg Config) (Store, error) {
 	ttl := cfg.LocalTTL
 	if ttl == 0 {
 		ttl = localDefaultTTL
@@ -245,7 +246,7 @@ func New(cfg Config) (Store, error) {
 		stopCh: make(chan struct{}),
 	}
 	if cfg.Cache != nil {
-		s.sub = cfg.Cache.Subscribe(context.Background(), redisInvalidateCh)
+		s.sub = cfg.Cache.Subscribe(ctx, redisInvalidateCh)
 		s.stopWg.Add(1)
 		go s.runInvalidator()
 	}

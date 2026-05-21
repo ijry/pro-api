@@ -47,7 +47,9 @@ func main() {
 	ctx := context.Background()
 	application, err := app.SetupBasic(ctx, cfg, log)
 	if err != nil {
-		log.Fatal("setup basic failed", zap.Error(err))
+		log.Error("setup basic failed", zap.Error(err))
+		_ = log.Sync()
+		os.Exit(1)
 	}
 
 	// 业务层 Wire(M1-02 ~ M1-13 各自 spec 实施时在这里加):

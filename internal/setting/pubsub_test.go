@@ -38,7 +38,7 @@ func TestNew_StartsInvalidator(t *testing.T) {
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	db := openSettingDB(t, t.Name())
 
-	s, err := New(Config{DB: db, Cache: rdb, Log: zap.NewNop()})
+	s, err := New(context.Background(), Config{DB: db, Cache: rdb, Log: zap.NewNop()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,8 +70,8 @@ func TestPut_BroadcastsToOtherInstance(t *testing.T) {
 	rdb2 := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	db := openSettingDB(t, t.Name())
 
-	a, _ := New(Config{DB: db, Cache: rdb1, Log: zap.NewNop()})
-	b, _ := New(Config{DB: db, Cache: rdb2, Log: zap.NewNop()})
+	a, _ := New(context.Background(), Config{DB: db, Cache: rdb1, Log: zap.NewNop()})
+	b, _ := New(context.Background(), Config{DB: db, Cache: rdb2, Log: zap.NewNop()})
 	defer a.Close()
 	defer b.Close()
 
@@ -98,7 +98,7 @@ func TestPut_BroadcastsToOtherInstance(t *testing.T) {
 func TestClose_StopsInvalidator(t *testing.T) {
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	s, _ := New(Config{Cache: rdb, Log: zap.NewNop()})
+	s, _ := New(context.Background(), Config{Cache: rdb, Log: zap.NewNop()})
 	if err := s.Close(); err != nil {
 		t.Fatal(err)
 	}
