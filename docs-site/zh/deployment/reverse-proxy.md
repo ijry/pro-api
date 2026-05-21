@@ -99,7 +99,8 @@ server {
 
 Caddy 自动 Let's Encrypt + 默认 HTTP/2,配置极简:
 
-```caddyfile
+```nginx
+# Caddyfile (Shiki 暂未内置 caddyfile,用 nginx 高亮近似)
 api.example.com {
     encode gzip
 
