@@ -57,6 +57,10 @@ const (
 	CodeEmailNotVerified Code = 20007
 	CodeCaptchaInvalid   Code = 20008
 
+	// CodeNotFound 表示资源(按 id 查询)不存在 → HTTP 404。
+	// 通用资源 404,各模块都可复用(M1-03 spec §7 引用)。
+	CodeNotFound Code = 40015
+
 	CodeUpstreamRateLimit Code = 60004
 	CodeUpstreamQuota     Code = 60005
 
@@ -104,6 +108,8 @@ func httpStatusByCode(c Code) int {
 		return http.StatusConflict
 	case c == CodeChannelDisabled || c == CodeChannelMisconfig:
 		return http.StatusServiceUnavailable
+	case c == CodeNotFound:
+		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
 	}
