@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS users (
+    id              BIGINT      NOT NULL,
+    username        VARCHAR(64) NOT NULL,
+    email           VARCHAR(128),
+    password_hash   VARCHAR(128),
+    display_name    VARCHAR(64),
+    avatar          VARCHAR(256),
+    role            TINYINT     NOT NULL DEFAULT 0,
+    status          TINYINT     NOT NULL DEFAULT 0,
+    group_id        BIGINT,
+    primary_dept_id BIGINT,
+    invited_by      BIGINT,
+    last_login_at   DATETIME,
+    last_login_ip   VARCHAR(45),
+    created_at      DATETIME    NOT NULL,
+    updated_at      DATETIME    NOT NULL,
+    deleted_at      DATETIME,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_users_username (username),
+    UNIQUE KEY uk_users_email (email),
+    KEY idx_users_group_status (group_id, status),
+    KEY idx_users_invited_by (invited_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
