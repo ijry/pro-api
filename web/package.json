@@ -1,0 +1,20 @@
+{
+  "name": "@proapi/web",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "lint": "pnpm -r --filter='./*' --if-present lint",
+    "format": "pnpm -r --filter='./*' --if-present format",
+    "typecheck": "pnpm -r --filter='./*' --if-present typecheck",
+    "build": "pnpm -r --filter='./*' --if-present build",
+    "test": "pnpm -r --filter='./*' --if-present test"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "eslint": "^9.13.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}
