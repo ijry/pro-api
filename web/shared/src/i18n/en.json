@@ -1,0 +1,24 @@
+{
+  "brand": {
+    "name": "proapi",
+    "slogan": "All-in-one LLM API Gateway"
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "empty": "No data",
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "errors": {
+    "10000": "Internal error, please retry",
+    "20001": "Please sign in",
+    "20003": "Invalid token",
+    "40004": "Insufficient balance, please top up",
+    "50001": "Too many requests, please slow down"
+  }
+}
