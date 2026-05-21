@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/proapi/proapi/internal/app/config"
+	"github.com/ijry/pro-api/internal/app/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

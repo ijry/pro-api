@@ -21,8 +21,8 @@
 ### 步骤
 
 ```bash
-git clone https://github.com/proapi/proapi.git
-cd proapi
+git clone https://github.com/ijry/pro-api.git
+cd pro-api
 make install-tools          # 装 golangci-lint / pnpm / migrate 等
 make docker-up              # 起依赖
 export PROAPI_MASTER_KEY=$(openssl rand -base64 32)

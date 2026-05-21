@@ -21,8 +21,8 @@ See the roadmap at [`docs/superpowers/2026-05-21-proapi-总体路线图.md`](./d
 ### Steps
 
 ```bash
-git clone https://github.com/proapi/proapi.git
-cd proapi
+git clone https://github.com/ijry/pro-api.git
+cd pro-api
 make install-tools
 make docker-up
 export PROAPI_MASTER_KEY=$(openssl rand -base64 32)

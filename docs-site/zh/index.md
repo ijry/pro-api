@@ -14,7 +14,7 @@ hero:
       link: /zh/guide/quickstart
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/proapi/proapi
+      link: https://github.com/ijry/pro-api
 
 features:
   - icon: 🔁

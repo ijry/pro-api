@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/proapi/proapi/pkg/apierr"
+	"github.com/ijry/pro-api/pkg/apierr"
 )
 
 const errCtxKey = "proapi:err"

@@ -3,7 +3,7 @@ package orm
 import (
 	"testing"
 
-	"github.com/proapi/proapi/internal/app/config"
+	"github.com/ijry/pro-api/internal/app/config"
 )
 
 func TestOpen_RejectsUnsupportedDriver(t *testing.T) {

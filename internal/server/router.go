@@ -3,9 +3,9 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/proapi/proapi/internal/observability/metrics"
-	"github.com/proapi/proapi/internal/server/handler"
-	"github.com/proapi/proapi/internal/server/middleware"
+	"github.com/ijry/pro-api/internal/observability/metrics"
+	"github.com/ijry/pro-api/internal/server/handler"
+	"github.com/ijry/pro-api/internal/server/middleware"
 	"go.uber.org/zap"
 )
 

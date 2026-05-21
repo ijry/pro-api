@@ -1,6 +1,6 @@
 package middleware
 
-import "github.com/proapi/proapi/pkg/apierr"
+import "github.com/ijry/pro-api/pkg/apierr"
 
 // openAITypeMap 把 apierr.Code 映射到 OpenAI 错误协议的 type 字段。
 var openAITypeMap = map[apierr.Code]string{

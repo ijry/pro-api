@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/proapi/proapi/internal/version"
+	"github.com/ijry/pro-api/internal/version"
 )
 
 // Health 返回 200 + 服务版本。M0 阶段不做依赖检查;M1 起补 DB/Redis 探活。

@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/proapi/proapi/internal/app"
-	"github.com/proapi/proapi/internal/app/config"
-	"github.com/proapi/proapi/internal/observability/logger"
-	"github.com/proapi/proapi/internal/observability/metrics"
-	"github.com/proapi/proapi/internal/server"
-	"github.com/proapi/proapi/internal/version"
+	"github.com/ijry/pro-api/internal/app"
+	"github.com/ijry/pro-api/internal/app/config"
+	"github.com/ijry/pro-api/internal/observability/logger"
+	"github.com/ijry/pro-api/internal/observability/metrics"
+	"github.com/ijry/pro-api/internal/server"
+	"github.com/ijry/pro-api/internal/version"
 	"go.uber.org/zap"
 )
 

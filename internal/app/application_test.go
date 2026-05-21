@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/proapi/proapi/internal/app/config"
+	"github.com/ijry/pro-api/internal/app/config"
 	"go.uber.org/zap"
 )
 

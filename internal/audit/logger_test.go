@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/proapi/proapi/internal/util/idgen"
+	"github.com/ijry/pro-api/internal/util/idgen"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 	"gorm.io/driver/sqlite"

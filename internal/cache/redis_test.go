@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/proapi/proapi/internal/app/config"
+	"github.com/ijry/pro-api/internal/app/config"
 )
 
 func TestNewClient_BadAddr(t *testing.T) {

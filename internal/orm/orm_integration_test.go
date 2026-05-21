@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ory/dockertest/v3"
-	"github.com/proapi/proapi/internal/app/config"
+	"github.com/ijry/pro-api/internal/app/config"
 )
 
 func mustPool(t *testing.T) *dockertest.Pool {

@@ -45,9 +45,9 @@ ARG BUILD_TIME=unknown
 RUN CGO_ENABLED=0 go build \
     -tags embed \
     -ldflags="-s -w \
-      -X github.com/proapi/proapi/internal/version.Version=${VERSION} \
-      -X github.com/proapi/proapi/internal/version.Commit=${COMMIT} \
-      -X github.com/proapi/proapi/internal/version.BuildTime=${BUILD_TIME}" \
+      -X github.com/ijry/pro-api/internal/version.Version=${VERSION} \
+      -X github.com/ijry/pro-api/internal/version.Commit=${COMMIT} \
+      -X github.com/ijry/pro-api/internal/version.BuildTime=${BUILD_TIME}" \
     -o /out/proapi ./cmd/proapi
 
 ############################################################

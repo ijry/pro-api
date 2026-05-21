@@ -11,7 +11,7 @@ hero:
       link: /en/
     - theme: alt
       text: View on GitHub
-      link: https://github.com/proapi/proapi
+      link: https://github.com/ijry/pro-api
 
 features:
   - icon: 🔁

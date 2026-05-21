@@ -1,4 +1,4 @@
-module github.com/proapi/proapi
+module github.com/ijry/pro-api
 
 go 1.22
 

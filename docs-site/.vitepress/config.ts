@@ -7,7 +7,7 @@ export default defineConfig({
   lastUpdated: true,
   themeConfig: {
     logo: '/logo.svg',
-    socialLinks: [{ icon: 'github', link: 'https://github.com/proapi/proapi' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/ijry/pro-api' }],
     search: { provider: 'local' },
   },
   locales: {

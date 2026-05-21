@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/proapi/proapi/internal/app/config"
+	"github.com/ijry/pro-api/internal/app/config"
 	"github.com/redis/go-redis/v9"
 )
 
