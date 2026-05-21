@@ -51,6 +51,20 @@ const (
 	CodeUpstreamError         Code = 60001
 	CodeUpstreamTimeout       Code = 60002
 	CodeUpstreamContentFilter Code = 60003
+
+	// === M1 新增 ===
+
+	CodeEmailNotVerified Code = 20007
+	CodeCaptchaInvalid   Code = 20008
+
+	CodeUpstreamRateLimit Code = 60004
+	CodeUpstreamQuota     Code = 60005
+
+	CodeReservationNotFound  Code = 40011
+	CodeReservationCommitted Code = 40012
+
+	CodeChannelDisabled  Code = 40013
+	CodeChannelMisconfig Code = 40014
 )
 
 // httpStatusByCode 把错误码映射到 HTTP status。
@@ -80,6 +94,16 @@ func httpStatusByCode(c Code) int {
 		return http.StatusBadGateway
 	case c == CodeUpstreamTimeout:
 		return http.StatusGatewayTimeout
+	case c == CodeEmailNotVerified || c == CodeCaptchaInvalid:
+		return http.StatusUnauthorized
+	case c == CodeUpstreamRateLimit || c == CodeUpstreamQuota:
+		return http.StatusTooManyRequests
+	case c == CodeReservationNotFound:
+		return http.StatusGone
+	case c == CodeReservationCommitted:
+		return http.StatusConflict
+	case c == CodeChannelDisabled || c == CodeChannelMisconfig:
+		return http.StatusServiceUnavailable
 	default:
 		return http.StatusInternalServerError
 	}
