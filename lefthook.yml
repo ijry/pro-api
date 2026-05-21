@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  commands:
+    go-fmt:
+      glob: "*.go"
+      run: gofumpt -l -w {staged_files}
+      stage_fixed: true
+    go-lint:
+      glob: "*.go"
+      run: golangci-lint run --fast --new-from-rev HEAD
+    eslint:
+      glob: "web/**/*.{ts,vue}"
+      run: pnpm -C web lint --fix {staged_files}
+      stage_fixed: true
+    typecheck-web:
+      glob: "web/**/*.{ts,vue}"
+      run: pnpm -C web typecheck
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm dlx @commitlint/cli --config .commitlintrc.yml --edit {1}
