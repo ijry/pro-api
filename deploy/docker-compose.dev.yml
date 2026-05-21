@@ -1,0 +1,60 @@
+# proapi 开发环境依赖:MySQL + PostgreSQL + Redis。
+# 启动后开发者本机可:
+#   - mysql -h 127.0.0.1 -P 3306 -uroot -pproapi
+#   - psql postgres://postgres:proapi@127.0.0.1:5432/proapi
+#   - redis-cli -p 6379
+
+name: proapi-dev
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: proapi
+      MYSQL_DATABASE: proapi
+    ports: ["3306:3306"]
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pproapi"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: proapi
+      POSTGRES_DB: proapi
+      TZ: UTC
+    ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports: ["6379:6379"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql_data:
+  postgres_data:
+  redis_data:
