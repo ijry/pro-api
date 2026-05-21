@@ -3,6 +3,7 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/proapi/proapi/internal/observability/metrics"
 	"github.com/proapi/proapi/internal/server/handler"
 	"github.com/proapi/proapi/internal/server/middleware"
 	"go.uber.org/zap"
@@ -15,6 +16,6 @@ func NewEngine(log *zap.Logger) *gin.Engine {
 	r.Use(middleware.RequestID(), middleware.Recovery(log))
 
 	r.GET("/healthz", handler.Health)
-	// /metrics 由 T12 注册
+	r.GET("/metrics", gin.WrapH(metrics.HTTPHandler()))
 	return r
 }
