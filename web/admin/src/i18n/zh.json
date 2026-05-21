@@ -1,0 +1,9 @@
+{
+  "login": {
+    "title": "登录管理后台",
+    "subtitle": "proapi 管理员",
+    "email": "邮箱",
+    "password": "密码",
+    "submit": "登 录"
+  }
+}

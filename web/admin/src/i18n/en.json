@@ -1,0 +1,9 @@
+{
+  "login": {
+    "title": "Admin Sign In",
+    "subtitle": "proapi Admin",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign In"
+  }
+}

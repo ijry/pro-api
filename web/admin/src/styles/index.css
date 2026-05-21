@@ -1,0 +1,32 @@
+@unocss preflights;
+@unocss default;
+
+:root {
+  --c-bg: 255 255 255;
+  --c-bg-elevated: 250 250 250;
+  --c-fg: 23 23 23;
+  --c-fg-muted: 115 115 115;
+  --c-border: 229 229 229;
+  --c-primary: 79 70 229;
+  --c-primary-hover: 67 56 202;
+  color-scheme: light;
+}
+
+:root.dark {
+  --c-bg: 14 14 16;
+  --c-bg-elevated: 24 24 27;
+  --c-fg: 244 244 245;
+  --c-fg-muted: 161 161 170;
+  --c-border: 39 39 42;
+  --c-primary: 99 102 241;
+  --c-primary-hover: 129 140 248;
+  color-scheme: dark;
+}
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: rgb(var(--c-bg));
+  color: rgb(var(--c-fg));
+}
