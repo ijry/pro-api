@@ -82,9 +82,24 @@ func (s *store) Get(ctx context.Context, key string) (json.RawMessage, bool) {
 	return s.getFromDB(ctx, key)
 }
 
-// getFromDB 在 T07 阶段是 stub(返回 not found),T08 改为真实查询 DB。
+// getFromDB 查 DB,命中后回填 Redis。
 func (s *store) getFromDB(ctx context.Context, key string) (json.RawMessage, bool) {
-	return nil, false
+	if s.db == nil {
+		return nil, false
+	}
+	var row Setting
+	err := s.db.WithContext(ctx).Where("`key` = ?", key).First(&row).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			s.log.Warn("setting: db get failed", zap.String("key", key), zap.Error(err))
+		}
+		return nil, false
+	}
+	if err := s.rdb.Set(ctx, redisKey(key), []byte(row.Value), redisTTL).Err(); err != nil {
+		s.log.Warn("setting: redis backfill failed", zap.String("key", key), zap.Error(err))
+	}
+	s.local.Store(key, cachedValue{raw: row.Value, ts: time.Now()})
+	return row.Value, true
 }
 
 // GetString 从 JSON-encoded value 中解出字符串。
@@ -160,9 +175,35 @@ func (s *store) GetJSON(ctx context.Context, key string, dest any) error {
 	return json.Unmarshal(v, dest)
 }
 
-// Put 在 T08 阶段补 DB 写入;T07 stub。
+// Put 写 DB(UPSERT)→ DEL Redis → PUBLISH 失效。
+// val 任意 Go 值,内部 json.Marshal。actor=0 表示系统写入。
 func (s *store) Put(ctx context.Context, key string, val any, actor int64) error {
-	return fmt.Errorf("setting: Put not implemented in T07 (added in T08)")
+	if s.db == nil {
+		return fmt.Errorf("setting: DB not configured")
+	}
+	raw, err := json.Marshal(val)
+	if err != nil {
+		return fmt.Errorf("setting: marshal value: %w", err)
+	}
+	rec := Setting{
+		Key:       key,
+		Value:     raw,
+		UpdatedAt: time.Now().UTC(),
+	}
+	if actor != 0 {
+		rec.UpdatedBy = &actor
+	}
+	if err := s.db.WithContext(ctx).Save(&rec).Error; err != nil {
+		return fmt.Errorf("setting: db upsert %s: %w", key, err)
+	}
+	if err := s.rdb.Del(ctx, redisKey(key)).Err(); err != nil {
+		s.log.Warn("setting: redis del failed", zap.String("key", key), zap.Error(err))
+	}
+	s.invalidateLocal(key)
+	if err := s.rdb.Publish(ctx, redisInvalidateCh, key).Err(); err != nil {
+		s.log.Warn("setting: publish failed", zap.String("key", key), zap.Error(err))
+	}
+	return nil
 }
 
 // Close 关停所有后台 goroutine。
