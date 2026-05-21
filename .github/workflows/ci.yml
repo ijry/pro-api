@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.22"
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.12.0"
+
+jobs:
+  lint-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "${{ env.GO_VERSION }}" }
+      - uses: golangci/golangci-lint-action@v6
+        with: { version: v1.61.0 }
+
+  lint-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm -C web install --frozen-lockfile
+      - run: pnpm -C web typecheck
+
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "${{ env.GO_VERSION }}" }
+      - run: go test -race -count=1 ./...
+        env:
+          PROAPI_MASTER_KEY: "0123456789abcdef0123456789abcdef"
+
+  test-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [mysql, postgres]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "${{ env.GO_VERSION }}" }
+      - name: Start ${{ matrix.db }}
+        run: |
+          if [ "${{ matrix.db }}" = "mysql" ]; then
+            docker run -d --name db -p 3306:3306 \
+              -e MYSQL_ROOT_PASSWORD=proapi -e MYSQL_DATABASE=proapi \
+              mysql:8.0
+          else
+            docker run -d --name db -p 5432:5432 \
+              -e POSTGRES_PASSWORD=proapi -e POSTGRES_DB=proapi \
+              postgres:16
+          fi
+      - run: go test -race -count=1 -tags=integration ./...
+        env:
+          PROAPI_MASTER_KEY: "0123456789abcdef0123456789abcdef"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint-go, lint-web, test-unit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "${{ env.GO_VERSION }}" }
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: pnpm
+          cache-dependency-path: |
+            web/pnpm-lock.yaml
+            docs-site/pnpm-lock.yaml
+      - run: pnpm -C web install --frozen-lockfile
+      - run: pnpm -C web/admin build
+      - run: pnpm -C web/user build
+      - run: pnpm -C docs-site install --frozen-lockfile
+      - run: pnpm -C docs-site build
+      - run: go build -tags embed -ldflags="-s -w" -o bin/proapi ./cmd/proapi
+        env:
+          PROAPI_MASTER_KEY: "0123456789abcdef0123456789abcdef"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: proapi-linux-amd64
+          path: bin/proapi
