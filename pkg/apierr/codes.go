@@ -65,6 +65,9 @@ const (
 
 	CodeChannelDisabled  Code = 40013
 	CodeChannelMisconfig Code = 40014
+
+	// CodeNotFound 通用资源不存在(公告 / 设置 / 用户对象等)。
+	CodeNotFound Code = 40015
 )
 
 // httpStatusByCode 把错误码映射到 HTTP status。
@@ -104,6 +107,8 @@ func httpStatusByCode(c Code) int {
 		return http.StatusConflict
 	case c == CodeChannelDisabled || c == CodeChannelMisconfig:
 		return http.StatusServiceUnavailable
+	case c == CodeNotFound:
+		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
 	}
