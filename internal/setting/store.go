@@ -226,3 +226,44 @@ func (s *store) Close() error {
 func (s *store) invalidateLocal(key string) {
 	s.local.Delete(key)
 }
+
+// New 启动一个 Store 实例并订阅 Pub/Sub 失效。
+func New(cfg Config) (Store, error) {
+	ttl := cfg.LocalTTL
+	if ttl == 0 {
+		ttl = localDefaultTTL
+	}
+	log := cfg.Log
+	if log == nil {
+		log = zap.NewNop()
+	}
+	s := &store{
+		db:     cfg.DB,
+		rdb:    cfg.Cache,
+		log:    log,
+		ttl:    ttl,
+		stopCh: make(chan struct{}),
+	}
+	if cfg.Cache != nil {
+		s.sub = cfg.Cache.Subscribe(context.Background(), redisInvalidateCh)
+		s.stopWg.Add(1)
+		go s.runInvalidator()
+	}
+	return s, nil
+}
+
+func (s *store) runInvalidator() {
+	defer s.stopWg.Done()
+	ch := s.sub.Channel()
+	for {
+		select {
+		case <-s.stopCh:
+			return
+		case msg, ok := <-ch:
+			if !ok {
+				return
+			}
+			s.invalidateLocal(msg.Payload)
+		}
+	}
+}
