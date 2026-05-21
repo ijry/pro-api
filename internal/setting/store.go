@@ -33,6 +33,11 @@ type Store interface {
 	GetFloat(ctx context.Context, key string, def float64) float64
 	GetJSON(ctx context.Context, key string, dest any) error
 	Put(ctx context.Context, key string, val any, actor int64) error
+	// GetSecret 读取 key,若 value 是 ENC(...) 形态字符串,自动解密为明文。
+	// 非加密 / 非字符串 / key 不存在 → 返对应错误(ErrNotFound / ErrNotEncrypted / 解密错)。
+	GetSecret(ctx context.Context, key string, dec Decryptor) (string, error)
+	// ListAll 返回所有 setting 行(按 key 升序)。仅供管理后台列表使用。
+	ListAll(ctx context.Context) ([]Setting, error)
 	Close() error
 }
 
