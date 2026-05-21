@@ -1,0 +1,30 @@
+# proapi 配置示例。复制为 configs/proapi.yaml 并按需修改。
+# 任何字段都可被 ENV 覆盖,前缀 PROAPI_,分隔符 _,例如:
+#   PROAPI_SERVER_ADDR=:9090
+#   PROAPI_DATABASE_DSN=postgres://...
+#
+# master_key 强烈建议只用 ENV 不入文件:
+#   export PROAPI_MASTER_KEY=$(openssl rand -base64 32)
+
+node_id: 0
+
+server:
+  addr: :8080
+  read_timeout_ms: 30000
+  write_timeout_ms: 60000
+
+log:
+  level: info        # debug | info | warn | error
+  format: json       # json | console
+
+database:
+  driver: mysql      # mysql | postgres
+  dsn: root:proapi@tcp(127.0.0.1:3306)/proapi?charset=utf8mb4&parseTime=True&loc=UTC
+  max_open_conns: 50
+  max_idle_conns: 10
+  conn_max_life_sec: 1800
+
+redis:
+  addr: 127.0.0.1:6379
+  password: ""
+  db: 0
