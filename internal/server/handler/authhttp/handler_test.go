@@ -86,6 +86,19 @@ func (f *fakeSetting) Put(_ context.Context, key string, val any, _ int64) error
 }
 func (f *fakeSetting) Close() error { return nil }
 
+func (f *fakeSetting) GetSecret(ctx context.Context, key string, _ setting.Decryptor) (string, error) {
+	return f.GetString(ctx, key, ""), nil
+}
+
+func (f *fakeSetting) ListAll(_ context.Context) ([]setting.Setting, error) {
+	out := make([]setting.Setting, 0, len(f.kv))
+	for k, v := range f.kv {
+		b, _ := json.Marshal(v)
+		out = append(out, setting.Setting{Key: k, Value: b})
+	}
+	return out, nil
+}
+
 type captureMailer struct{ msgs []email.Message }
 
 func (c *captureMailer) Send(_ context.Context, m email.Message) error {
