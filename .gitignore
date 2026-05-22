@@ -54,3 +54,4 @@ logs/
 *.log
 tmp/
 .cache/
+.claude/worktrees/
