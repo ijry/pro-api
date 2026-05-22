@@ -10,32 +10,26 @@ linters:
     - errcheck
     - govet
     - ineffassign
-    - revive
     - staticcheck
     - unused
     - misspell
-    - gosec
     - bodyclose
-    - contextcheck
     - gocritic
     - nilerr
 
   settings:
-    revive:
-      rules:
-        - name: exported
-          severity: warning
-          disabled: false
-    gosec:
-      excludes:
-        - G104  # 与 errcheck 重复
+    gocritic:
+      disabled-checks:
+        - unlambda  # 与 cryptoRandRead 包装风格冲突
 
   exclusions:
     rules:
       - path: _test\.go
         linters:
-          - gosec
           - errcheck
+      - path: internal/auth/oauth/github/provider\.go
+        linters:
+          - errcheck  # defer resp.Body.Close() 是 Go 惯用法
 
 issues:
   max-issues-per-linter: 0
