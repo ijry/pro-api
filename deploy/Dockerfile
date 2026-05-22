@@ -30,7 +30,7 @@ RUN pnpm build
 ############################################################
 # Stage 3: Go 构建
 ############################################################
-FROM golang:1.22-alpine AS backend
+FROM golang:1.25-alpine AS backend
 RUN apk add --no-cache git
 WORKDIR /src
 COPY go.mod go.sum ./
