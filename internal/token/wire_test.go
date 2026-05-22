@@ -1,6 +1,7 @@
 package token
 
 import (
+	"context"
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
@@ -70,7 +71,7 @@ func TestWireToken_AssignsStoreAndCloser(t *testing.T) {
 	_ = store
 
 	// Shutdown 应触发 Close 不报错
-	if err := application.Shutdown(nil); err != nil {
+	if err := application.Shutdown(context.TODO()); err != nil {
 		t.Fatalf("shutdown error: %v", err)
 	}
 }

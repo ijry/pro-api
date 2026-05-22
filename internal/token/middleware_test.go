@@ -189,13 +189,9 @@ func TestExtractBearer_RejectsNonPAPrefix(t *testing.T) {
 }
 
 func TestFromContext_PlainContext_Works(t *testing.T) {
-	ctx := context.WithValue(context.Background(), interface{}(CtxKeyToken), &View{ID: 5})
-	if _, ok := FromContext(ctx); !ok {
-		// 注意 Gin 使用 string key,而 context.Value 用 any key;此处 string key 应当也能命中(Gin 文档:c.Set 等价于把 key 加入 Keys map)
-		// 这里测试纯 context.Context 路径,key 必须用 string("proapi:token")
-	}
-	// 用 string key 设置
-	ctx2 := context.WithValue(context.Background(), interface{}("proapi:token"), &View{ID: 5})
+	// FromContext 内部用 string key(与 Gin Set 一致),测试也用同名常量。
+	//nolint:staticcheck // SA1029: 与 Gin 兼容,key 必须是 string
+	ctx2 := context.WithValue(context.Background(), CtxKeyToken, &View{ID: 5})
 	got, ok := FromContext(ctx2)
 	if !ok || got.ID != 5 {
 		t.Fatalf("plain ctx FromContext failed: ok=%v got=%+v", ok, got)

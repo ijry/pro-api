@@ -27,7 +27,7 @@ func mockGitHub(t *testing.T, opts mockOpts) (baseURL string, apiBaseURL string)
 	})
 	mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
-			http.Error(w, "no auth", 401)
+			http.Error(w, "no auth", http.StatusUnauthorized)
 			return
 		}
 		user := map[string]any{

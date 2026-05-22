@@ -270,15 +270,5 @@ var cryptoRandRead = func(p []byte) (int, error) {
 	return defaultRand(p)
 }
 
-// 抽出来便于换实现
-func sliceContains(arr []string, s string) bool {
-	for _, x := range arr {
-		if x == s {
-			return true
-		}
-	}
-	return false
-}
-
 // 占位防止 lint
 var _ = strings.Contains

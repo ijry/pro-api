@@ -22,10 +22,8 @@ type SessionUserExtractor func(c *gin.Context) int64
 
 // UserHandler 提供 /api/user/tokens/* 路由的 handler。
 type UserHandler struct {
-	store    tokensvc.Store
-	userOf   SessionUserExtractor
-	maxRPM   int // 0 = 不强制上限
-	maxTPM   int // 0 = 不强制上限
+	store  tokensvc.Store
+	userOf SessionUserExtractor
 }
 
 // NewUserHandler 构造。userOf 必填。

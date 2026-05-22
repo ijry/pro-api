@@ -98,9 +98,6 @@ func (h *handlers) adminUserPatch(c *gin.Context) {
 	}
 	actorID := middleware.UserID(c)
 	actorRole := middleware.Role(c)
-	if actorID == id {
-		// 不能修改自己的 role / status,只能改 display_name
-	}
 	var req adminUserPatchReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		sendErr(c, apierr.New(apierr.CodeInvalidParam, "请求格式错误"))
