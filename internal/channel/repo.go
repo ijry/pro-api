@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/ijry/pro-api/internal/util/clock"
 	"github.com/ijry/pro-api/internal/util/crypto"
@@ -232,10 +231,6 @@ func (r *repo) NamesByIDs(ctx context.Context, ids []int64) map[int64]string {
 	return m
 }
 
-// formatTime 格式化时间用于日志。
-func formatTime(t time.Time) string {
-	return t.Format("2006-01-02T15:04:05Z")
-}
 
 // int64SliceIDs 把 []*Channel 转成 id 切片。
 func int64SliceIDs(chs []*Channel) []int64 {

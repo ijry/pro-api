@@ -20,16 +20,24 @@ linters:
   settings:
     gocritic:
       disabled-checks:
-        - unlambda  # 与 cryptoRandRead 包装风格冲突
+        - unlambda      # 与 cryptoRandRead 包装风格冲突
+        - ifElseChain   # adapter 协议翻译中的 if-else chain 可读性更好
 
   exclusions:
     rules:
       - path: _test\.go
         linters:
           - errcheck
+      # defer resp.Body.Close() 是 Go 惯用法,不检查返回值
       - path: internal/auth/oauth/github/provider\.go
         linters:
-          - errcheck  # defer resp.Body.Close() 是 Go 惯用法
+          - errcheck
+      - path: internal/adapter/
+        linters:
+          - errcheck  # defer resp.Body.Close() 与 reader.Close() 惯用法
+      - path: internal/server/handler/relay/
+        linters:
+          - errcheck  # defer reader.Close() 惯用法
 
 issues:
   max-issues-per-linter: 0

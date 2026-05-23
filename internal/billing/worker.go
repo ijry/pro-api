@@ -70,10 +70,7 @@ func (b *biller) reconcileExpired() {
 		Find(&recs)
 
 	for _, rec := range recs {
-		res, err := b.lua.Refund.RunInts(ctx, []string{walletKey(rec.UserID), reserveKey(rec.ID)})
-		if err != nil || (len(res) > 0 && res[0] == -1) {
-			// 已被 commit/refund 或 lua 出错,只更新 DB 状态
-		}
+		_, _ = b.lua.Refund.RunInts(ctx, []string{walletKey(rec.UserID), reserveKey(rec.ID)})
 		b.cfg.DB.WithContext(ctx).Model(&Reservation{}).
 			Where("id = ? AND status = 0", rec.ID).
 			Updates(map[string]any{"status": 3})

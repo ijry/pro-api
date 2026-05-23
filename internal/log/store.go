@@ -89,7 +89,7 @@ func New(ctx context.Context, cfg Config) (Store, error) {
 		_ = sqlDB
 	}
 	// 从 gorm dialector 名判断
-	dname := cfg.DB.Dialector.Name()
+	dname := cfg.DB.Name()
 	if dname == "postgres" || dname == "pgx" {
 		driver = "postgres"
 	} else {

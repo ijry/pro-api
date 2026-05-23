@@ -29,7 +29,7 @@ func WireChannel(ctx context.Context, a *app.Application) error {
 		return fmt.Errorf("channel: app.Cache is nil")
 	}
 
-	clk, _ := a.Clock.(clock.Clock)
+	clk := a.Clock
 	if clk == nil {
 		clk = clock.Real
 	}

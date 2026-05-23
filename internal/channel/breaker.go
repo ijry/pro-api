@@ -38,7 +38,6 @@ type localBreakerState struct {
 	lastProbeAt  time.Time
 	successCount int
 	failureCount int
-	windowStart  time.Time
 }
 
 type redisBreaker struct {
