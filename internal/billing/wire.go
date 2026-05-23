@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ijry/pro-api/internal/app"
-	"github.com/ijry/pro-api/internal/audit"
 	"github.com/ijry/pro-api/internal/wallet"
 )
 
