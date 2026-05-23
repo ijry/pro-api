@@ -38,8 +38,6 @@ func newRepoDB(t *testing.T) (*repo, *gorm.DB) {
 	return &repo{db: db}, db
 }
 
-func ptrTime(t time.Time) *time.Time { return &t }
-func ptrInt64(v int64) *int64        { return &v }
 
 func TestRepo_Create_PersistsAllFields(t *testing.T) {
 	r, _ := newRepoDB(t)

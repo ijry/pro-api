@@ -27,7 +27,7 @@ func WireBilling(a *app.Application) error {
 		Clock:   a.Clock,
 		IDGen:   a.IDGen,
 		Setting: a.Setting,
-		Audit:   a.Audit.(audit.Logger),
+		Audit:   a.Audit,
 		Wallet:  ws,
 		Usage:   usageInc,
 	})

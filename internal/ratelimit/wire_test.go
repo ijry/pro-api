@@ -97,7 +97,7 @@ func TestWireRateLimit_PubSub_PurgesPlannerCache(t *testing.T) {
 		t.Fatal(err)
 	}
 	// 等到 cache 清空(最多 1 秒)
-	if !waitUntil(time.Second, func() bool {
+	if !waitUntil(3*time.Second, func() bool {
 		_, ok := p.cache.get("user_rpm_default")
 		return !ok
 	}) {

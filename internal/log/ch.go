@@ -14,12 +14,6 @@ type ClickHouseConfig struct {
 	FlushIntervalMS int
 }
 
-// chStore 是 ClickHouse 实现的占位 type（M3 实现）。
-type chStore struct {
-	cfg ClickHouseConfig
-	log *zap.Logger
-}
-
 // NewClickHouse 工厂，M1 直接返回 ErrCHNotImplemented。
 func NewClickHouse(cfg ClickHouseConfig, log *zap.Logger) (Store, error) {
 	return nil, ErrCHNotImplemented
