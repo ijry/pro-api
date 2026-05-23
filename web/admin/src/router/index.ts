@@ -1,11 +1,10 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-
-const routes: RouteRecordRaw[] = [
-  { path: '/login', name: 'login', component: () => import('@/views/Login.vue') },
-  { path: '/:pathMatch(.*)*', redirect: '/login' },
-]
+import { createRouter, createWebHistory } from 'vue-router'
+import { routes } from './routes'
+import { installGuards } from './guard'
 
 export const router = createRouter({
   history: createWebHistory('/admin/'),
   routes,
 })
+
+installGuards(router)

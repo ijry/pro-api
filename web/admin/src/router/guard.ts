@@ -1,0 +1,32 @@
+import type { Router } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+
+export function installGuards(router: Router) {
+  router.beforeEach(async (to) => {
+    const publicRoutes = ['login', 'forbidden', 'not-found']
+    if (typeof to.name === 'string' && publicRoutes.includes(to.name)) return true
+
+    const us = useUserStore()
+    if (!us.fetched) {
+      try { await us.fetchMe() } catch (_) { /* 401 handled by http interceptor */ }
+    }
+
+    if (!us.user) {
+      return { name: 'login', query: { redirect: to.fullPath } }
+    }
+
+    const roles = (to.meta?.roles as number[] | undefined) ?? []
+    if (roles.length > 0 && !roles.includes(us.user.role)) {
+      return { name: 'forbidden' }
+    }
+
+    return true
+  })
+
+  router.afterEach((to) => {
+    const title = (to.meta?.title as string | undefined) ?? 'proapi admin'
+    if (typeof document !== 'undefined') {
+      document.title = `${title} · proapi admin`
+    }
+  })
+}
