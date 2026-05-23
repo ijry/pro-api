@@ -86,6 +86,9 @@ func TestWireRateLimit_PubSub_PurgesPlannerCache(t *testing.T) {
 	}
 	defer a.Shutdown(context.Background())
 
+	// 等待 PubSub 订阅者 goroutine 就绪
+	time.Sleep(100 * time.Millisecond)
+
 	p := PlannerFrom(a)
 	// 让 cache 填充
 	_ = p.PlanRPM(context.Background(), PlanInput{UserID: 1, TokenID: 1, IP: "1.2.3.4"})
@@ -116,6 +119,9 @@ func TestWireRateLimit_PubSub_IgnoresNonRatelimitKeys(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer a.Shutdown(context.Background())
+
+	// 等待 PubSub 订阅者 goroutine 就绪
+	time.Sleep(100 * time.Millisecond)
 
 	p := PlannerFrom(a)
 	_ = p.PlanRPM(context.Background(), PlanInput{UserID: 1, TokenID: 1, IP: "1.2.3.4"})
