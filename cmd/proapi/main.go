@@ -212,6 +212,11 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	if relaySvc, ok := a.Relay.(*relay.Service); ok {
 		relayH := relayhdr.New(relaySvc)
 		relayH.Register(v1)
+		// M2a: Anthropic 入口 /v1/messages
+		relayH.RegisterAnthropicRoutes(v1)
+		// M2a: Gemini 入口 /v1beta/models/:model/...
+		v1beta := eng.Group("/v1beta", middleware.ErrorResponse("json"))
+		relayH.RegisterGeminiRoutes(v1beta)
 	}
 
 	_ = ctx

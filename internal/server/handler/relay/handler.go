@@ -1,5 +1,6 @@
 // Package relay provides HTTP handlers for the OpenAI-compatible proxy endpoints.
 // Routes: POST /v1/chat/completions, POST /v1/completions, POST /v1/embeddings
+// M2a adds: POST /v1/messages (Anthropic), POST /v1beta/models/:model/generateContent (Gemini)
 package relay
 
 import (
@@ -9,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/adapter"
+	"github.com/ijry/pro-api/internal/protocol/anthropic"
+	"github.com/ijry/pro-api/internal/protocol/gemini"
 	"github.com/ijry/pro-api/internal/protocol/ir"
 	"github.com/ijry/pro-api/internal/protocol/openai"
 	relaySvc "github.com/ijry/pro-api/internal/relay"
@@ -26,11 +29,22 @@ func New(r *relaySvc.Service) *Handler {
 	return &Handler{relay: r}
 }
 
-// Register attaches routes to the given router group.
+// Register attaches OpenAI-format routes to the given router group.
 func (h *Handler) Register(g *gin.RouterGroup) {
 	g.POST("/chat/completions", h.ChatCompletions)
 	g.POST("/completions", h.Completions)
 	g.POST("/embeddings", h.Embeddings)
+}
+
+// RegisterAnthropicRoutes attaches Anthropic-format routes.
+func (h *Handler) RegisterAnthropicRoutes(g *gin.RouterGroup) {
+	g.POST("/messages", h.AnthropicMessages)
+}
+
+// RegisterGeminiRoutes attaches Gemini-format routes.
+func (h *Handler) RegisterGeminiRoutes(g *gin.RouterGroup) {
+	g.POST("/models/:model/generateContent", h.GeminiGenerateContent)
+	g.POST("/models/:model/streamGenerateContent", h.GeminiStreamGenerateContent)
 }
 
 // providerAndCred extracts provider name and credential from context.
@@ -151,6 +165,148 @@ func (h *Handler) Embeddings(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, openai.EncodeEmbed(resp, req.EncodingFormat))
+}
+
+// AnthropicMessages handles POST /v1/messages (Anthropic Messages API inlet)
+func (h *Handler) AnthropicMessages(c *gin.Context) {
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 4*1024*1024))
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "read body: "+err.Error()))
+		return
+	}
+
+	req, err := anthropic.DecodeRequest(body)
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
+		return
+	}
+
+	provider, cred := providerAndCred(c)
+
+	if req.Stream {
+		reader, relayErr := h.relay.ChatStream(c.Request.Context(), req, cred, provider)
+		if relayErr != nil {
+			middleware.SetErr(c, mapErr(relayErr))
+			return
+		}
+		defer reader.Close()
+
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("X-Accel-Buffering", "no")
+		w := c.Writer
+		flusher, hasFlusher := w.(http.Flusher)
+
+		var idx int
+		for {
+			chunk, nextErr := reader.Next(c.Request.Context())
+			if nextErr == io.EOF {
+				break
+			}
+			if nextErr != nil {
+				break
+			}
+			isStop := chunk.FinishReason != ""
+			events, _ := anthropic.EncodeChunk(chunk, idx, isStop)
+			for _, ev := range events {
+				_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", ev.Event, ev.Data)
+			}
+			if hasFlusher {
+				flusher.Flush()
+			}
+			idx++
+			if isStop {
+				break
+			}
+		}
+		return
+	}
+
+	irResp, relayErr := h.relay.Chat(c.Request.Context(), req, cred, provider)
+	if relayErr != nil {
+		middleware.SetErr(c, mapErr(relayErr))
+		return
+	}
+	b, _ := anthropic.EncodeResponse(irResp)
+	c.Data(http.StatusOK, "application/json", b)
+}
+
+// GeminiGenerateContent handles POST /v1beta/models/:model/generateContent
+func (h *Handler) GeminiGenerateContent(c *gin.Context) {
+	model := c.Param("model")
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 4*1024*1024))
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "read body: "+err.Error()))
+		return
+	}
+
+	req, err := gemini.DecodeRequest(body, model)
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
+		return
+	}
+
+	provider, cred := providerAndCred(c)
+
+	irResp, relayErr := h.relay.Chat(c.Request.Context(), req, cred, provider)
+	if relayErr != nil {
+		middleware.SetErr(c, mapErr(relayErr))
+		return
+	}
+	b, _ := gemini.EncodeResponse(irResp)
+	c.Data(http.StatusOK, "application/json", b)
+}
+
+// GeminiStreamGenerateContent handles POST /v1beta/models/:model/streamGenerateContent
+func (h *Handler) GeminiStreamGenerateContent(c *gin.Context) {
+	model := c.Param("model")
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 4*1024*1024))
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "read body: "+err.Error()))
+		return
+	}
+
+	req, err := gemini.DecodeRequest(body, model)
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
+		return
+	}
+	req.Stream = true
+
+	provider, cred := providerAndCred(c)
+
+	reader, relayErr := h.relay.ChatStream(c.Request.Context(), req, cred, provider)
+	if relayErr != nil {
+		middleware.SetErr(c, mapErr(relayErr))
+		return
+	}
+	defer reader.Close()
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	w := c.Writer
+	flusher, hasFlusher := w.(http.Flusher)
+
+	for {
+		chunk, nextErr := reader.Next(c.Request.Context())
+		if nextErr == io.EOF {
+			break
+		}
+		if nextErr != nil {
+			break
+		}
+		isStop := chunk.FinishReason != ""
+		events, _ := gemini.EncodeChunk(chunk, isStop)
+		for _, ev := range events {
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", ev.Data)
+		}
+		if hasFlusher {
+			flusher.Flush()
+		}
+		if isStop {
+			break
+		}
+	}
 }
 
 // mapErr maps errors to apierr.Error.
