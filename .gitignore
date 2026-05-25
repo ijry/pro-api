@@ -50,7 +50,7 @@ docs-site/.vitepress/dist/
 docs-site/.vitepress/cache/
 
 # 日志 / 临时
-logs/
+/logs/
 *.log
 tmp/
 .cache/
