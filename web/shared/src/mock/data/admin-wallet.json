@@ -1,0 +1,9 @@
+{
+  "id": 1001,
+  "owner_type": "user",
+  "owner_id": 1001,
+  "quota_balance": 8650000,
+  "quota_total_recharged": 10000000,
+  "quota_total_consumed": 1350000,
+  "currency": "USD"
+}

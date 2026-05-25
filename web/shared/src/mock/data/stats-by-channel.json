@@ -1,0 +1,8 @@
+{
+  "rows": [
+    { "channel_id": 1, "channel_name": "openai-main", "provider": "openai", "requests": 10340, "quota": 14000000, "errors": 26 },
+    { "channel_id": 2, "channel_name": "anthropic-main", "provider": "anthropic", "requests": 4180, "quota": 9430000, "errors": 12 },
+    { "channel_id": 3, "channel_name": "gemini-main", "provider": "gemini", "requests": 1704, "quota": 1380000, "errors": 7 },
+    { "channel_id": 5, "channel_name": "deepseek-main", "provider": "deepseek", "requests": 2010, "quota": 100000, "errors": 4 }
+  ]
+}

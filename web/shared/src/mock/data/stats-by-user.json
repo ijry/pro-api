@@ -1,0 +1,7 @@
+{
+  "rows": [
+    { "user_id": 1001, "username": "demo_user", "requests": 12450, "quota": 18200000, "errors": 28 },
+    { "user_id": 1002, "username": "test_user", "requests": 3120, "quota": 4700000, "errors": 11 },
+    { "user_id": 1003, "username": "legacy_user", "requests": 2664, "quota": 1830000, "errors": 9 }
+  ]
+}

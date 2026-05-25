@@ -1,0 +1,4 @@
+[
+  { "id": 9001, "user_id": 1001, "username": "demo_user", "amount_money": 700, "currency": "CNY", "amount_quota": 10000000, "status": 1, "applicant_note": "首次充值", "reviewer_id": 1, "review_note": "已确认转账", "reviewed_at": "2026-01-01T00:00:00Z", "created_at": "2025-12-31T18:00:00Z", "updated_at": "2026-01-01T00:00:00Z" },
+  { "id": 9002, "user_id": 1002, "username": "test_user", "amount_money": 100, "currency": "CNY", "amount_quota": 0, "status": 0, "applicant_note": "测试充值", "reviewer_id": null, "review_note": "", "reviewed_at": null, "created_at": "2026-05-24T10:00:00Z", "updated_at": "2026-05-24T10:00:00Z" }
+]

@@ -1,0 +1,14 @@
+{
+  "id": 1,
+  "username": "admin",
+  "email": "admin@proapi.demo",
+  "display_name": "演示管理员",
+  "avatar": null,
+  "role": 3,
+  "status": 1,
+  "group_id": 1,
+  "group_name": "默认分组",
+  "email_verified_at": "2026-01-01T00:00:00Z",
+  "last_login_at": "2026-05-25T10:00:00Z",
+  "created_at": "2026-01-01T00:00:00Z"
+}

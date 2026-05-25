@@ -1,0 +1,7 @@
+{
+  "requests_today": 18234,
+  "revenue_today": 124.36,
+  "active_users": 47,
+  "error_rate": 0.012,
+  "delta": { "requests": 0.082, "revenue": 0.115, "users": 0.04, "error_rate": -0.003 }
+}

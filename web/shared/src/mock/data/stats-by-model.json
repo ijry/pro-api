@@ -1,0 +1,9 @@
+{
+  "rows": [
+    { "model": "gpt-4o", "requests": 6420, "tokens_in": 2150000, "tokens_out": 312000, "quota": 13780000, "errors": 18 },
+    { "model": "claude-3-5-sonnet", "requests": 4180, "tokens_in": 1840000, "tokens_out": 256000, "quota": 9430000, "errors": 12 },
+    { "model": "gpt-4o-mini", "requests": 3920, "tokens_in": 980000, "tokens_out": 124000, "quota": 220000, "errors": 8 },
+    { "model": "deepseek-chat", "requests": 2010, "tokens_in": 540000, "tokens_out": 87000, "quota": 100000, "errors": 4 },
+    { "model": "gemini-1.5-pro", "requests": 1704, "tokens_in": 720000, "tokens_out": 95000, "quota": 1380000, "errors": 7 }
+  ]
+}

@@ -1,0 +1,5 @@
+[
+  { "id": 1, "title": "演示公告:欢迎试用", "content": "这是一个静态演示环境,所有写操作不会生效。", "level": "info", "target": "all", "status": 1, "publish_at": "2026-05-01T00:00:00Z", "expires_at": null, "pinned": true, "created_by": 1, "created_at": "2026-05-01T00:00:00Z", "updated_at": "2026-05-01T00:00:00Z" },
+  { "id": 2, "title": "新增 Doubao / MiniMax 适配器", "content": "已上线 2 家新适配器,可在渠道列表中查看。", "level": "success", "target": "user", "status": 1, "publish_at": "2026-05-20T00:00:00Z", "expires_at": null, "pinned": false, "created_by": 1, "created_at": "2026-05-20T00:00:00Z", "updated_at": "2026-05-20T00:00:00Z" },
+  { "id": 3, "title": "HuggingFace 渠道暂时熔断", "content": "上游连接超时,已自动跳过该渠道。", "level": "warning", "target": "admin", "status": 1, "publish_at": "2026-05-24T18:00:00Z", "expires_at": null, "pinned": false, "created_by": 1, "created_at": "2026-05-24T18:00:00Z", "updated_at": "2026-05-24T18:00:00Z" }
+]

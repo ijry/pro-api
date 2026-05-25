@@ -1,0 +1,7 @@
+[
+  { "id": 5001, "wallet_id": 1001, "direction": "credit", "amount_quota": 10000000, "amount_money": 100.0, "currency": "USD", "ref_type": "manual", "ref_id": 9001, "balance_after": 10000000, "description": "初始充值", "created_at": "2026-01-01T00:00:00Z" },
+  { "id": 5002, "wallet_id": 1001, "direction": "debit",  "amount_quota": 4200, "amount_money": 0.042, "currency": "USD", "ref_type": "usage", "ref_id": 70001, "balance_after": 9995800, "description": "gpt-4o 用量结算", "created_at": "2026-03-12T08:32:00Z" },
+  { "id": 5003, "wallet_id": 1001, "direction": "debit",  "amount_quota": 18000, "amount_money": 0.18, "currency": "USD", "ref_type": "usage", "ref_id": 70002, "balance_after": 9977800, "description": "claude-3-5-sonnet 用量结算", "created_at": "2026-04-05T14:12:00Z" },
+  { "id": 5004, "wallet_id": 1001, "direction": "credit", "amount_quota": 500000, "amount_money": 5.0, "currency": "USD", "ref_type": "redeem", "ref_id": 9100, "balance_after": 10477800, "description": "兑换码 DEMO500", "created_at": "2026-04-20T10:00:00Z" },
+  { "id": 5005, "wallet_id": 1001, "direction": "debit",  "amount_quota": 1827800, "amount_money": 18.278, "currency": "USD", "ref_type": "usage", "ref_id": 70003, "balance_after": 8650000, "description": "近期累计用量", "created_at": "2026-05-25T08:00:00Z" }
+]

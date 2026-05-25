@@ -1,0 +1,4 @@
+[
+  { "id": "tk_demo_a1b2", "name": "默认 Token", "prefix": "sk-prx-", "status": "enabled", "quota_used": 1820000, "quota_limit": 5000000, "allowed_models": ["gpt-4o", "claude-3-5-sonnet"], "allowed_ips": [], "rpm_limit": 600, "tpm_limit": 200000, "expires_at": null, "last_used_at": "2026-05-25T08:45:12Z", "created_at": "2026-02-01T08:00:00Z" },
+  { "id": "tk_demo_c3d4", "name": "开发 Token", "prefix": "sk-dev-", "status": "enabled", "quota_used": 234000, "quota_limit": 1000000, "allowed_models": [], "allowed_ips": ["127.0.0.1/32"], "rpm_limit": 60, "tpm_limit": 30000, "expires_at": "2026-12-31T23:59:59Z", "last_used_at": "2026-05-24T17:20:00Z", "created_at": "2026-02-10T08:00:00Z" }
+]
