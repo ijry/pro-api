@@ -5,7 +5,7 @@ outline: deep
 
 # 5 分钟跑起来
 
-> 💡 **想直接看看?** <a :href="$withBase('/admin-demo/index.html')" target="_blank">管理后台演示</a> · <a :href="$withBase('/user-demo/index.html')" target="_blank">用户中心演示</a>(纯前端 mock,无需部署后端)
+> 💡 **想直接看看?** <a :href="$withBase('/admin-demo/')" target="_blank">管理后台演示</a> · <a :href="$withBase('/user-demo/')" target="_blank">用户中心演示</a>(纯前端 mock,无需部署后端)
 
 > 本页面向第一次接触 proapi 的用户:从 0 到调通第一个请求,目标耗时 5 分钟。
 >

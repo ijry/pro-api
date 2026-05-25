@@ -192,8 +192,8 @@ export default defineConfig({
           {
             text: '在线演示',
             items: [
-              { text: '管理后台演示', link: '/admin-demo/index.html', target: '_blank' },
-              { text: '用户中心演示', link: '/user-demo/index.html',  target: '_blank' },
+              { text: '管理后台演示', link: '/admin-demo/', target: '_blank' },
+              { text: '用户中心演示', link: '/user-demo/',  target: '_blank' },
             ],
           },
         ],
@@ -224,8 +224,8 @@ export default defineConfig({
           {
             text: 'Live Demo',
             items: [
-              { text: 'Admin Demo', link: '/admin-demo/index.html', target: '_blank' },
-              { text: 'User Demo',  link: '/user-demo/index.html',  target: '_blank' },
+              { text: 'Admin Demo', link: '/admin-demo/', target: '_blank' },
+              { text: 'User Demo',  link: '/user-demo/',  target: '_blank' },
             ],
           },
         ],

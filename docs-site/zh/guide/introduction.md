@@ -1,6 +1,6 @@
 # 项目介绍
 
-> 💡 **想直接看看?** <a :href="$withBase('/admin-demo/index.html')" target="_blank">管理后台演示</a> · <a :href="$withBase('/user-demo/index.html')" target="_blank">用户中心演示</a>(纯前端 mock,无需部署后端)
+> 💡 **想直接看看?** <a :href="$withBase('/admin-demo/')" target="_blank">管理后台演示</a> · <a :href="$withBase('/user-demo/')" target="_blank">用户中心演示</a>(纯前端 mock,无需部署后端)
 
 **proapi** 是一个自主实现的大模型 API 中转 / 网关系统,定位为开源项目 + 对外 SaaS + 企业平台三位一体。
 
