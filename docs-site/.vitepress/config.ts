@@ -188,6 +188,13 @@ export default defineConfig({
           { text: '部署', link: '/zh/deployment/docker' },
           { text: '二次开发', link: '/zh/development/overview' },
           { text: '更新日志', link: '/zh/changelog' },
+          {
+            text: '在线演示',
+            items: [
+              { text: '管理后台演示', link: '/admin-demo/index.html', target: '_blank' },
+              { text: '用户中心演示', link: '/user-demo/index.html',  target: '_blank' },
+            ],
+          },
         ],
         sidebar: {
           '/zh/': zhSidebar,
@@ -213,6 +220,13 @@ export default defineConfig({
           { text: 'Deployment', link: '/en/deployment/docker' },
           { text: 'Development', link: '/en/development/overview' },
           { text: 'Changelog', link: '/en/changelog' },
+          {
+            text: 'Live Demo',
+            items: [
+              { text: 'Admin Demo', link: '/admin-demo/index.html', target: '_blank' },
+              { text: 'User Demo',  link: '/user-demo/index.html',  target: '_blank' },
+            ],
+          },
         ],
         sidebar: {
           '/en/': enSidebar,
