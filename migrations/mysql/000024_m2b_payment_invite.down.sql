@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS invite_records;
+DROP TABLE IF EXISTS payment_orders;
+ALTER TABLE users DROP COLUMN IF EXISTS invited_by;
