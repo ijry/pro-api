@@ -18,7 +18,12 @@ import (
 	"github.com/ijry/pro-api/internal/app"
 	"github.com/ijry/pro-api/internal/auth"
 	"github.com/ijry/pro-api/internal/auth/oauth"
+	authdiscord  "github.com/ijry/pro-api/internal/auth/oauth/discord"
+	authdingtalk "github.com/ijry/pro-api/internal/auth/oauth/dingtalk"
+	authfeishu   "github.com/ijry/pro-api/internal/auth/oauth/feishu"
 	"github.com/ijry/pro-api/internal/auth/oauth/github"
+	authgoogle   "github.com/ijry/pro-api/internal/auth/oauth/google"
+	authwechat   "github.com/ijry/pro-api/internal/auth/oauth/wechat"
 	"github.com/ijry/pro-api/internal/auth/session"
 	"github.com/ijry/pro-api/internal/auth/verifycode"
 	"github.com/ijry/pro-api/internal/group"
@@ -93,10 +98,27 @@ func Wire(a *app.Application) error {
 		ghProvider = github.New(*cfg)
 	}
 
+	var oauthProviders []oauth.Provider
+	if cfg := readGoogleOAuth(ctx, a); cfg != nil {
+		oauthProviders = append(oauthProviders, authgoogle.New(*cfg))
+	}
+	if cfg := readWechatOAuth(ctx, a); cfg != nil {
+		oauthProviders = append(oauthProviders, authwechat.New(*cfg))
+	}
+	if cfg := readFeishuOAuth(ctx, a); cfg != nil {
+		oauthProviders = append(oauthProviders, authfeishu.New(*cfg))
+	}
+	if cfg := readDingTalkOAuth(ctx, a); cfg != nil {
+		oauthProviders = append(oauthProviders, authdingtalk.New(*cfg))
+	}
+	if cfg := readDiscordOAuth(ctx, a); cfg != nil {
+		oauthProviders = append(oauthProviders, authdiscord.New(*cfg))
+	}
+
 	authSvc := auth.NewService(auth.Deps{
 		User: userSvc, Group: groupSvc, Session: sessStore, VerifyCode: vc,
 		Mailer: mailer, GithubProvider: ghProvider, GithubState: stateStore,
-		OAuthRepo: oauthRepo,
+		OAuthRepo: oauthRepo, OAuthProviders: oauthProviders,
 		Setting:   a.Setting, Audit: a.Audit,
 		Clock: a.Clock, IDGen: a.IDGen, Log: a.Log,
 	})
@@ -133,6 +155,96 @@ func readGithubOAuth(ctx context.Context, a *app.Application) *github.Config {
 		ClientID:     raw.ClientID,
 		ClientSecret: secret,
 	}
+}
+
+// readGoogleOAuth reads auth.google_oauth setting: {"client_id":"...","client_secret":"..."}
+func readGoogleOAuth(ctx context.Context, a *app.Application) *authgoogle.Config {
+	var raw struct {
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	}
+	if err := a.Setting.GetJSON(ctx, "auth.google_oauth", &raw); err != nil || raw.ClientID == "" {
+		return nil
+	}
+	secret := raw.ClientSecret
+	if a.Crypto != nil {
+		if dec, err := a.Crypto.Decrypt(raw.ClientSecret); err == nil {
+			secret = dec
+		}
+	}
+	return &authgoogle.Config{ClientID: raw.ClientID, ClientSecret: secret}
+}
+
+// readWechatOAuth reads auth.wechat_oauth setting: {"app_id":"...","app_secret":"..."}
+func readWechatOAuth(ctx context.Context, a *app.Application) *authwechat.Config {
+	var raw struct {
+		AppID     string `json:"app_id"`
+		AppSecret string `json:"app_secret"`
+	}
+	if err := a.Setting.GetJSON(ctx, "auth.wechat_oauth", &raw); err != nil || raw.AppID == "" {
+		return nil
+	}
+	secret := raw.AppSecret
+	if a.Crypto != nil {
+		if dec, err := a.Crypto.Decrypt(raw.AppSecret); err == nil {
+			secret = dec
+		}
+	}
+	return &authwechat.Config{AppID: raw.AppID, AppSecret: secret}
+}
+
+// readFeishuOAuth reads auth.feishu_oauth setting: {"app_id":"...","app_secret":"..."}
+func readFeishuOAuth(ctx context.Context, a *app.Application) *authfeishu.Config {
+	var raw struct {
+		AppID     string `json:"app_id"`
+		AppSecret string `json:"app_secret"`
+	}
+	if err := a.Setting.GetJSON(ctx, "auth.feishu_oauth", &raw); err != nil || raw.AppID == "" {
+		return nil
+	}
+	secret := raw.AppSecret
+	if a.Crypto != nil {
+		if dec, err := a.Crypto.Decrypt(raw.AppSecret); err == nil {
+			secret = dec
+		}
+	}
+	return &authfeishu.Config{AppID: raw.AppID, AppSecret: secret}
+}
+
+// readDingTalkOAuth reads auth.dingtalk_oauth setting: {"client_id":"...","client_secret":"..."}
+func readDingTalkOAuth(ctx context.Context, a *app.Application) *authdingtalk.Config {
+	var raw struct {
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	}
+	if err := a.Setting.GetJSON(ctx, "auth.dingtalk_oauth", &raw); err != nil || raw.ClientID == "" {
+		return nil
+	}
+	secret := raw.ClientSecret
+	if a.Crypto != nil {
+		if dec, err := a.Crypto.Decrypt(raw.ClientSecret); err == nil {
+			secret = dec
+		}
+	}
+	return &authdingtalk.Config{ClientID: raw.ClientID, ClientSecret: secret}
+}
+
+// readDiscordOAuth reads auth.discord_oauth setting: {"client_id":"...","client_secret":"..."}
+func readDiscordOAuth(ctx context.Context, a *app.Application) *authdiscord.Config {
+	var raw struct {
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	}
+	if err := a.Setting.GetJSON(ctx, "auth.discord_oauth", &raw); err != nil || raw.ClientID == "" {
+		return nil
+	}
+	secret := raw.ClientSecret
+	if a.Crypto != nil {
+		if dec, err := a.Crypto.Decrypt(raw.ClientSecret); err == nil {
+			secret = dec
+		}
+	}
+	return &authdiscord.Config{ClientID: raw.ClientID, ClientSecret: secret}
 }
 
 // RegisterRoutes 把 /api/auth/* + /api/user/* + /api/admin/* 三组路由挂到 eng。

@@ -67,6 +67,8 @@ func RegisterRoutes(eng *gin.Engine, d Deps) {
 	authG.POST("/password/reset", h.passwordReset)
 	authG.GET("/oauth/github/start", h.githubStart)
 	authG.GET("/oauth/github/callback", h.githubCallback)
+	authG.GET("/oauth/:provider/start", h.oauthStart)
+	authG.GET("/oauth/:provider/callback", h.oauthCallback)
 
 	adminAuthG := api.Group("/admin/auth")
 	adminAuthG.POST("/login", h.adminLogin)
@@ -81,6 +83,8 @@ func RegisterRoutes(eng *gin.Engine, d Deps) {
 	userG.GET("/oauth/bindings", h.userOAuthBindings)
 	userG.POST("/oauth/bindings/github", h.userBindGithub)
 	userG.DELETE("/oauth/bindings/github", h.userUnbindGithub)
+	userG.POST("/oauth/bindings/:provider", h.bindOAuth)
+	userG.DELETE("/oauth/bindings/:provider", h.unbindOAuth)
 
 	// 管理员侧(SessionAuth + CSRF + RoleGate(TenantAdmin))
 	adminG := api.Group("/admin")
