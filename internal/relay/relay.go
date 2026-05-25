@@ -9,6 +9,7 @@ import (
 
 	"github.com/ijry/pro-api/internal/adapter"
 	"github.com/ijry/pro-api/internal/protocol/ir"
+	"github.com/ijry/pro-api/pkg/apierr"
 )
 
 // Service 是 relay 编排服务。
@@ -47,4 +48,56 @@ func (s *Service) Embed(ctx context.Context, req *ir.EmbedRequest, cred adapter.
 		return nil, fmt.Errorf("relay: unknown provider %q", providerName)
 	}
 	return a.Embed(ctx, req, cred)
+}
+
+// GenerateImage 执行图片生成请求。
+func (s *Service) GenerateImage(ctx context.Context, req *ir.ImageRequest, cred adapter.Credential, providerName string) (*ir.ImageResponse, error) {
+	a, ok := s.registry.Get(providerName)
+	if !ok {
+		return nil, fmt.Errorf("relay: unknown provider %q", providerName)
+	}
+	ia, ok := a.(adapter.ImageAdapter)
+	if !ok {
+		return nil, apierr.New(apierr.CodeInvalidParam, "provider does not support image generation")
+	}
+	return ia.GenerateImage(ctx, req, cred)
+}
+
+// TextToSpeech 执行文字转语音请求。
+func (s *Service) TextToSpeech(ctx context.Context, req *ir.SpeechRequest, cred adapter.Credential, providerName string) (*ir.SpeechResponse, error) {
+	a, ok := s.registry.Get(providerName)
+	if !ok {
+		return nil, fmt.Errorf("relay: unknown provider %q", providerName)
+	}
+	sa, ok := a.(adapter.SpeechAdapter)
+	if !ok {
+		return nil, apierr.New(apierr.CodeInvalidParam, "provider does not support TTS")
+	}
+	return sa.TextToSpeech(ctx, req, cred)
+}
+
+// Transcribe 执行语音转文字请求。
+func (s *Service) Transcribe(ctx context.Context, req *ir.TranscribeRequest, cred adapter.Credential, providerName string) (*ir.TranscribeResponse, error) {
+	a, ok := s.registry.Get(providerName)
+	if !ok {
+		return nil, fmt.Errorf("relay: unknown provider %q", providerName)
+	}
+	ta, ok := a.(adapter.TranscribeAdapter)
+	if !ok {
+		return nil, apierr.New(apierr.CodeInvalidParam, "provider does not support transcription")
+	}
+	return ta.Transcribe(ctx, req, cred)
+}
+
+// Rerank 执行文档重排请求。
+func (s *Service) Rerank(ctx context.Context, req *ir.RerankRequest, cred adapter.Credential, providerName string) (*ir.RerankResponse, error) {
+	a, ok := s.registry.Get(providerName)
+	if !ok {
+		return nil, fmt.Errorf("relay: unknown provider %q", providerName)
+	}
+	ra, ok := a.(adapter.RerankAdapter)
+	if !ok {
+		return nil, apierr.New(apierr.CodeInvalidParam, "provider does not support rerank")
+	}
+	return ra.Rerank(ctx, req, cred)
 }

@@ -17,6 +17,10 @@ const (
 	CapVision
 	CapToolUse
 	CapReasoning // o1 / deepseek-reasoner / 思维链
+	CapImage     // DALL-E 图片生成
+	CapTTS       // 文字转语音
+	CapSTT       // 语音转文字
+	CapRerank    // 文档重排
 )
 
 // Has 判断是否包含某项能力。
@@ -60,4 +64,24 @@ type Adapter interface {
 type StreamReader interface {
 	Next(ctx context.Context) (*ir.ChatChunk, error)
 	Close() error
+}
+
+// ImageAdapter 支持图片生成的 adapter 可选接口。
+type ImageAdapter interface {
+	GenerateImage(ctx context.Context, req *ir.ImageRequest, cred Credential) (*ir.ImageResponse, error)
+}
+
+// SpeechAdapter 支持文字转语音的 adapter 可选接口。
+type SpeechAdapter interface {
+	TextToSpeech(ctx context.Context, req *ir.SpeechRequest, cred Credential) (*ir.SpeechResponse, error)
+}
+
+// TranscribeAdapter 支持语音转文字的 adapter 可选接口。
+type TranscribeAdapter interface {
+	Transcribe(ctx context.Context, req *ir.TranscribeRequest, cred Credential) (*ir.TranscribeResponse, error)
+}
+
+// RerankAdapter 支持文档重排的 adapter 可选接口。
+type RerankAdapter interface {
+	Rerank(ctx context.Context, req *ir.RerankRequest, cred Credential) (*ir.RerankResponse, error)
 }

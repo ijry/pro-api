@@ -34,6 +34,9 @@ func (h *Handler) Register(g *gin.RouterGroup) {
 	g.POST("/chat/completions", h.ChatCompletions)
 	g.POST("/completions", h.Completions)
 	g.POST("/embeddings", h.Embeddings)
+	g.POST("/images/generations", h.Images)
+	g.POST("/audio/speech", h.Speech)
+	g.POST("/audio/transcriptions", h.Transcriptions)
 }
 
 // RegisterAnthropicRoutes attaches Anthropic-format routes.
@@ -315,4 +318,98 @@ func mapErr(err error) *apierr.Error {
 		return e
 	}
 	return apierr.New(apierr.CodeUpstreamError, err.Error())
+}
+
+// Images handles POST /v1/images/generations
+func (h *Handler) Images(c *gin.Context) {
+	var req ir.ImageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
+		return
+	}
+	provider, cred := providerAndCred(c)
+	resp, err := h.relay.GenerateImage(c.Request.Context(), &req, cred, provider)
+	if err != nil {
+		middleware.SetErr(c, mapErr(err))
+		return
+	}
+	type imageItem struct {
+		URL           string `json:"url,omitempty"`
+		B64JSON       string `json:"b64_json,omitempty"`
+		RevisedPrompt string `json:"revised_prompt,omitempty"`
+	}
+	type imageResp struct {
+		Created int64       `json:"created"`
+		Data    []imageItem `json:"data"`
+	}
+	out := imageResp{Created: resp.Created}
+	for _, d := range resp.Data {
+		out.Data = append(out.Data, imageItem{
+			URL:           d.URL,
+			B64JSON:       d.B64JSON,
+			RevisedPrompt: d.RevisedPrompt,
+		})
+	}
+	c.JSON(http.StatusOK, out)
+}
+
+// Speech handles POST /v1/audio/speech
+func (h *Handler) Speech(c *gin.Context) {
+	var req ir.SpeechRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
+		return
+	}
+	provider, cred := providerAndCred(c)
+	resp, err := h.relay.TextToSpeech(c.Request.Context(), &req, cred, provider)
+	if err != nil {
+		middleware.SetErr(c, mapErr(err))
+		return
+	}
+	ct := resp.ContentType
+	if ct == "" {
+		ct = "audio/mpeg"
+	}
+	c.Data(http.StatusOK, ct, resp.Data)
+}
+
+// Transcriptions handles POST /v1/audio/transcriptions
+func (h *Handler) Transcriptions(c *gin.Context) {
+	audioFile, header, err := c.Request.FormFile("file")
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "missing file: "+err.Error()))
+		return
+	}
+	defer audioFile.Close()
+
+	audio, err := io.ReadAll(io.LimitReader(audioFile, 25*1024*1024))
+	if err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "read file: "+err.Error()))
+		return
+	}
+
+	req := ir.TranscribeRequest{
+		Model:          c.PostForm("model"),
+		Audio:          audio,
+		Filename:       header.Filename,
+		Language:       c.PostForm("language"),
+		Prompt:         c.PostForm("prompt"),
+		ResponseFormat: c.PostForm("response_format"),
+	}
+	if req.Model == "" {
+		req.Model = "whisper-1"
+	}
+
+	provider, cred := providerAndCred(c)
+	resp, err := h.relay.Transcribe(c.Request.Context(), &req, cred, provider)
+	if err != nil {
+		middleware.SetErr(c, mapErr(err))
+		return
+	}
+
+	if req.ResponseFormat == "text" {
+		c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(resp.Text))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"text": resp.Text})
 }

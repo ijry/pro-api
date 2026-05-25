@@ -46,7 +46,8 @@ func (a *OpenAI) Name() string { return a.name }
 
 func (a *OpenAI) Capabilities() adapter.Capability {
 	return adapter.CapChat | adapter.CapStream | adapter.CapCompletion |
-		adapter.CapEmbedding | adapter.CapVision | adapter.CapToolUse
+		adapter.CapEmbedding | adapter.CapVision | adapter.CapToolUse |
+		adapter.CapImage | adapter.CapTTS | adapter.CapSTT
 }
 
 func (a *OpenAI) SupportedModels() []string {
