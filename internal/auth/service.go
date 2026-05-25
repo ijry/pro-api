@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,6 +85,12 @@ type Service interface {
 	UnbindGithub(ctx context.Context, userID int64) error
 
 	GithubEnabled() bool
+
+	OAuthStart(ctx context.Context, providerName, ip, ua, redirect string, bindUserID int64) (string, error)
+	OAuthCallback(ctx context.Context, providerName, code, state, ip, ua string) (*session.Session, *User, []byte, error)
+	BindOAuth(ctx context.Context, userID int64, providerName, code, state string) error
+	UnbindOAuth(ctx context.Context, userID int64, providerName string) error
+	OAuthEnabled(providerName string) bool
 }
 
 // Deps 是 NewService 的依赖。
@@ -95,6 +103,7 @@ type Deps struct {
 	GithubProvider github.Provider // 可空,表示 GitHub 未启用
 	GithubState    oauth.StateStore
 	OAuthRepo      oauth.Repository
+	OAuthProviders []oauth.Provider // 通用 provider 列表(google/wechat/feishu/dingtalk/discord 等)
 	Setting        setting.Store
 	Audit          audit.Logger
 	Clock          clock.Clock
@@ -529,6 +538,160 @@ func (s *svc) UnbindGithub(ctx context.Context, userID int64) error {
 	return nil
 }
 
+// --- Generic OAuth ---
+
+// oauthProvider 按 name 查找通用 provider。
+func (s *svc) oauthProvider(name string) (oauth.Provider, bool) {
+	for _, p := range s.deps.OAuthProviders {
+		if p.Name() == name {
+			return p, true
+		}
+	}
+	return nil, false
+}
+
+// OAuthEnabled 报告指定 provider 是否可用。
+func (s *svc) OAuthEnabled(providerName string) bool {
+	_, ok := s.oauthProvider(providerName)
+	return ok
+}
+
+// OAuthStart 生成指定 provider 的跳转 URL。
+func (s *svc) OAuthStart(ctx context.Context, providerName, ip, ua, redirect string, bindUserID int64) (string, error) {
+	p, ok := s.oauthProvider(providerName)
+	if !ok {
+		return "", apierr.New(apierr.CodeForbidden, providerName+" 登录未启用")
+	}
+	payload := githubStatePayload{
+		BindUserID: bindUserID, Redirect: redirect, IP: ip, UA: ua,
+		IssuedAt: s.deps.Clock.Now().Unix(),
+	}
+	b, _ := json.Marshal(payload)
+	state, err := s.deps.GithubState.Issue(ctx, providerName, b)
+	if err != nil {
+		return "", err
+	}
+	return p.BuildAuthURL(ctx, state, redirect)
+}
+
+// OAuthCallback 处理通用 provider 回调。
+func (s *svc) OAuthCallback(ctx context.Context, providerName, code, state, ip, ua string) (*session.Session, *User, []byte, error) {
+	p, ok := s.oauthProvider(providerName)
+	if !ok {
+		return nil, nil, nil, apierr.New(apierr.CodeForbidden, providerName+" 登录未启用")
+	}
+	payload, err := s.deps.GithubState.Consume(ctx, providerName, state)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	var st githubStatePayload
+	_ = json.Unmarshal(payload, &st)
+
+	userInfo, _, err := p.Exchange(ctx, code, st.Redirect)
+	if err != nil {
+		return nil, nil, payload, err
+	}
+	if userInfo.ProviderUID == "" {
+		return nil, nil, payload, apierr.New(apierr.CodeUpstreamError, providerName+" 返回 user 缺少 id")
+	}
+
+	binding, err := s.deps.OAuthRepo.FindByProviderUID(ctx, providerName, userInfo.ProviderUID)
+	if err != nil {
+		return nil, nil, payload, apierr.Wrap(apierr.CodeDatabase, "oauth lookup binding", err)
+	}
+
+	var u *User
+	if binding != nil {
+		u, err = s.deps.User.GetByID(ctx, binding.UserID)
+		if err != nil {
+			return nil, nil, payload, apierr.Wrap(apierr.CodeDatabase, "oauth user", err)
+		}
+		if u == nil || u.Status == user.StatusDisabled {
+			return nil, nil, payload, apierr.New(apierr.CodeForbidden, "账号不可用")
+		}
+	} else {
+		// 尝试按 email 找已有账号
+		emailAddr := userInfo.Email
+		if emailAddr == "" {
+			emailAddr = fmt.Sprintf("%s_%s@oauth.noemail.local", providerName, userInfo.ProviderUID)
+		}
+		existing, _ := s.deps.User.GetByEmail(ctx, emailAddr)
+		if existing != nil {
+			if existing.Status == user.StatusDisabled {
+				return nil, nil, payload, apierr.New(apierr.CodeForbidden, "账号不可用")
+			}
+			u = existing
+			if err := s.createGenericBinding(ctx, u.ID, providerName, userInfo); err != nil {
+				return nil, nil, payload, err
+			}
+			after, _ := json.Marshal(map[string]any{"provider": providerName})
+			_ = s.deps.Audit.Log(ctx, audit.Entry{Action: "oauth.bind", TargetType: "user", TargetID: &u.ID, ActorID: &u.ID, After: after})
+		}
+	}
+
+	if u == nil {
+		// 自动建账号
+		u, err = s.autoCreateOAuthUser(ctx, providerName, userInfo, ip)
+		if err != nil {
+			return nil, nil, payload, err
+		}
+		if err := s.createGenericBinding(ctx, u.ID, providerName, userInfo); err != nil {
+			return nil, nil, payload, err
+		}
+	}
+
+	sess, err := s.deps.Session.Create(ctx, u.ID, u.Role, ip, ua)
+	if err != nil {
+		return nil, nil, payload, err
+	}
+	_ = s.deps.User.TouchLogin(ctx, u.ID, ip)
+	after, _ := json.Marshal(map[string]any{"method": providerName})
+	_ = s.deps.Audit.Log(ctx, audit.Entry{Action: "user.login", TargetType: "user", TargetID: &u.ID, After: after, IP: ip})
+	return sess, u, payload, nil
+}
+
+// BindOAuth 已登录用户绑定指定 provider。
+func (s *svc) BindOAuth(ctx context.Context, userID int64, providerName, code, state string) error {
+	p, ok := s.oauthProvider(providerName)
+	if !ok {
+		return apierr.New(apierr.CodeForbidden, providerName+" 登录未启用")
+	}
+	payload, err := s.deps.GithubState.Consume(ctx, providerName, state)
+	if err != nil {
+		return err
+	}
+	var st githubStatePayload
+	_ = json.Unmarshal(payload, &st)
+
+	userInfo, _, err := p.Exchange(ctx, code, st.Redirect)
+	if err != nil {
+		return err
+	}
+	existing, _ := s.deps.OAuthRepo.FindByProviderUID(ctx, providerName, userInfo.ProviderUID)
+	if existing != nil && existing.UserID != userID {
+		return apierr.New(apierr.CodeForbidden, "此 "+providerName+" 账号已绑定其他用户")
+	}
+	if existing != nil && existing.UserID == userID {
+		return nil // idempotent
+	}
+	if err := s.createGenericBinding(ctx, userID, providerName, userInfo); err != nil {
+		return err
+	}
+	after, _ := json.Marshal(map[string]any{"provider": providerName, "uid": userInfo.ProviderUID})
+	_ = s.deps.Audit.Log(ctx, audit.Entry{Action: "oauth.bind", TargetType: "user", TargetID: &userID, ActorID: &userID, After: after})
+	return nil
+}
+
+// UnbindOAuth 解绑指定 provider。
+func (s *svc) UnbindOAuth(ctx context.Context, userID int64, providerName string) error {
+	if err := s.deps.OAuthRepo.DeleteByUserProvider(ctx, userID, providerName); err != nil {
+		return apierr.Wrap(apierr.CodeDatabase, "auth: delete binding", err)
+	}
+	after, _ := json.Marshal(map[string]any{"provider": providerName})
+	_ = s.deps.Audit.Log(ctx, audit.Entry{Action: "oauth.unbind", TargetType: "user", TargetID: &userID, ActorID: &userID, After: after})
+	return nil
+}
+
 // --- internal helpers ---
 
 // lookupUser 按 identity(email 含 @ 或 username)查 User。
@@ -630,6 +793,69 @@ func (s *svc) createBinding(ctx context.Context, userID int64, providerUID strin
 		Profile:   prof,
 		CreatedAt: now, UpdatedAt: now,
 	})
+}
+
+// createGenericBinding 为通用 provider 创建 oauth_bindings 记录。
+func (s *svc) createGenericBinding(ctx context.Context, userID int64, providerName string, info *oauth.UserInfo) error {
+	if s.deps.IDGen == nil {
+		return errors.New("auth: idgen not configured")
+	}
+	now := s.deps.Clock.Now().UTC()
+	return s.deps.OAuthRepo.Create(ctx, &oauth.Binding{
+		ID: s.deps.IDGen.Generate(), UserID: userID,
+		Provider: providerName, ProviderUID: info.ProviderUID, Email: info.Email,
+		Profile:   info.Raw,
+		CreatedAt: now, UpdatedAt: now,
+	})
+}
+
+// autoCreateOAuthUser 为通用 OAuth provider 自动建账号。
+func (s *svc) autoCreateOAuthUser(ctx context.Context, providerName string, info *oauth.UserInfo, ip string) (*User, error) {
+	base := info.Name
+	if base == "" {
+		base = fmt.Sprintf("%s_%s", providerName, info.ProviderUID)
+	}
+	username, err := s.pickUsername(ctx, base)
+	if err != nil {
+		return nil, err
+	}
+	emailAddr := info.Email
+	if emailAddr == "" {
+		emailAddr = fmt.Sprintf("%s_%s@oauth.noemail.local", providerName, info.ProviderUID)
+	}
+	// 随机密码,用户不会用到,仅用于满足 Create 约定
+	randBytes := make([]byte, 16)
+	if _, err := cryptorand.Read(randBytes); err != nil {
+		return nil, apierr.Wrap(apierr.CodeInternal, "oauth rand password", err)
+	}
+	randPass := hex.EncodeToString(randBytes)
+
+	in := user.CreateInput{
+		Username:    username,
+		Email:       &emailAddr,
+		Avatar:      ptrIfNonEmpty(info.Avatar),
+		DisplayName: ptrIfNonEmpty(info.Name),
+		Role:        user.RoleUser,
+		Status:      user.StatusActive,
+	}
+	// 对于 noemail 虚拟地址不存密码 hash;对于真实 email 也不存明文密码
+	_ = randPass // password hash 不写入;OAuth-only 账号通过 ChangePassword 设置
+	u, err := s.deps.User.Create(ctx, in)
+	if err != nil {
+		var ae *apierr.Error
+		if errors.As(err, &ae) && ae.Code == apierr.CodeEmailRegistered {
+			// email 已存在,找到该用户直接返回
+			existing, gerr := s.deps.User.GetByEmail(ctx, emailAddr)
+			if gerr != nil || existing == nil {
+				return nil, err
+			}
+			return existing, nil
+		}
+		return nil, err
+	}
+	after, _ := json.Marshal(map[string]any{"method": providerName, "username": username})
+	_ = s.deps.Audit.Log(ctx, audit.Entry{Action: "user.register", TargetType: "user", TargetID: &u.ID, After: after, IP: ip})
+	return u, nil
 }
 
 type githubConfig struct {
