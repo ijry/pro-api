@@ -77,15 +77,28 @@ http.interceptors.response.use(
 export type Page<T> = { items: T[]; total: number; page: number; size: number }
 export type Ok = { ok: true }
 
+const MOCK = import.meta.env.VITE_DEMO_MOCK === 'true'
+
+async function mockOr<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, params?: unknown): Promise<T> {
+  const { matchMock } = await import('@proapi/shared/mock')
+  const { matched, data } = await matchMock<T>(method, url, params)
+  if (!matched) console.warn(`[mock] no data for: ${method} ${url}`)
+  return (data ?? ([] as unknown)) as T
+}
+
 export async function get<T>(url: string, params?: Record<string, unknown>, cfg?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('GET', url, params)
   return http.get<T>(url, { params, ...cfg }).then((r) => r.data)
 }
 export async function post<T>(url: string, body?: unknown, cfg?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('POST', url, body)
   return http.post<T>(url, body, cfg).then((r) => r.data)
 }
 export async function patch<T>(url: string, body?: unknown, cfg?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('PATCH', url, body)
   return http.patch<T>(url, body, cfg).then((r) => r.data)
 }
 export async function del<T>(url: string, params?: Record<string, unknown>, cfg?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('DELETE', url, params)
   return http.delete<T>(url, { params, ...cfg }).then((r) => r.data)
 }
