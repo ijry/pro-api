@@ -119,10 +119,24 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
-export const router = createRouter({ history: createWebHistory('/'), routes })
+const MOCK = import.meta.env.VITE_DEMO_MOCK === 'true'
+const baseUrl = MOCK ? import.meta.env.BASE_URL : '/'
+
+export const router = createRouter({ history: createWebHistory(baseUrl), routes })
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  if (MOCK) {
+    if (!auth.user) {
+      try { await auth.refresh() } catch { /* mock 不会失败 */ }
+    }
+    if (['login', 'register', 'forgot'].includes(to.name as string)) {
+      return { name: 'home' }
+    }
+    return
+  }
+
   if (to.meta.auth) {
     if (!auth.user) {
       try { await auth.refresh() } catch { /* fall through */ }
