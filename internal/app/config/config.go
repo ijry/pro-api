@@ -20,6 +20,7 @@ type Config struct {
 	Log       LogConfig      `mapstructure:"log"`
 	Database  DatabaseConfig `mapstructure:"database"`
 	Redis     RedisConfig    `mapstructure:"redis"`
+	SMTP      SMTPConfig     `mapstructure:"smtp"`
 }
 
 // ServerConfig 描述 HTTP server 启动参数。
@@ -49,6 +50,17 @@ type RedisConfig struct {
 	Addr     string `mapstructure:"addr"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+}
+
+// SMTPConfig 描述 SMTP 发件服务器。Host 为空时禁用 SMTP，回落到 stub。
+type SMTPConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`     // 25 / 465 / 587
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	From     string `mapstructure:"from"`     // "name <addr>" 或 "addr"
+	TLS      bool   `mapstructure:"tls"`      // true: implicit TLS (port 465)
+	Insecure bool   `mapstructure:"insecure"` // 跳过证书验证(开发环境)
 }
 
 // Load 加载配置。path 为空时仅使用 ENV 与默认值。

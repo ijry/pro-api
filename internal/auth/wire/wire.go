@@ -71,7 +71,22 @@ func Wire(a *app.Application) error {
 	vc := verifycode.New(a.Cache, a.Clock, a.Log, verifycode.Config{})
 	stateStore := oauth.NewStateStore(a.Cache, a.Clock)
 	oauthRepo := oauth.NewRepository(a.DB)
-	mailer := email.NewStub(a.Log, a.Audit)
+
+	var mailer email.Mailer
+	if a.Config != nil {
+		mailer = email.NewSMTP(email.SMTPConfig{
+			Host:     a.Config.SMTP.Host,
+			Port:     a.Config.SMTP.Port,
+			Username: a.Config.SMTP.Username,
+			Password: a.Config.SMTP.Password,
+			From:     a.Config.SMTP.From,
+			TLS:      a.Config.SMTP.TLS,
+			Insecure: a.Config.SMTP.Insecure,
+		})
+	}
+	if mailer == nil {
+		mailer = email.NewStub(a.Log, a.Audit)
+	}
 
 	var ghProvider github.Provider
 	if cfg := readGithubOAuth(ctx, a); cfg != nil {
