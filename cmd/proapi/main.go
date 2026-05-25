@@ -33,6 +33,7 @@ import (
 	"github.com/ijry/pro-api/internal/server"
 	relayhdr "github.com/ijry/pro-api/internal/server/handler/relay"
 	paymenthdr "github.com/ijry/pro-api/internal/server/handler/payment"
+	userhdr "github.com/ijry/pro-api/internal/server/handler/user"
 	"github.com/ijry/pro-api/internal/server/handler/logh"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	"github.com/ijry/pro-api/internal/token"
@@ -229,6 +230,23 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 		// M2a: Gemini 入口 /v1beta/models/:model/...
 		v1beta := eng.Group("/v1beta", middleware.ErrorResponse("json"))
 		relayH.RegisterGeminiRoutes(v1beta)
+	}
+
+	// Playground 路由 — SessionAuth 保护(M2a E1)
+	sessStore := authhwire.SessionStoreFrom(a)
+	if sessStore != nil {
+		pgH, err := userhdr.WirePlayground(a)
+		if err != nil {
+			log.Warn("playground handler wiring failed", zap.Error(err))
+		} else {
+			pgGroup := eng.Group("/api/user/playground",
+				middleware.ErrorResponse("json"),
+				middleware.SessionAuth(sessStore, a.Clock),
+			)
+			pgGroup.POST("/chat", pgH.Chat)
+		}
+	} else {
+		log.Warn("session store not available; playground routes skipped")
 	}
 
 	_ = ctx

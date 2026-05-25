@@ -5,7 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/app"
+	"github.com/ijry/pro-api/internal/channel"
 	"github.com/ijry/pro-api/internal/notice"
+	"github.com/ijry/pro-api/internal/relay"
 )
 
 // WireUserNotice 构造用户公告 NoticeHandler。
@@ -20,4 +22,27 @@ func WireUserNotice(a *app.Application, userOf func(*gin.Context) int64) (*Notic
 		return nil, errors.New("user: notice service not wired")
 	}
 	return NewNoticeHandler(svc, userOf), nil
+}
+
+// WirePlayground 构造 PlaygroundHandler。
+//
+// 依赖 relay.Service、channel.Facade 和 setting.Store 均从 app.Application 取。
+func WirePlayground(a *app.Application) (*PlaygroundHandler, error) {
+	if a == nil {
+		return nil, errors.New("user: app is nil")
+	}
+	relaySvc, ok := a.Relay.(*relay.Service)
+	if !ok || relaySvc == nil {
+		return nil, errors.New("user: relay service not wired")
+	}
+	facade := channel.FacadeFrom(a)
+	if facade == nil {
+		return nil, errors.New("user: channel facade not wired")
+	}
+	return NewPlaygroundHandler(PlaygroundDeps{
+		Relay:   relaySvc,
+		Channel: facade,
+		Setting: a.Setting,
+		Log:     a.Log,
+	}), nil
 }
