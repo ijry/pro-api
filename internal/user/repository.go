@@ -152,7 +152,11 @@ func (r *repo) SoftDelete(ctx context.Context, id int64) error {
 
 func (r *repo) FindByInviteCode(ctx context.Context, code string) (*User, error) {
 	var u User
-	if err := r.db.WithContext(ctx).Where("invite_code = ?", code).First(&u).Error; err != nil {
+	err := r.db.WithContext(ctx).Where("invite_code = ? AND deleted_at IS NULL", code).First(&u).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	return &u, nil

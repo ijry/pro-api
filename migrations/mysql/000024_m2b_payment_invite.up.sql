@@ -1,4 +1,5 @@
 ALTER TABLE users ADD COLUMN invited_by BIGINT NOT NULL DEFAULT 0 COMMENT '邀请人 user_id';
+ALTER TABLE users ADD COLUMN invite_code VARCHAR(32) NULL UNIQUE COMMENT '邀请码';
 
 CREATE TABLE IF NOT EXISTS payment_orders (
     id                BIGINT        NOT NULL PRIMARY KEY,
