@@ -1,9 +1,56 @@
 {
+  "nav": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "profile": "Profile",
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "user_detail": "User Detail",
+    "groups": "User Groups",
+    "channels": "Channels",
+    "channel_new": "New Channel",
+    "channel_detail": "Channel Detail",
+    "channel_mappings": "Model Mappings",
+    "models": "Model Catalog",
+    "pricing": "Pricing & Ratio",
+    "tokens": "API Tokens",
+    "logs": "Logs",
+    "logs_requests": "Request Logs",
+    "logs_errors": "Error Logs",
+    "logs_audit": "Audit Logs",
+    "stats": "Statistics",
+    "notices": "Notices",
+    "notice_new": "New Notice",
+    "notice_detail": "Notice Detail",
+    "payments": "Payments",
+    "payments_recharges": "Manual Recharges",
+    "payments_redeem": "Redeem Codes",
+    "payments_redeem_batch_new": "Batch Generate",
+    "settings": "Settings",
+    "forbidden": "Forbidden",
+    "not_found": "Not Found",
+    "m3_coming": "M3 Modules (Coming)",
+    "new": "New",
+    "mappings": "Mappings",
+    "requests": "Requests",
+    "errors": "Errors",
+    "audit": "Audit",
+    "recharges": "Recharges",
+    "redeem": "Redeem",
+    "batch_new": "New Batch"
+  },
   "login": {
     "title": "Admin Sign In",
     "subtitle": "proapi Admin",
     "email": "Email",
+    "identity": "Email or Username",
+    "identity_placeholder": "Enter email or username",
     "password": "Password",
-    "submit": "Sign In"
+    "submit": "Sign In",
+    "oauth_login": "Sign in with OAuth",
+    "errors": {
+      "not_admin": "This account is not an admin",
+      "wrong_password": "Wrong email or password"
+    }
   }
 }

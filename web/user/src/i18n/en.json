@@ -1,8 +1,123 @@
 {
-  "home": {
-    "cta": { "start": "Get Started", "docs": "View Docs" }
-  },
   "nav": {
-    "playground": "Playground"
+    "home": "Home",
+    "tokens": "API Tokens",
+    "recharge": "Recharge",
+    "redeem": "Redeem",
+    "logs": "Logs",
+    "models": "Models",
+    "notices": "Notices",
+    "profile": "Profile",
+    "playground": "Playground",
+    "invites": "Invites"
+  },
+  "auth": {
+    "logout": "Sign Out",
+    "login": { "title": "Sign In" },
+    "register": { "title": "Sign Up" },
+    "forgot": { "title": "Forgot Password" }
+  },
+  "errors": {
+    "required": "Required"
+  },
+  "home": {
+    "greeting": "Hi, {name}",
+    "cta": { "start": "Get Started", "docs": "View Docs" },
+    "wallet": {
+      "title": "Wallet Balance",
+      "cta": { "recharge": "Recharge", "redeem": "Redeem Code" }
+    },
+    "usage": {
+      "today": "Today",
+      "month": "This Month",
+      "requests": "Requests"
+    },
+    "quickstart": {
+      "title": "Quickstart",
+      "copy": "Copy",
+      "my_tokens": "My Tokens"
+    },
+    "logs": {
+      "title": "Recent Requests",
+      "view_all": "View All",
+      "empty": {
+        "title": "No requests yet",
+        "subtitle": "Create an API token to get started",
+        "cta": "Create Token"
+      }
+    }
+  },
+  "profile": {
+    "security": { "title": "Security" },
+    "oauth": { "title": "OAuth Connections" }
+  },
+  "recharge": {
+    "detail": { "title": "Recharge Detail" }
+  },
+  "notices": {
+    "detail": { "title": "Notice Detail" }
+  },
+  "tokens": {
+    "title": "API Tokens",
+    "subtitle": "Manage credentials used to call proapi",
+    "create": "New Token",
+    "base_url": "Base URL",
+    "created_at": "Created",
+    "last_used": "Last Used",
+    "usage_label": "Used / Quota",
+    "usage_unlimited": "Unlimited",
+    "action": {
+      "edit": "Edit",
+      "regenerate": "Regenerate",
+      "revoke": "Revoke"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "empty": {
+      "title": "No tokens yet",
+      "subtitle": "Create an API token to start calling proapi",
+      "cta": "Create Token"
+    },
+    "form": {
+      "name": "Name",
+      "expires_at": "Expires At",
+      "never_expire": "Never expire",
+      "quota_limit": "Quota Limit (USD)",
+      "unlimited": "Unlimited",
+      "rpm_limit": "RPM Limit",
+      "tpm_limit": "TPM Limit",
+      "advanced": "Advanced",
+      "allowed_models": "Allowed Models",
+      "allowed_ips": "Allowed IPs",
+      "submit": "Create",
+      "submit_edit": "Save",
+      "cancel": "Cancel"
+    },
+    "plaintext": {
+      "title": "Save this key now",
+      "hint": "For security, the key is shown only once. Copy and store it somewhere safe.",
+      "ack": "I've copied & saved it",
+      "confirm": "I've saved it"
+    },
+    "regenerate": {
+      "confirm": {
+        "title": "Regenerate key?",
+        "subtitle": "The old key will be revoked immediately. Any client using it must be updated."
+      }
+    },
+    "revoke": {
+      "confirm": {
+        "title": "Revoke this token?",
+        "subtitle": "Once revoked, the token can no longer call the API. This cannot be undone."
+      }
+    },
+    "toast": {
+      "copied": "Copied to clipboard",
+      "updated": "Updated",
+      "regenerated": "Key regenerated",
+      "revoked": "Token revoked"
+    }
   }
 }

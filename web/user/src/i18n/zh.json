@@ -1,8 +1,123 @@
 {
-  "home": {
-    "cta": { "start": "立即开始", "docs": "查看文档" }
-  },
   "nav": {
-    "playground": "Playground"
+    "home": "首页",
+    "tokens": "API 令牌",
+    "recharge": "充值",
+    "redeem": "兑换",
+    "logs": "调用日志",
+    "models": "可用模型",
+    "notices": "公告",
+    "profile": "个人中心",
+    "playground": "Playground",
+    "invites": "邀请"
+  },
+  "auth": {
+    "logout": "退出登录",
+    "login": { "title": "登录" },
+    "register": { "title": "注册" },
+    "forgot": { "title": "忘记密码" }
+  },
+  "errors": {
+    "required": "必填"
+  },
+  "home": {
+    "greeting": "你好,{name}",
+    "cta": { "start": "立即开始", "docs": "查看文档" },
+    "wallet": {
+      "title": "钱包余额",
+      "cta": { "recharge": "立即充值", "redeem": "兑换码" }
+    },
+    "usage": {
+      "today": "今日消耗",
+      "month": "本月消耗",
+      "requests": "请求数"
+    },
+    "quickstart": {
+      "title": "快速接入",
+      "copy": "复制",
+      "my_tokens": "我的令牌"
+    },
+    "logs": {
+      "title": "最近请求",
+      "view_all": "查看全部",
+      "empty": {
+        "title": "还没有调用记录",
+        "subtitle": "创建一个 API 令牌即可开始使用",
+        "cta": "创建令牌"
+      }
+    }
+  },
+  "profile": {
+    "security": { "title": "安全设置" },
+    "oauth": { "title": "第三方账号" }
+  },
+  "recharge": {
+    "detail": { "title": "充值详情" }
+  },
+  "notices": {
+    "detail": { "title": "公告详情" }
+  },
+  "tokens": {
+    "title": "API 令牌",
+    "subtitle": "管理你的 API 调用凭证",
+    "create": "新建令牌",
+    "base_url": "Base URL",
+    "created_at": "创建时间",
+    "last_used": "最近使用",
+    "usage_label": "已使用 / 配额",
+    "usage_unlimited": "不限",
+    "action": {
+      "edit": "编辑",
+      "regenerate": "重新生成",
+      "revoke": "吊销"
+    },
+    "status": {
+      "enabled": "启用",
+      "disabled": "已停用"
+    },
+    "empty": {
+      "title": "还没有令牌",
+      "subtitle": "创建一个 API 令牌即可开始调用 proapi",
+      "cta": "创建令牌"
+    },
+    "form": {
+      "name": "名称",
+      "expires_at": "过期时间",
+      "never_expire": "永不过期",
+      "quota_limit": "配额上限 (USD)",
+      "unlimited": "不限",
+      "rpm_limit": "RPM 上限",
+      "tpm_limit": "TPM 上限",
+      "advanced": "高级设置",
+      "allowed_models": "允许的模型",
+      "allowed_ips": "允许的 IP",
+      "submit": "创建",
+      "submit_edit": "保存",
+      "cancel": "取消"
+    },
+    "plaintext": {
+      "title": "保存好这把密钥",
+      "hint": "出于安全考虑,密钥仅展示一次,请立即复制并妥善保存。",
+      "ack": "我已复制并保存",
+      "confirm": "我已保存"
+    },
+    "regenerate": {
+      "confirm": {
+        "title": "重新生成密钥?",
+        "subtitle": "旧密钥将立即失效,所有使用该密钥的客户端都需要更新。"
+      }
+    },
+    "revoke": {
+      "confirm": {
+        "title": "吊销该令牌?",
+        "subtitle": "吊销后该令牌将无法继续调用,操作不可恢复。"
+      }
+    },
+    "toast": {
+      "copied": "已复制到剪贴板",
+      "updated": "已更新",
+      "regenerated": "密钥已重新生成",
+      "revoked": "令牌已吊销"
+    }
   }
 }
