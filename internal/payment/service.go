@@ -16,6 +16,8 @@ type Holder struct {
 	Manual any
 	// Redeem: *redeem.Service。
 	Redeem any
+	// Online: *online.Service (online payments: Stripe/Alipay/WechatPay).
+	Online any
 }
 
 // HolderFrom 是个工具:从一个 any(通常是 app.PaymentSvc)取回 Holder;
