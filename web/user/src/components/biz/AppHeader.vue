@@ -26,6 +26,7 @@ const navLinks = [
   { to: '/logs', label: 'nav.logs', icon: 'i-lucide-list' },
   { to: '/models', label: 'nav.models', icon: 'i-lucide-bot' },
   { to: '/notices', label: 'nav.notices', icon: 'i-lucide-megaphone' },
+  { to: '/playground', label: 'nav.playground', icon: 'i-lucide-flask-conical' },
 ]
 
 const balanceDisplay = computed(() => {

@@ -102,7 +102,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/playground',
     name: 'playground',
-    component: () => import('@/pages/placeholder.vue'),
+    component: () => import('@/pages/playground.vue'),
     meta: { auth: true, title: 'nav.playground', layout: 'app' },
   },
   {
