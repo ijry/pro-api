@@ -47,6 +47,18 @@ const userTokenById = (url: string) => {
   return found ? clone(found) : clone((userTokens as any[])[0])
 }
 
+const userLogItem = (e: any) => ({
+  id: String(e.id),
+  model: e.client_model,
+  status: e.status_code,
+  cost_usd: e.total_quota / 100000,
+  latency_ms: e.latency_ms,
+  prompt_tokens: e.input_tokens,
+  completion_tokens: e.output_tokens,
+  created_at: e.created_at,
+  trace_id: e.trace_id || undefined,
+})
+
 export const routes: MockRoute[] = [
   // ============ admin =============
   { pattern: /^\/api\/admin\/auth\/login$/,                handler: () => ({ user: clone(adminUser), session: { id: 'demo-session', expires_at: '2099-12-31T23:59:59Z' } }) },
@@ -104,8 +116,17 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/user\/payment\/manual\/[^/?]+\/cancel$/, handler: writeOk },
   { pattern: /^\/api\/user\/payment\/manual\/[^/?]+$/,         handler: () => clone((userRecharges as any).items[0]) },
   { pattern: /^\/api\/user\/payment\/manual(\?.*)?$/,          handler: (m) => m === 'GET' ? clone(userRecharges) : clone((userRecharges as any).items[0]) },
+  { pattern: /^\/api\/user\/payment\/redeem$/,                 handler: () => ({ granted_usd: 5, code: 'DEMO-REDEEM-XXXX' }) },
 
-  { pattern: /^\/api\/user\/notices/,                      handler: () => clone(notices) },
+  { pattern: /^\/api\/user\/logs\/requests(\?.*)?$/,           handler: (_m, _u, p) => paginate((logRequests as any[]).map(userLogItem), p as PageParams) },
+
+  { pattern: /^\/api\/user\/notices\/unread_count$/,           handler: () => ({ count: 1 }) },
+  { pattern: /^\/api\/user\/notices\/[^/?]+\/read$/,           handler: writeOk },
+  { pattern: /^\/api\/user\/notices\/[^/?]+$/,                 handler: () => clone((notices as any[])[0]) },
+  { pattern: /^\/api\/user\/notices(\?.*)?$/,                  handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
+
+  { pattern: /^\/api\/public\/models(\?.*)?$/,                 handler: () => clone(models) },
+  { pattern: /^\/api\/public\/notices(\?.*)?$/,                handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
 ]
 
 export function routeMock(method: MockMethod, url: string, params?: unknown):
