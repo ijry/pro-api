@@ -30,7 +30,8 @@ func newSvcDB(t *testing.T) (Service, *gorm.DB) {
 		CREATE TABLE users (
 			id INTEGER PRIMARY KEY, username TEXT UNIQUE, email TEXT UNIQUE, password_hash TEXT,
 			display_name TEXT, avatar TEXT, role INTEGER DEFAULT 0, status INTEGER DEFAULT 0,
-			group_id INTEGER, email_verified_at DATETIME, last_login_at DATETIME, last_login_ip TEXT,
+			group_id INTEGER, invite_code TEXT UNIQUE, invited_by INTEGER NOT NULL DEFAULT 0,
+			email_verified_at DATETIME, last_login_at DATETIME, last_login_ip TEXT,
 			created_at DATETIME, updated_at DATETIME, deleted_at DATETIME
 		);
 		CREATE TABLE user_groups (

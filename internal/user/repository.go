@@ -25,6 +25,8 @@ type Repository interface {
 	GetByID(ctx context.Context, id int64) (*User, error)
 	GetByUsername(ctx context.Context, name string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
+	FindByInviteCode(ctx context.Context, code string) (*User, error)
+	SetInvitedBy(ctx context.Context, userID, inviterID int64) error
 	List(ctx context.Context, f ListFilter) ([]*User, int64, error)
 	UpdateFields(ctx context.Context, id int64, fields map[string]any) error
 	SoftDelete(ctx context.Context, id int64) error
@@ -146,6 +148,19 @@ func (r *repo) SoftDelete(ctx context.Context, id int64) error {
 			"deleted_at": gormNow(),
 			"status":     StatusDisabled,
 		}).Error
+}
+
+func (r *repo) FindByInviteCode(ctx context.Context, code string) (*User, error) {
+	var u User
+	if err := r.db.WithContext(ctx).Where("invite_code = ?", code).First(&u).Error; err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *repo) SetInvitedBy(ctx context.Context, userID, inviterID int64) error {
+	return r.db.WithContext(ctx).Model(&User{}).Where("id = ?", userID).
+		Update("invited_by", inviterID).Error
 }
 
 // gormNow 返回当前 UTC,gorm 写入。

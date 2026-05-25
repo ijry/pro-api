@@ -114,6 +114,7 @@ func setupAuth(t *testing.T) (Service, *fakeSetting, *captureMailer, session.Sto
 		CREATE TABLE users (
 			id INTEGER PRIMARY KEY, username TEXT UNIQUE, email TEXT UNIQUE, password_hash TEXT,
 			display_name TEXT, avatar TEXT, role INTEGER, status INTEGER, group_id INTEGER,
+			invite_code TEXT UNIQUE, invited_by INTEGER NOT NULL DEFAULT 0,
 			email_verified_at DATETIME, last_login_at DATETIME, last_login_ip TEXT,
 			created_at DATETIME, updated_at DATETIME, deleted_at DATETIME
 		);

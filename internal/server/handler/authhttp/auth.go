@@ -12,10 +12,11 @@ import (
 func netURLQueryEscape(s string) string { return url.QueryEscape(s) }
 
 type registerReq struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Lang     string `json:"lang"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Lang       string `json:"lang"`
+	InviteCode string `json:"invite_code"`
 }
 
 func (h *handlers) register(c *gin.Context) {
@@ -25,12 +26,13 @@ func (h *handlers) register(c *gin.Context) {
 		return
 	}
 	res, err := h.d.Auth.Register(c.Request.Context(), auth.RegisterInput{
-		Username: req.Username,
-		Email:    req.Email,
-		Password: req.Password,
-		IP:       clientIP(c),
-		UA:       userAgent(c),
-		Lang:     req.Lang,
+		Username:   req.Username,
+		Email:      req.Email,
+		Password:   req.Password,
+		IP:         clientIP(c),
+		UA:         userAgent(c),
+		Lang:       req.Lang,
+		InviteCode: req.InviteCode,
 	})
 	if err != nil {
 		sendErr(c, err)

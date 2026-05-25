@@ -30,6 +30,8 @@ func newUserDB(t *testing.T) *gorm.DB {
 			role INTEGER NOT NULL DEFAULT 0,
 			status INTEGER NOT NULL DEFAULT 0,
 			group_id INTEGER,
+			invite_code TEXT UNIQUE,
+			invited_by INTEGER NOT NULL DEFAULT 0,
 			email_verified_at DATETIME,
 			last_login_at DATETIME,
 			last_login_ip TEXT,

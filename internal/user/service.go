@@ -42,6 +42,8 @@ type Service interface {
 	GetByID(ctx context.Context, id int64) (*User, error)
 	GetByUsername(ctx context.Context, name string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
+	FindByInviteCode(ctx context.Context, code string) (*User, error)
+	SetInvitedBy(ctx context.Context, userID, inviterID int64) error
 	List(ctx context.Context, f ListFilter) ([]*User, int64, error)
 	Update(ctx context.Context, id int64, in UpdateInput) (*User, error)
 	UpdatePasswordHash(ctx context.Context, id int64, hash string) error
@@ -117,6 +119,7 @@ func (s *svc) Create(ctx context.Context, in CreateInput) (*User, error) {
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
+	u.InviteCode = ptrString(fmt.Sprintf("%08x", uint32(u.ID)))
 	if err := s.repo.Create(ctx, u); err != nil {
 		return nil, apierr.Wrap(apierr.CodeDatabase, "user create insert", err)
 	}
@@ -131,6 +134,12 @@ func (s *svc) GetByUsername(ctx context.Context, name string) (*User, error) {
 }
 func (s *svc) GetByEmail(ctx context.Context, email string) (*User, error) {
 	return s.repo.GetByEmail(ctx, email)
+}
+func (s *svc) FindByInviteCode(ctx context.Context, code string) (*User, error) {
+	return s.repo.FindByInviteCode(ctx, code)
+}
+func (s *svc) SetInvitedBy(ctx context.Context, userID, inviterID int64) error {
+	return s.repo.SetInvitedBy(ctx, userID, inviterID)
 }
 func (s *svc) List(ctx context.Context, f ListFilter) ([]*User, int64, error) {
 	return s.repo.List(ctx, f)

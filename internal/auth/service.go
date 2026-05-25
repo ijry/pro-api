@@ -31,12 +31,13 @@ type User = user.User
 
 // RegisterInput / RegisterResult。
 type RegisterInput struct {
-	Username string
-	Email    string
-	Password string
-	IP       string
-	UA       string
-	Lang     string
+	Username   string
+	Email      string
+	Password   string
+	IP         string
+	UA         string
+	Lang       string
+	InviteCode string
 }
 
 // RegisterResult 是 Register 返回值。
@@ -172,6 +173,13 @@ func (s *svc) Register(ctx context.Context, in RegisterInput) (*RegisterResult, 
 	_ = s.deps.Audit.Log(ctx, audit.Entry{
 		Action: "user.register", TargetType: "user", TargetID: &u.ID, After: after, IP: in.IP,
 	})
+
+	if in.InviteCode != "" {
+		inviter, err := s.deps.User.FindByInviteCode(ctx, in.InviteCode)
+		if err == nil && inviter != nil && inviter.ID != u.ID {
+			_ = s.deps.User.SetInvitedBy(ctx, u.ID, inviter.ID)
+		}
+	}
 
 	if verifyRequired {
 		// 发码

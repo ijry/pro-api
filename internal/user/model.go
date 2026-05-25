@@ -28,6 +28,7 @@ type User struct {
 	Role            int8       `gorm:"column:role;default:0"`
 	Status          int8       `gorm:"column:status;default:0"`
 	GroupID         *int64     `gorm:"column:group_id"`
+	InviteCode      *string    `gorm:"column:invite_code;size:32;uniqueIndex" json:"invite_code,omitempty"`
 	InvitedBy       int64      `gorm:"column:invited_by;not null;default:0" json:"invited_by,omitempty"`
 	EmailVerifiedAt *time.Time `gorm:"column:email_verified_at"`
 	LastLoginAt     *time.Time `gorm:"column:last_login_at"`
