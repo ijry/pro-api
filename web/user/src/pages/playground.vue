@@ -22,6 +22,7 @@ async function send() {
   if (!text || loading.value) return
   input.value = ''
   error.value = ''
+  const userMsgIdx = messages.value.length
   messages.value.push({ role: 'user', content: text })
   loading.value = true
   try {
@@ -35,7 +36,7 @@ async function send() {
   } catch (e: unknown) {
     const err = e as { response?: { data?: { message?: string } }; message?: string }
     error.value = err?.response?.data?.message ?? err?.message ?? '请求失败'
-    // Remove the user message that failed so they can retry
+    messages.value.splice(userMsgIdx, 1)
   } finally {
     loading.value = false
   }
