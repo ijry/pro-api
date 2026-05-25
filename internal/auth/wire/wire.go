@@ -247,6 +247,15 @@ func readDiscordOAuth(ctx context.Context, a *app.Application) *authdiscord.Conf
 	return &authdiscord.Config{ClientID: raw.ClientID, ClientSecret: secret}
 }
 
+// SessionStoreFrom returns the session.Store that was wired for the given
+// Application by Wire(). Returns nil if Wire() has not been called yet.
+// Callers can use the store to create additional SessionAuth-protected route groups.
+func SessionStoreFrom(a *app.Application) session.Store {
+	storeMu.RLock()
+	defer storeMu.RUnlock()
+	return sessStoreRegistry[a]
+}
+
 // RegisterRoutes 把 /api/auth/* + /api/user/* + /api/admin/* 三组路由挂到 eng。
 //
 // 调用方负责传入已经 Use 过 RequestID/AccessLog/Recovery/ErrorResponse 的 engine。

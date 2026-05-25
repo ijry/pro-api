@@ -25,11 +25,14 @@ import (
 	"github.com/ijry/pro-api/internal/observability/logger"
 	"github.com/ijry/pro-api/internal/observability/metrics"
 	mmanual "github.com/ijry/pro-api/internal/payment/manual"
+	monline "github.com/ijry/pro-api/internal/payment/online"
 	"github.com/ijry/pro-api/internal/payment/redeem"
+	"github.com/ijry/pro-api/internal/payment"
 	"github.com/ijry/pro-api/internal/ratelimit"
 	"github.com/ijry/pro-api/internal/relay"
 	"github.com/ijry/pro-api/internal/server"
 	relayhdr "github.com/ijry/pro-api/internal/server/handler/relay"
+	paymenthdr "github.com/ijry/pro-api/internal/server/handler/payment"
 	"github.com/ijry/pro-api/internal/server/handler/logh"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	"github.com/ijry/pro-api/internal/token"
@@ -142,6 +145,12 @@ func run() error {
 		return fmt.Errorf("redeem wire: %w", err)
 	}
 
+	// ── 支付:在线支付(Stripe 等) ─────────────────────────────
+	// providers 在此处留空;各支付渠道 provider 由后续 C1/C2 任务注入。
+	// online.Service.HandleWebhook / CreateOrder 在 provider 为空时会返回
+	// "unknown provider" 错误,这是预期行为。
+	monline.Wire(application, nil, nil, nil)
+
 	// ── 路由注册 ─────────────────────────────────────────────────
 	engine := server.NewEngine(log)
 	if err := wireRoutes(ctx, engine, application, log); err != nil {
@@ -206,6 +215,9 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	// 日志 & 统计路由(M1-08)
 	wireLogHandlers(a, adminGroup, userGroup)
 
+	// 在线支付路由(M2a B4)
+	wirePaymentRoutes(eng, a, log)
+
 	// 代理路由(/v1/*) — TokenAuth 保护(M1-03/04)
 	v1 := eng.Group("/v1", middleware.ErrorResponse("openai"))
 	// TokenAuth 由 M1-03 提供;M1 先留 placeholder,实际路由由 relay handler 挂
@@ -254,4 +266,38 @@ func wireLogHandlers(a *app.Application, adminG, userG *gin.RouterGroup) {
 
 	userH := logh.NewUser(logStore)
 	userH.Register(userG.Group("/logs"))
+}
+
+// wirePaymentRoutes 挂载在线支付 handler。
+//
+// 用户侧路由需要 SessionAuth;Webhook 路由公开(无 auth)。
+func wirePaymentRoutes(eng *gin.Engine, a *app.Application, log *zap.Logger) {
+	h := payment.HolderFrom(a.PaymentSvc)
+	onlineSvc, _ := h.Online.(*monline.Service)
+	if onlineSvc == nil {
+		log.Warn("online payment service not wired; payment routes skipped")
+		return
+	}
+
+	payH := paymenthdr.New(paymenthdr.Deps{
+		Online: onlineSvc,
+		Log:    log,
+	})
+
+	// 用户侧:需要 SessionAuth
+	sessStore := authhwire.SessionStoreFrom(a)
+	if sessStore != nil {
+		userPayG := eng.Group("/api/user/payment",
+			middleware.ErrorResponse("json"),
+			middleware.SessionAuth(sessStore, a.Clock),
+		)
+		userPayG.POST("/create", payH.CreateOrder)
+		userPayG.GET("/orders", payH.ListOrders)
+	} else {
+		log.Warn("session store not available; user payment routes skipped")
+	}
+
+	// Webhook:公开,无需认证
+	payWebhookG := eng.Group("/api/pay", middleware.ErrorResponse("json"))
+	payWebhookG.POST("/webhook/:provider", payH.Webhook)
 }
