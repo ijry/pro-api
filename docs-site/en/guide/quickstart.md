@@ -5,7 +5,7 @@ outline: deep
 
 # Quickstart
 
-> 💡 **Want a quick look?** <a href="/admin-demo/index.html" target="_blank">Admin Demo</a> · <a href="/user-demo/index.html" target="_blank">User Demo</a> (front-end mock, no backend required)
+> 💡 **Want a quick look?** <a :href="$withBase('/admin-demo/index.html')" target="_blank">Admin Demo</a> · <a :href="$withBase('/user-demo/index.html')" target="_blank">User Demo</a> (front-end mock, no backend required)
 
 > :construction: This page is not translated yet. Please refer to the [Chinese version](/zh/guide/quickstart) for now. Full English translation is planned for **M2**.
 

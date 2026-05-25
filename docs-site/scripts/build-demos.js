@@ -8,6 +8,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..', '..')
 const publicDir = path.resolve(__dirname, '..', 'public')
+const basePrefix = process.env.DOCS_BASE || '/'
 
 const targets = [
   { name: 'admin', srcDir: path.join(rootDir, 'web', 'admin') },
@@ -16,7 +17,7 @@ const targets = [
 
 for (const t of targets) {
   console.log(`[demo] Building ${t.name}...`)
-  execSync(`pnpm run build:demo --base=/${t.name}-demo/`, {
+  execSync(`pnpm run build:demo --base=${basePrefix}${t.name}-demo/`, {
     cwd: t.srcDir,
     stdio: 'inherit',
   })

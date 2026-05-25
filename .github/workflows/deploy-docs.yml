@@ -1,0 +1,70 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs-site/**'
+      - 'web/**'
+      - '.github/workflows/deploy-docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.12.0"
+  # GitHub Pages 子路径,匹配仓库名 ijry/pro-api → https://ijry.github.io/pro-api/
+  DOCS_BASE: /pro-api/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: "${{ env.PNPM_VERSION }}" }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NODE_VERSION }}"
+          cache: pnpm
+          cache-dependency-path: |
+            web/pnpm-lock.yaml
+            docs-site/pnpm-lock.yaml
+
+      - name: Install web deps
+        run: pnpm -C web install --frozen-lockfile
+
+      - name: Install docs-site deps
+        run: pnpm -C docs-site install --frozen-lockfile
+
+      - name: Build admin + user demos
+        run: pnpm -C docs-site demo:build
+
+      - name: Build docs-site
+        run: pnpm -C docs-site build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-site/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
