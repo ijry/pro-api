@@ -2,7 +2,6 @@ import { paginate, ok, clone, type PageParams } from './helpers'
 
 import adminUser from './data/admin-user.json'
 import userProfile from './data/user-profile.json'
-import adminWallet from './data/admin-wallet.json'
 import userWallet from './data/user-wallet.json'
 import channels from './data/channels.json'
 import adminTokens from './data/admin-tokens.json'
@@ -82,8 +81,7 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/payments\/manual_recharges\/\d+$/,                   handler: () => clone((adminRecharges as any[])[0]) },
   { pattern: /^\/api\/admin\/payments\/manual_recharges$/,                        handler: (_m, _u, p) => paginate(adminRecharges as any[], p as PageParams) },
 
-  { pattern: /^\/api\/admin\/wallet$/,                     handler: () => clone(adminWallet) },
-  { pattern: /^\/api\/admin\/users\/\d+\/quota$/,          handler: () => ({ ok: true, balance_after: 8650000 }) },
+{ pattern: /^\/api\/admin\/users\/\d+\/quota$/,          handler: () => ({ ok: true, balance_after: 8650000 }) },
 
   // 兜底:其他 admin 子模块返回空(分页或数组),避免白屏
   { pattern: /^\/api\/admin\/(pricing|ratelimit|groups?|users|settings|redeem|payments)/, handler: (_m, _u, p) => paginate([], p as PageParams) },
