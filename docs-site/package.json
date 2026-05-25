@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vitepress dev --port 5175 --host 127.0.0.1",
     "build": "vitepress build",
-    "preview": "vitepress preview --port 5175"
+    "preview": "vitepress preview --port 5175",
+    "demo:build": "node scripts/build-demos.js",
+    "docs:build-with-demo": "pnpm run demo:build && pnpm run build"
   },
   "devDependencies": {
     "vitepress": "^1.4.1",
