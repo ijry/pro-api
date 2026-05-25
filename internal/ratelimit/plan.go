@@ -22,11 +22,12 @@ import (
 // PlanInput 是构造 Check 列表所需的上下文。
 // 由 RateLimit 中间件从 gin.Context 拼装。
 type PlanInput struct {
-	UserID  int64
-	TokenID int64
-	GroupID int64
-	IP      string
-	Model   string
+	UserID    int64
+	TokenID   int64
+	GroupID   int64
+	ChannelID int64
+	IP        string
+	Model     string
 
 	// 来自 token 字段的覆盖值;0 表示用全局默认。
 	TokenRPMOverride int
@@ -74,11 +75,36 @@ func (p *Planner) InvalidateCache() {
 }
 
 // PlanRPM 根据 PlanInput 生成 RPM 维度的 Check 列表。
-// 顺序:user → token → ip → model(与总纲 §6.1 中间件顺序一致)。
+// 顺序:global → group → user → token → channel → ip → model。
 // 阈值为 0 的维度被跳过。
 func (p *Planner) PlanRPM(ctx context.Context, in PlanInput) []Check {
 	window := p.window(ctx)
-	out := make([]Check, 0, 4)
+	out := make([]Check, 0, 7)
+
+	// 全局维度
+	if lim := p.globalRPM(ctx); lim > 0 {
+		out = append(out, Check{
+			Dimension: DimGlobalRPM,
+			Key:       "ratelimit:global:rpm",
+			Limit:     lim,
+			Window:    window,
+			Cost:      1,
+		})
+	}
+
+	// 分组维度
+	if in.GroupID > 0 {
+		if lim := p.groupRPM(ctx, in); lim > 0 {
+			out = append(out, Check{
+				Dimension: DimGroupRPM,
+				Key:       fmt.Sprintf("ratelimit:group:%d:rpm", in.GroupID),
+				Limit:     lim,
+				Window:    window,
+				Cost:      1,
+			})
+		}
+	}
+
 	if in.UserID > 0 {
 		lim := p.userRPM(ctx, in)
 		if lim > 0 {
@@ -103,6 +129,20 @@ func (p *Planner) PlanRPM(ctx context.Context, in PlanInput) []Check {
 			})
 		}
 	}
+
+	// 渠道维度
+	if in.ChannelID > 0 {
+		if lim := p.channelRPM(ctx); lim > 0 {
+			out = append(out, Check{
+				Dimension: DimChannelRPM,
+				Key:       fmt.Sprintf("ratelimit:channel:%d:rpm", in.ChannelID),
+				Limit:     lim,
+				Window:    window,
+				Cost:      1,
+			})
+		}
+	}
+
 	if in.IP != "" {
 		lim := p.ipRPM(ctx)
 		if lim > 0 {
@@ -134,7 +174,32 @@ func (p *Planner) PlanRPM(ctx context.Context, in PlanInput) []Check {
 // 返回的 Check.Cost = 0(由调用方在 ConsumeTPM 前通过 FillTPMCost 回填实际 token 数)。
 func (p *Planner) PlanTPM(ctx context.Context, in PlanInput) []Check {
 	window := p.window(ctx)
-	out := make([]Check, 0, 3)
+	out := make([]Check, 0, 6)
+
+	// 全局维度
+	if lim := p.globalTPM(ctx); lim > 0 {
+		out = append(out, Check{
+			Dimension: DimGlobalTPM,
+			Key:       "ratelimit:global:tpm",
+			Limit:     lim,
+			Window:    window,
+			Cost:      0,
+		})
+	}
+
+	// 分组维度
+	if in.GroupID > 0 {
+		if lim := p.groupTPM(ctx, in); lim > 0 {
+			out = append(out, Check{
+				Dimension: DimGroupTPM,
+				Key:       fmt.Sprintf("ratelimit:group:%d:tpm", in.GroupID),
+				Limit:     lim,
+				Window:    window,
+				Cost:      0,
+			})
+		}
+	}
+
 	if in.UserID > 0 {
 		lim := p.userTPM(ctx, in)
 		if lim > 0 {
@@ -159,6 +224,20 @@ func (p *Planner) PlanTPM(ctx context.Context, in PlanInput) []Check {
 			})
 		}
 	}
+
+	// 渠道维度
+	if in.ChannelID > 0 {
+		if lim := p.channelTPM(ctx); lim > 0 {
+			out = append(out, Check{
+				Dimension: DimChannelTPM,
+				Key:       fmt.Sprintf("ratelimit:channel:%d:tpm", in.ChannelID),
+				Limit:     lim,
+				Window:    window,
+				Cost:      0,
+			})
+		}
+	}
+
 	if in.Model != "" {
 		lim := p.modelTPM(ctx, in.Model)
 		if lim > 0 {
@@ -224,6 +303,32 @@ func (p *Planner) modelRPM(ctx context.Context, _ string) int {
 
 func (p *Planner) modelTPM(ctx context.Context, _ string) int {
 	return p.cachedInt(ctx, "ratelimit.model_default_tpm", 0, "model_tpm_default")
+}
+
+func (p *Planner) groupRPM(ctx context.Context, in PlanInput) int {
+	def := p.cachedInt(ctx, "ratelimit.group_default_rpm", 0, "group_rpm_default")
+	return scaleByGroup(def, in.GroupRatio)
+}
+
+func (p *Planner) groupTPM(ctx context.Context, in PlanInput) int {
+	def := p.cachedInt(ctx, "ratelimit.group_default_tpm", 0, "group_tpm_default")
+	return scaleByGroup(def, in.GroupRatio)
+}
+
+func (p *Planner) channelRPM(ctx context.Context) int {
+	return p.cachedInt(ctx, "ratelimit.channel_default_rpm", 0, "channel_rpm_default")
+}
+
+func (p *Planner) channelTPM(ctx context.Context) int {
+	return p.cachedInt(ctx, "ratelimit.channel_default_tpm", 0, "channel_tpm_default")
+}
+
+func (p *Planner) globalRPM(ctx context.Context) int {
+	return p.cachedInt(ctx, "ratelimit.global_rpm", 0, "global_rpm")
+}
+
+func (p *Planner) globalTPM(ctx context.Context) int {
+	return p.cachedInt(ctx, "ratelimit.global_tpm", 0, "global_tpm")
 }
 
 // cachedInt 先查本地缓存,miss 则查 setting.Store 并回填。

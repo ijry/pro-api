@@ -10,18 +10,25 @@ import (
 type Dimension string
 
 const (
-	DimUserRPM  Dimension = "user_rpm"
-	DimUserTPM  Dimension = "user_tpm"
-	DimTokenRPM Dimension = "token_rpm"
-	DimTokenTPM Dimension = "token_tpm"
-	DimIPRPM    Dimension = "ip_rpm"
-	DimModelRPM Dimension = "model_rpm"
-	DimModelTPM Dimension = "model_tpm"
+	DimUserRPM    Dimension = "user_rpm"
+	DimUserTPM    Dimension = "user_tpm"
+	DimTokenRPM   Dimension = "token_rpm"
+	DimTokenTPM   Dimension = "token_tpm"
+	DimIPRPM      Dimension = "ip_rpm"
+	DimModelRPM   Dimension = "model_rpm"
+	DimModelTPM   Dimension = "model_tpm"
+	DimGroupRPM   Dimension = "group_rpm"
+	DimGroupTPM   Dimension = "group_tpm"
+	DimChannelRPM Dimension = "channel_rpm"
+	DimChannelTPM Dimension = "channel_tpm"
+	DimGlobalRPM  Dimension = "global_rpm"
+	DimGlobalTPM  Dimension = "global_tpm"
 )
 
 // IsTPM 区分 RPM / TPM。
 func (d Dimension) IsTPM() bool {
-	return d == DimUserTPM || d == DimTokenTPM || d == DimModelTPM
+	return d == DimUserTPM || d == DimTokenTPM || d == DimModelTPM ||
+		d == DimGroupTPM || d == DimChannelTPM || d == DimGlobalTPM
 }
 
 // HeaderSuffix 用于 X-RateLimit-* 响应头。
