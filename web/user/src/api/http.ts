@@ -63,15 +63,28 @@ http.interceptors.response.use(
   }
 )
 
+const MOCK = import.meta.env.VITE_DEMO_MOCK === 'true'
+
+async function mockOr<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, params?: unknown): Promise<T> {
+  const { matchMock } = await import('@proapi/shared/mock')
+  const { matched, data } = await matchMock<T>(method, url, params)
+  if (!matched) console.warn(`[mock] no data for: ${method} ${url}`)
+  return (data ?? ([] as unknown)) as T
+}
+
 export function get<T = unknown>(url: string, config?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('GET', url, config?.params)
   return http.get<T>(url, config).then(r => r.data)
 }
 export function post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('POST', url, data)
   return http.post<T>(url, data, config).then(r => r.data)
 }
 export function patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('PATCH', url, data)
   return http.patch<T>(url, data, config).then(r => r.data)
 }
 export function del<T = unknown>(url: string, config?: AxiosRequestConfig) {
+  if (MOCK) return mockOr<T>('DELETE', url, config?.params)
   return http.delete<T>(url, config).then(r => r.data)
 }
