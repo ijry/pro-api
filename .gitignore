@@ -48,6 +48,8 @@ web/*/dist/
 web/*/.vite/
 docs-site/.vitepress/dist/
 docs-site/.vitepress/cache/
+docs-site/public/admin-demo/
+docs-site/public/user-demo/
 
 # 日志 / 临时
 /logs/
