@@ -16,6 +16,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const maxWebhookBodyBytes = 1 * 1024 * 1024 // 1 MiB
+
 // Deps holds handler dependencies.
 type Deps struct {
 	Online *online.Service
@@ -44,7 +46,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		_ = c.Error(apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	userID := mustUserID(c)
+	userID := middleware.UserID(c)
 	res, err := h.deps.Online.CreateOrder(c.Request.Context(), online.CreateOrderInput{
 		UserID:      userID,
 		Provider:    req.Provider,
@@ -70,7 +72,7 @@ func (h *Handler) ListOrders(c *gin.Context) {
 // Webhook POST /api/pay/webhook/:provider
 func (h *Handler) Webhook(c *gin.Context) {
 	providerName := c.Param("provider")
-	body, err := io.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, maxWebhookBodyBytes))
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		return
@@ -88,10 +90,4 @@ func (h *Handler) Webhook(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
-}
-
-// mustUserID returns the authenticated user's ID from context.
-// Relies on middleware.SessionAuth having run and set the user ID.
-func mustUserID(c *gin.Context) int64 {
-	return middleware.UserID(c)
 }

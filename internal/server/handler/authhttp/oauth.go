@@ -101,7 +101,7 @@ type bindOAuthReq struct {
 	State string `json:"state"`
 }
 
-// POST /api/auth/oauth/:provider/bind
+// POST /api/user/oauth/bindings/:provider
 func (h *handlers) bindOAuth(c *gin.Context) {
 	provider := c.Param("provider")
 	uid := middleware.UserID(c)
@@ -117,7 +117,7 @@ func (h *handlers) bindOAuth(c *gin.Context) {
 	c.JSON(200, gin.H{"ok": true})
 }
 
-// DELETE /api/auth/oauth/:provider/bind
+// DELETE /api/user/oauth/bindings/:provider
 func (h *handlers) unbindOAuth(c *gin.Context) {
 	provider := c.Param("provider")
 	uid := middleware.UserID(c)
