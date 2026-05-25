@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./api/types": "./src/api/types.ts",
     "./api/codes": "./src/api/codes.ts",
+    "./mock": "./src/mock/index.ts",
     "./i18n/zh": "./src/i18n/zh.json",
     "./i18n/en": "./src/i18n/en.json"
   },
