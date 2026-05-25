@@ -7,7 +7,7 @@
     "dev": "vite --port 5173 --host 127.0.0.1",
     "dev:demo": "cross-env VITE_DEMO_MOCK=true vite --port 5173 --host 127.0.0.1",
     "build": "vue-tsc --noEmit && vite build",
-    "build:demo": "cross-env VITE_DEMO_MOCK=true vue-tsc --noEmit && vite build --mode demo",
+    "build:demo": "vue-tsc --noEmit && cross-env VITE_DEMO_MOCK=true vite build --mode demo",
     "preview": "vite preview --port 5173",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint . --ext .ts,.vue --max-warnings 0",
