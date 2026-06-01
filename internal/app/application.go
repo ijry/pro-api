@@ -45,6 +45,7 @@ type Application struct {
 	PaymentSvc  any
 	AdapterReg  any
 	Relay       any
+	AccountSvc  any
 
 	cls closers
 }

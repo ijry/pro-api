@@ -15,9 +15,12 @@ type Channel struct {
 	Priority    int16           `gorm:"column:priority"               json:"priority"`
 	Weight      int             `gorm:"column:weight"                 json:"weight"`
 	Status      int8            `gorm:"column:status"                 json:"status"`
-	Tags        json.RawMessage `gorm:"column:tags;type:json"         json:"tags"`
-	Extra       json.RawMessage `gorm:"column:extra;type:json"        json:"extra"`
-	CreatedAt   time.Time       `gorm:"column:created_at"             json:"created_at"`
+	Tags            json.RawMessage `gorm:"column:tags;type:json"             json:"tags"`
+	Extra           json.RawMessage `gorm:"column:extra;type:json"            json:"extra"`
+	PoolEnabled     int8            `gorm:"column:pool_enabled"               json:"pool_enabled"`
+	AccountStrategy string          `gorm:"column:account_strategy;size:16"   json:"account_strategy"`
+	AccountTopK     int8            `gorm:"column:account_top_k"              json:"account_top_k"`
+	CreatedAt       time.Time       `gorm:"column:created_at"                 json:"created_at"`
 	UpdatedAt   time.Time       `gorm:"column:updated_at"             json:"updated_at"`
 	DeletedAt   *time.Time      `gorm:"column:deleted_at;index"       json:"deleted_at,omitempty"`
 
