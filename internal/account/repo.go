@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"time"
 
@@ -43,21 +44,33 @@ func (r *repo) Create(ctx context.Context, a *Account) error {
 	return r.db.WithContext(ctx).Create(a).Error
 }
 
+// Update applies non-zero fields of a to the row keyed by a.ID. Zero-value fields
+// are skipped (GORM struct update semantics). To re-encrypt credentials, populate
+// a.Cred with at least one non-empty token field; otherwise the stored ciphertext
+// is preserved. To intentionally clear a non-cred field to zero, use a map-based
+// update instead (not exposed here).
 func (r *repo) Update(ctx context.Context, a *Account) error {
-	// Re-encrypt only when the plaintext cred is populated.
+	if a.ID == 0 {
+		return apierr.New(apierr.CodeInvalidParam, "account: update requires ID")
+	}
+	// Only re-encrypt when caller populated any cred field.
 	if a.Cred.AccessToken != "" || a.Cred.RefreshToken != "" || a.Cred.APIKey != "" || a.Cred.IDToken != "" {
 		if err := r.encryptCred(a); err != nil {
 			return err
 		}
+	} else {
+		// Caller did not set cred; ensure we don't accidentally clobber stored ciphertext.
+		a.Credentials = ""
 	}
 	a.UpdatedAt = r.clock.Now().UTC()
-	return r.db.WithContext(ctx).Save(a).Error
+	// db.Updates with a struct skips zero-value fields — including empty Credentials.
+	return r.db.WithContext(ctx).Model(&Account{}).Where("id = ?", a.ID).Updates(a).Error
 }
 
 func (r *repo) Get(ctx context.Context, id int64) (*Account, error) {
 	var a Account
 	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&a).Error
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, apierr.New(apierr.CodeAccountNotFound, "account not found")
 	}
 	if err != nil {
@@ -78,6 +91,7 @@ func (r *repo) ListByChannel(ctx context.Context, channelID int64) ([]*Account, 
 		return nil, err
 	}
 	for _, a := range out {
+		// TODO(P8): log hydrate failures via repo logger
 		_ = r.hydrate(a)
 	}
 	return out, nil
@@ -92,6 +106,7 @@ func (r *repo) ListByShareTag(ctx context.Context, tag string) ([]*Account, erro
 		return nil, err
 	}
 	for _, a := range out {
+		// TODO(P8): log hydrate failures via repo logger
 		_ = r.hydrate(a)
 	}
 	return out, nil
@@ -100,13 +115,14 @@ func (r *repo) ListByShareTag(ctx context.Context, tag string) ([]*Account, erro
 func (r *repo) ListForRefresher(ctx context.Context, before time.Time, limit int) ([]*Account, error) {
 	var out []*Account
 	err := r.db.WithContext(ctx).
-		Where("cred_type = 'oauth' AND status = ? AND access_token_expires_at IS NOT NULL AND access_token_expires_at < ?",
+		Where("cred_type = 'oauth' AND status = ? AND access_token_expires_at IS NOT NULL AND access_token_expires_at < ? AND deleted_at IS NULL",
 			StatusActive, before).
 		Limit(limit).Find(&out).Error
 	if err != nil {
 		return nil, err
 	}
 	for _, a := range out {
+		// TODO(P8): log hydrate failures via repo logger
 		_ = r.hydrate(a)
 	}
 	return out, nil
@@ -115,10 +131,17 @@ func (r *repo) ListForRefresher(ctx context.Context, before time.Time, limit int
 func (r *repo) ListForReaper(ctx context.Context, now time.Time, limit int) ([]*Account, error) {
 	var out []*Account
 	err := r.db.WithContext(ctx).
-		Where("status = ? AND cooldown_until IS NOT NULL AND cooldown_until <= ?",
+		Where("status = ? AND cooldown_until IS NOT NULL AND cooldown_until <= ? AND deleted_at IS NULL",
 			StatusCooldown, now).
 		Limit(limit).Find(&out).Error
-	return out, err
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range out {
+		// TODO(P8): log hydrate failures via repo logger
+		_ = r.hydrate(a)
+	}
+	return out, nil
 }
 
 func (r *repo) Delete(ctx context.Context, id int64) error {

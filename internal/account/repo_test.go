@@ -121,8 +121,10 @@ func newTestDB(t *testing.T) *gorm.DB {
 func TestRepo_CreateGet(t *testing.T) {
 	ctx := context.Background()
 	db := newTestDB(t)
-	cr, _ := crypto.NewAESGCM([]byte("01234567890123456789012345678901"))
-	idg, _ := idgen.New(1)
+	cr, err := crypto.NewAESGCM([]byte("01234567890123456789012345678901"))
+	require.NoError(t, err)
+	idg, err := idgen.New(1)
+	require.NoError(t, err)
 	r := account.NewRepository(db, cr, idg, clock.Real)
 
 	a := &account.Account{
@@ -153,8 +155,10 @@ func TestRepo_CreateGet(t *testing.T) {
 func TestRepo_ListByChannel(t *testing.T) {
 	ctx := context.Background()
 	db := newTestDB(t)
-	cr, _ := crypto.NewAESGCM([]byte("01234567890123456789012345678901"))
-	idg, _ := idgen.New(2)
+	cr, err := crypto.NewAESGCM([]byte("01234567890123456789012345678901"))
+	require.NoError(t, err)
+	idg, err := idgen.New(2)
+	require.NoError(t, err)
 	r := account.NewRepository(db, cr, idg, clock.Real)
 	for i := 0; i < 3; i++ {
 		require.NoError(t, r.Create(ctx, &account.Account{
@@ -172,8 +176,10 @@ func TestRepo_ListByChannel(t *testing.T) {
 func TestRepo_AppendEvent(t *testing.T) {
 	ctx := context.Background()
 	db := newTestDB(t)
-	cr, _ := crypto.NewAESGCM([]byte("01234567890123456789012345678901"))
-	idg, _ := idgen.New(3)
+	cr, err := crypto.NewAESGCM([]byte("01234567890123456789012345678901"))
+	require.NoError(t, err)
+	idg, err := idgen.New(3)
+	require.NoError(t, err)
 	r := account.NewRepository(db, cr, idg, clock.Real)
 	a := &account.Account{
 		ChannelID: 300, Provider: "openai", CredType: "oauth",
