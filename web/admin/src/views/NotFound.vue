@@ -1,6 +1,16 @@
 <script setup lang="ts">
-// TODO: 待实现
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { NResult, NButton } from 'naive-ui'
+
+const router = useRouter()
+const { t } = useI18n()
 </script>
+
 <template>
-  <div class="p-6 text-fg-muted">页面建设中…</div>
+  <NResult status="404" :title="t('notfound.title')" :description="t('notfound.desc')">
+    <template #footer>
+      <NButton type="primary" @click="router.push('/')">{{ t('common.back_home') }}</NButton>
+    </template>
+  </NResult>
 </template>
