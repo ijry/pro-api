@@ -173,8 +173,11 @@ watch(recordsPage, loadRecords)
     </div>
 
     <!-- Tabs -->
-    <div class="flex items-center gap-1 border-b border-border">
+    <div role="tablist" class="flex items-center gap-1 border-b border-border">
       <button
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'invitees'"
         class="px-4 h-9 text-sm border-b-2 -mb-px transition-colors"
         :class="activeTab === 'invitees'
           ? 'border-primary text-primary font-medium'
@@ -185,6 +188,9 @@ watch(recordsPage, loadRecords)
         <span v-if="summary" class="ml-1 text-fg-muted">({{ summary.stats.invitee_count }})</span>
       </button>
       <button
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'records'"
         class="px-4 h-9 text-sm border-b-2 -mb-px transition-colors"
         :class="activeTab === 'records'
           ? 'border-primary text-primary font-medium'
@@ -197,7 +203,7 @@ watch(recordsPage, loadRecords)
     </div>
 
     <!-- Invitees tab -->
-    <div v-if="activeTab === 'invitees'">
+    <div v-if="activeTab === 'invitees'" role="tabpanel">
       <div v-if="inviteesLoading" class="space-y-2">
         <Skeleton v-for="i in 5" :key="i" class="h-10" />
       </div>
@@ -237,7 +243,7 @@ watch(recordsPage, loadRecords)
     </div>
 
     <!-- Records tab -->
-    <div v-else>
+    <div v-else role="tabpanel">
       <div v-if="recordsLoading" class="space-y-2">
         <Skeleton v-for="i in 5" :key="i" class="h-10" />
       </div>
