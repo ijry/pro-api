@@ -68,7 +68,7 @@ func (r RawRefreshToken) Parse(ctx context.Context, b []byte) ([]*Account, error
 	a := &Account{
 		Provider:     provider,
 		CredType:     "oauth",
-		ImportSource: "paste_raw",
+		ImportSource: "paste_tokens",
 		Status:       StatusActive,
 		Weight:       100,
 		Cred: AccountCred{
@@ -125,7 +125,7 @@ func (RawAPIKey) Parse(_ context.Context, b []byte) ([]*Account, error) {
 	a := &Account{
 		Provider:     provider,
 		CredType:     "apikey",
-		ImportSource: "paste_raw",
+		ImportSource: "paste_apikey",
 		Status:       StatusActive,
 		Weight:       100,
 		Cred: AccountCred{

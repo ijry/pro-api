@@ -7,7 +7,7 @@ import (
 	"github.com/ijry/pro-api/pkg/apierr"
 )
 
-// FormatParser 是各格式的解析器接口(由 importer/ 子包提供具体实现)。
+// FormatParser 是各格式解析器接口;具体实现见同包下 importer_*.go 文件。
 type FormatParser interface {
 	Format() string
 	Match(payload []byte) bool

@@ -43,6 +43,8 @@ func (AuthsBatch) Match(b []byte) bool {
 	return true
 }
 
+// Parse returns one account per email key. Output order follows Go map iteration
+// (i.e. non-deterministic); callers MUST not rely on positional ordering.
 func (AuthsBatch) Parse(_ context.Context, b []byte) ([]*Account, error) {
 	var m map[string]struct {
 		Tokens struct {
