@@ -108,7 +108,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/invites',
     name: 'invites',
-    component: () => import('@/pages/placeholder.vue'),
+    component: () => import('@/pages/invites.vue'),
     meta: { auth: true, title: 'nav.invites', layout: 'app' },
   },
   {
