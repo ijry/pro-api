@@ -28,12 +28,12 @@ func (f *Facade) Select(ctx context.Context, ch *channel.Channel, hint SelectHin
 	return f.Selector.Select(ctx, ch, hint)
 }
 
-// ReportSuccess 转发到 Selector,satisfies relay.AccountFacade.ReportSuccess。
+// ReportSuccess 转发到内部 Selector,满足 relay.AccountFacade.ReportSuccess。
 func (f *Facade) ReportSuccess(accountID int64, latency time.Duration) {
 	f.Selector.ReportSuccess(accountID, latency)
 }
 
-// ReportFailure 转发到 Selector,satisfies relay.AccountFacade.ReportFailure。
+// ReportFailure 转发到内部 Selector,满足 relay.AccountFacade.ReportFailure。
 func (f *Facade) ReportFailure(accountID int64, err error, headers http.Header) {
 	f.Selector.ReportFailure(accountID, err, headers)
 }

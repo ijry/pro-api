@@ -98,6 +98,36 @@ func TestService_Chat_UsesAccountWhenPoolEnabled(t *testing.T) {
 	require.Equal(t, 0, facade.failureCalls)
 }
 
+func TestService_Chat_PoolOverlayPreservesChannelExtra(t *testing.T) {
+	// 当 channel 携带 provider 级配置(如 Azure deployment id 在 Extra,或 Region)时,
+	// 账号池命中只应覆盖 APIKey/AccessToken,其它字段必须保留。
+	fakeAd := &fakeAdapter{name: "anthropic", resp: &ir.ChatResponse{ID: "r"}}
+	reg := newRegistry(t, fakeAd)
+	facade := &fakeFacade{acc: &account.Account{
+		ID:   42,
+		Cred: account.AccountCred{AccessToken: "acct-token"},
+	}}
+	s := relay.New(reg, facade)
+
+	ch := &channel.Channel{
+		Provider: "anthropic",
+		BaseURL:  "https://api.example",
+		Cred: channel.Credential{
+			APIKey: "channel-key-should-be-overridden",
+			Secret: "channel-secret",
+			Region: "us-east-1",
+			Extra:  map[string]string{"deployment": "gpt-4"},
+		},
+		PoolEnabled: 1,
+	}
+	_, _, err := s.Chat(context.Background(), &ir.ChatRequest{Model: "m"}, ch)
+	require.NoError(t, err)
+	require.Equal(t, "acct-token", fakeAd.gotCred.APIKey, "account token must override APIKey")
+	require.Equal(t, "channel-secret", fakeAd.gotCred.Secret, "channel Secret must survive overlay")
+	require.Equal(t, "us-east-1", fakeAd.gotCred.Region, "channel Region must survive overlay")
+	require.Equal(t, "gpt-4", fakeAd.gotCred.Extra["deployment"], "channel Extra must survive overlay")
+}
+
 func TestService_Chat_PoolDisabledUsesChannelCred(t *testing.T) {
 	fakeAd := &fakeAdapter{name: "openai", resp: &ir.ChatResponse{ID: "r2"}}
 	reg := newRegistry(t, fakeAd)

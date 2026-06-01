@@ -27,6 +27,18 @@ func NewRefresher(r Repo, c *redis.Client, o OAuthFlow, log *zap.Logger) Refresh
 	return &refresherImpl{repo: r, cache: c, oauth: o, log: log, stop: make(chan struct{})}
 }
 
+// Close 关闭后台 Run 循环。Run 会从 stop 通道收到信号退出。
+// 与 Breaker.Close 对称,供 wire 注册 AddCloser 用。
+func (r *refresherImpl) Close() error {
+	select {
+	case <-r.stop:
+		// already closed
+	default:
+		close(r.stop)
+	}
+	return nil
+}
+
 func (r *refresherImpl) Run(ctx context.Context) error {
 	tick := time.NewTicker(60 * time.Second)
 	defer tick.Stop()

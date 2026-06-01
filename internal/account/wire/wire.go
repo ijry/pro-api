@@ -86,5 +86,6 @@ func WireAccount(ctx context.Context, a *app.Application) error {
 		QuotaTrack: tracker,
 	}
 	a.AddCloser("account_breaker", br.Close)
+	a.AddCloser("account_refresher", rf.Close)
 	return nil
 }

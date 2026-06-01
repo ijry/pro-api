@@ -79,6 +79,7 @@ type QuotaTracker interface {
 type Refresher interface {
 	Run(ctx context.Context) error
 	RefreshOne(ctx context.Context, accountID int64) error
+	Close() error
 }
 
 // Probe 入池探测。

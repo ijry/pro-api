@@ -38,7 +38,12 @@ func New(reg adapter.Registry, accountFacade AccountFacade) *Service {
 }
 
 // resolveCred 决定本次调用使用的凭证。返回 (cred, accountID, err)。
-// 当 channel 启用账号池时,从池中选号并替换凭证;否则直接用 channel 凭证。
+// 当 channel 启用账号池时,从池中选号并把账号凭证 *叠加* 到 channel 凭证之上;
+// 否则直接用 channel 凭证。
+//
+// 叠加而不是替换的原因:channel.Cred 可能携带账号无关的 provider 级配置
+// (Azure deployment id 在 Extra、Region、Secret 等),账号池只接管"谁来发请求"
+// 的部分(APIKey / AccessToken)。
 func (s *Service) resolveCred(ctx context.Context, ch *channel.Channel, hint account.SelectHint) (adapter.Credential, int64, error) {
 	cred := ch.Cred.ToAdapter()
 	if cred.BaseURL == "" {
@@ -51,12 +56,11 @@ func (s *Service) resolveCred(ctx context.Context, ch *channel.Channel, hint acc
 	if err != nil {
 		return adapter.Credential{}, 0, err
 	}
-	// 账号池命中:用账号的访问凭证覆盖。APIKey 优先,其次 AccessToken。
-	cred = adapter.Credential{
-		APIKey:  a.Cred.APIKey,
-		BaseURL: ch.BaseURL,
-	}
-	if cred.APIKey == "" {
+	// 账号池命中:用账号的访问凭证覆盖 APIKey/AccessToken,其余字段保留。
+	// APIKey 优先,其次 AccessToken(OAuth 账号典型只有 AccessToken)。
+	if a.Cred.APIKey != "" {
+		cred.APIKey = a.Cred.APIKey
+	} else if a.Cred.AccessToken != "" {
 		cred.APIKey = a.Cred.AccessToken
 	}
 	return cred, a.ID, nil
@@ -92,8 +96,10 @@ func (s *Service) Chat(ctx context.Context, req *ir.ChatRequest, ch *channel.Cha
 }
 
 // ChatStream 执行流式 chat completion。
-// 注意:流式调用结果在 stream 结束后才知道,这里仅在 *构造 reader* 失败时上报失败。
-// 后续 stream 内错误不通过 facade.ReportFailure 上报(M2b 限制)。
+// 注意:reader 构造成功 ≠ 调用成功(stream 内可能 401/429/超时)。本方法只在
+// 构造失败时调 facade.ReportFailure;成功时不调 ReportSuccess,避免误把"刚发
+// 起请求"上报成"成功",欺骗 selector 给出错分增信。后续把流内结果回传给
+// facade 需要包装 StreamReader,留待 M2b+。
 func (s *Service) ChatStream(ctx context.Context, req *ir.ChatRequest, ch *channel.Channel) (adapter.StreamReader, int64, error) {
 	cred, accID, err := s.resolveCred(ctx, ch, account.SelectHint{Model: req.Model})
 	if err != nil {
@@ -103,13 +109,11 @@ func (s *Service) ChatStream(ctx context.Context, req *ir.ChatRequest, ch *chann
 	if !ok {
 		return nil, accID, fmt.Errorf("relay: unknown provider %q", ch.Provider)
 	}
-	start := time.Now()
 	reader, err := a.ChatStream(ctx, req, cred)
 	if err != nil {
-		s.report(accID, err, time.Since(start), nil)
+		s.report(accID, err, 0, nil)
 		return nil, accID, err
 	}
-	s.report(accID, nil, time.Since(start), nil)
 	return reader, accID, nil
 }
 
