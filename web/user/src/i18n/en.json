@@ -119,5 +119,49 @@
       "regenerated": "Key regenerated",
       "revoked": "Token revoked"
     }
+  },
+  "invites": {
+    "title": "Invite friends",
+    "subtitle": "Invite new users and get {ratio}% rebate on their top-ups",
+    "my_code": "My invite code",
+    "share_url": "Share link",
+    "copy": "Copy",
+    "stats": {
+      "invitee_count": "Invitees",
+      "rebate_total": "Total rebate",
+      "rebate_month": "This month"
+    },
+    "tab": {
+      "invitees": "Invitees",
+      "records": "Rebate records"
+    },
+    "table": {
+      "user": "User",
+      "email": "Email",
+      "registered_at": "Registered at",
+      "total_rebate": "Total rebate",
+      "order_id": "Order ID",
+      "rebate": "Rebate",
+      "created_at": "Time"
+    },
+    "empty": {
+      "invitees": "No one has signed up with your code yet",
+      "records": "No rebate records yet"
+    },
+    "load_failed": "Failed to load",
+    "retry": "Retry",
+    "rules": {
+      "title": "Rebate rules",
+      "item1": "When an invitee tops up, you get {ratio}% as rebate",
+      "item2": "Rebate goes straight to your wallet and offsets future usage",
+      "item3": "Invite binding is permanent — every later top-up keeps paying"
+    }
+  },
+  "notfound": {
+    "title": "Page not found",
+    "desc": "The page you requested doesn't exist or has been removed"
+  },
+  "common": {
+    "back_home": "Back to home"
   }
 }
