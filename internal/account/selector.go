@@ -85,19 +85,23 @@ func (s *selectorImpl) maxRemaining(cands []*Account) *Account {
 }
 
 func (s *selectorImpl) weighted(cands []*Account) *Account {
+	// 不写入 c.Weight:repo 返回的 *Account 可能在并发 Select 间共享,直接改字段会触发竞态。
+	weightOf := func(c *Account) int {
+		if c.Weight <= 0 {
+			return 1
+		}
+		return c.Weight
+	}
 	total := 0
 	for _, c := range cands {
-		if c.Weight <= 0 {
-			c.Weight = 1
-		}
-		total += c.Weight
+		total += weightOf(c)
 	}
 	s.mu.Lock()
 	n := s.rnd.Intn(total)
 	s.mu.Unlock()
 	acc := 0
 	for _, c := range cands {
-		acc += c.Weight
+		acc += weightOf(c)
 		if n < acc {
 			return c
 		}
