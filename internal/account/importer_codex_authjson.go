@@ -18,25 +18,20 @@ func (CodexAuthJSON) Match(b []byte) bool {
 	if !strings.HasPrefix(strings.TrimSpace(string(b)), "{") {
 		return false
 	}
-	// Must have the "OPENAI_API_KEY" key present (even if empty) AND tokens.account_id.
-	var m map[string]json.RawMessage
-	if err := json.Unmarshal(b, &m); err != nil {
+	var probe struct {
+		OpenAIAPIKey string `json:"OPENAI_API_KEY"`
+		Tokens       struct {
+			IDToken string `json:"id_token"`
+			RT      string `json:"refresh_token"`
+		} `json:"tokens"`
+	}
+	if err := json.Unmarshal(b, &probe); err != nil {
 		return false
 	}
-	if _, hasKey := m["OPENAI_API_KEY"]; !hasKey {
-		return false
+	if probe.OpenAIAPIKey != "" {
+		return true
 	}
-	tokRaw, hasTok := m["tokens"]
-	if !hasTok {
-		return false
-	}
-	var tok struct {
-		AccountID string `json:"account_id"`
-	}
-	if err := json.Unmarshal(tokRaw, &tok); err != nil {
-		return false
-	}
-	return tok.AccountID != ""
+	return probe.Tokens.IDToken != "" && strings.HasPrefix(probe.Tokens.RT, "rt_")
 }
 
 func (CodexAuthJSON) Parse(_ context.Context, b []byte) ([]*Account, error) {
@@ -60,8 +55,10 @@ func (CodexAuthJSON) Parse(_ context.Context, b []byte) ([]*Account, error) {
 		RefreshToken: raw.Tokens.RT,
 	}
 	if raw.OpenAIAPIKey != "" {
-		credType = "apikey"
 		cred.APIKey = raw.OpenAIAPIKey
+		if raw.Tokens.RT == "" {
+			credType = "apikey"
+		}
 	}
 
 	a := &Account{

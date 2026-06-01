@@ -8,7 +8,7 @@ import (
 )
 
 // RawAccessToken 解析纯文本 access_token。
-// 匹配前缀: sk-ant-oat01- (Anthropic) 或 sess- (OpenAI session).
+// 匹配前缀: sk-ant-oat01- (Anthropic) 或 eyJ (JWT).
 type RawAccessToken struct{}
 
 func (RawAccessToken) Format() string { return "raw_access_token" }
@@ -18,7 +18,7 @@ func (RawAccessToken) Match(b []byte) bool {
 	if strings.HasPrefix(s, "{") || strings.HasPrefix(s, "[") {
 		return false
 	}
-	return strings.HasPrefix(s, "sk-ant-oat01-") || strings.HasPrefix(s, "sess-")
+	return strings.HasPrefix(s, "sk-ant-oat01-") || strings.HasPrefix(s, "eyJ")
 }
 
 func (RawAccessToken) Parse(_ context.Context, b []byte) ([]*Account, error) {
@@ -26,14 +26,10 @@ func (RawAccessToken) Parse(_ context.Context, b []byte) ([]*Account, error) {
 	if s == "" {
 		return nil, apierr.New(apierr.CodeAccountImportFields, "raw_access_token: empty token")
 	}
-	provider := "anthropic"
-	if strings.HasPrefix(s, "sess-") {
-		provider = "openai"
-	}
 	a := &Account{
-		Provider:     provider,
-		CredType:     "oauth",
-		ImportSource: "paste_raw",
+		Provider:     "anthropic",
+		CredType:     "token_pasted",
+		ImportSource: "paste_tokens",
 		Status:       StatusActive,
 		Weight:       100,
 		Cred: AccountCred{
