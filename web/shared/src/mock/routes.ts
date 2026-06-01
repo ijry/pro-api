@@ -21,6 +21,9 @@ import logAudit from './data/log-audit.json'
 import adminRecharges from './data/admin-recharges.json'
 import userRecharges from './data/user-recharges.json'
 import oauthBindings from './data/oauth-bindings.json'
+import inviteSummary from './data/invite-summary.json'
+import inviteInvitees from './data/invite-invitees.json'
+import inviteRecords from './data/invite-records.json'
 
 export type MockMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 export type MockHandler = (method: MockMethod, url: string, params?: unknown) => unknown
@@ -124,6 +127,10 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/user\/notices\/[^/?]+\/read$/,           handler: writeOk },
   { pattern: /^\/api\/user\/notices\/[^/?]+$/,                 handler: () => clone((notices as any[])[0]) },
   { pattern: /^\/api\/user\/notices(\?.*)?$/,                  handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
+
+  { pattern: /^\/api\/user\/invites\/me$/,                       handler: () => clone(inviteSummary) },
+  { pattern: /^\/api\/user\/invites\/invitees(\?.*)?$/,          handler: (_m, _u, p) => paginate(inviteInvitees as any[], p as PageParams) },
+  { pattern: /^\/api\/user\/invites\/records(\?.*)?$/,           handler: (_m, _u, p) => paginate(inviteRecords as any[], p as PageParams) },
 
   { pattern: /^\/api\/public\/models(\?.*)?$/,                 handler: () => clone(models) },
   { pattern: /^\/api\/public\/notices(\?.*)?$/,                handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
