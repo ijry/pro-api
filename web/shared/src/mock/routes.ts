@@ -128,9 +128,9 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/user\/notices\/[^/?]+$/,                 handler: () => clone((notices as any[])[0]) },
   { pattern: /^\/api\/user\/notices(\?.*)?$/,                  handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
 
-  { pattern: /^\/api\/user\/invites\/me$/,                       handler: () => clone(inviteSummary) },
-  { pattern: /^\/api\/user\/invites\/invitees(\?.*)?$/,          handler: (_m, _u, p) => paginate(inviteInvitees as any[], p as PageParams) },
-  { pattern: /^\/api\/user\/invites\/records(\?.*)?$/,           handler: (_m, _u, p) => paginate(inviteRecords as any[], p as PageParams) },
+  { pattern: /^\/api\/user\/invites\/me$/,                   handler: () => clone(inviteSummary) },
+  { pattern: /^\/api\/user\/invites\/invitees(\?.*)?$/,      handler: (_m, _u, p) => paginate(inviteInvitees as any[], p as PageParams) },
+  { pattern: /^\/api\/user\/invites\/records(\?.*)?$/,       handler: (_m, _u, p) => paginate(inviteRecords as any[], p as PageParams) },
 
   { pattern: /^\/api\/public\/models(\?.*)?$/,                 handler: () => clone(models) },
   { pattern: /^\/api\/public\/notices(\?.*)?$/,                handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
