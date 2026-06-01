@@ -1,7 +1,6 @@
 package quota_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
 
@@ -16,5 +15,4 @@ func TestTracker_DispatchByProvider(t *testing.T) {
 	snap := tk.ExtractFromResponse("anthropic", h)
 	require.NotNil(t, snap)
 	require.Nil(t, tk.ExtractFromResponse("unknown", h))
-	_ = context.Background()
 }

@@ -7,6 +7,9 @@ import (
 
 // ProviderExtractor 是各 provider 实现的接口(由 quota/ 子包提供)。
 type ProviderExtractor interface {
+	// Extract reads provider-specific rate-limit headers and returns a quota
+	// snapshot. Returns nil if h contains no headers relevant to this provider.
+	// Partial snapshots (some fields nil) are valid and mean "header absent."
 	Extract(h http.Header) *QuotaSnapshot
 }
 
@@ -55,8 +58,12 @@ func (t *quotaTracker) UpdateAccount(ctx context.Context, accountID int64, snap 
 	if snap.QuotaWeek.ResetAt != nil {
 		a.QuotaWeekResetAt = snap.QuotaWeek.ResetAt
 	}
-	if snap.Quota5h.SyncedAt != nil {
-		a.QuotaSyncedAt = snap.Quota5h.SyncedAt
+	syncedAt := snap.Quota5h.SyncedAt
+	if syncedAt == nil {
+		syncedAt = snap.QuotaWeek.SyncedAt
+	}
+	if syncedAt != nil {
+		a.QuotaSyncedAt = syncedAt
 	}
 	return t.repo.Update(ctx, a)
 }
