@@ -1,0 +1,17 @@
+[
+  { "user_id": 9001, "display_name": "John D.",    "email_masked": "j***@gmail.com",     "registered_at": "2026-05-25T10:30:00Z", "total_rebate_credits": 1240 },
+  { "user_id": 9002, "display_name": "Alice L.",   "email_masked": "a***@outlook.com",   "registered_at": "2026-05-24T18:12:00Z", "total_rebate_credits": 980 },
+  { "user_id": 9003, "display_name": "Bob W.",     "email_masked": "b***@163.com",       "registered_at": "2026-05-24T09:05:00Z", "total_rebate_credits": 320 },
+  { "user_id": 9004, "display_name": "Cathy M.",   "email_masked": "c***@qq.com",        "registered_at": "2026-05-23T16:42:00Z", "total_rebate_credits": 2150 },
+  { "user_id": 9005, "display_name": "David K.",   "email_masked": "d***@gmail.com",     "registered_at": "2026-05-22T11:21:00Z", "total_rebate_credits": 410 },
+  { "user_id": 9006, "display_name": "Emma Z.",    "email_masked": "e***@hotmail.com",   "registered_at": "2026-05-21T20:08:00Z", "total_rebate_credits": 1670 },
+  { "user_id": 9007, "display_name": "Frank L.",   "email_masked": "f***@126.com",       "registered_at": "2026-05-20T14:55:00Z", "total_rebate_credits": 88 },
+  { "user_id": 9008, "display_name": "Grace P.",   "email_masked": "g***@yahoo.com",     "registered_at": "2026-05-19T09:30:00Z", "total_rebate_credits": 2400 },
+  { "user_id": 9009, "display_name": "Henry T.",   "email_masked": "h***@gmail.com",     "registered_at": "2026-05-18T17:11:00Z", "total_rebate_credits": 0 },
+  { "user_id": 9010, "display_name": "Ivy R.",     "email_masked": "i***@outlook.com",   "registered_at": "2026-05-17T08:45:00Z", "total_rebate_credits": 540 },
+  { "user_id": 9011, "display_name": "Jack S.",    "email_masked": "j***@qq.com",        "registered_at": "2026-05-16T22:19:00Z", "total_rebate_credits": 1320 },
+  { "user_id": 9012, "display_name": "Karen B.",   "email_masked": "k***@gmail.com",     "registered_at": "2026-05-15T13:02:00Z", "total_rebate_credits": 760 },
+  { "user_id": 9013, "display_name": "Leo H.",     "email_masked": "l***@163.com",       "registered_at": "2026-05-14T19:33:00Z", "total_rebate_credits": 200 },
+  { "user_id": 9014, "display_name": "Mia C.",     "email_masked": "m***@hotmail.com",   "registered_at": "2026-05-13T07:50:00Z", "total_rebate_credits": 1890 },
+  { "user_id": 9015, "display_name": "Nathan F.",  "email_masked": "n***@gmail.com",     "registered_at": "2026-05-12T15:27:00Z", "total_rebate_credits": 0 }
+]

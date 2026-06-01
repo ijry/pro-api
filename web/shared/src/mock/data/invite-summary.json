@@ -1,0 +1,10 @@
+{
+  "invite_code": "PROAQ7K3",
+  "share_url": "https://demo.proapi.example/register?invite_code=PROAQ7K3",
+  "rebate_ratio": 0.10,
+  "stats": {
+    "invitee_count": 47,
+    "rebate_credits_total": 35820,
+    "rebate_credits_month": 4210
+  }
+}
