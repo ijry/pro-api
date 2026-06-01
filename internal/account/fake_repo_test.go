@@ -43,6 +43,33 @@ func (f *fakeRepo) Update(_ context.Context, a *account.Account) error {
 	return nil
 }
 
+func (f *fakeRepo) Reactivate(_ context.Context, id int64) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	a := f.items[id]
+	if a == nil {
+		return account.ErrNotFound
+	}
+	a.Status = account.StatusActive
+	a.CooldownUntil = nil
+	a.ConsecFailures = 0
+	return nil
+}
+
+func (f *fakeRepo) ResetFailures(_ context.Context, id int64) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	a := f.items[id]
+	if a == nil {
+		return account.ErrNotFound
+	}
+	now := time.Now().UTC()
+	a.ConsecFailures = 0
+	a.LastSuccessAt = &now
+	a.LastUsedAt = &now
+	return nil
+}
+
 func (f *fakeRepo) Get(_ context.Context, id int64) (*account.Account, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

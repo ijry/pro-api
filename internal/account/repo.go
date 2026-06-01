@@ -67,6 +67,31 @@ func (r *repo) Update(ctx context.Context, a *Account) error {
 	return r.db.WithContext(ctx).Model(&Account{}).Where("id = ?", a.ID).Updates(a).Error
 }
 
+// Reactivate 把账号从 cooldown 恢复到 active。使用 map-based 更新,
+// 因为 GORM 的 Updates(struct) 会跳过零值字段(StatusActive=0 / cooldown_until=nil / consec_failures=0)。
+func (r *repo) Reactivate(ctx context.Context, id int64) error {
+	return r.db.WithContext(ctx).Model(&Account{}).Where("id = ?", id).
+		Updates(map[string]any{
+			"status":          StatusActive,
+			"cooldown_until":  nil,
+			"consec_failures": 0,
+			"updated_at":      r.clock.Now().UTC(),
+		}).Error
+}
+
+// ResetFailures 把 consec_failures 清零并刷新 last_success_at / last_used_at。
+// 同样用 map-based 写入避免零值跳过。
+func (r *repo) ResetFailures(ctx context.Context, id int64) error {
+	now := r.clock.Now().UTC()
+	return r.db.WithContext(ctx).Model(&Account{}).Where("id = ?", id).
+		Updates(map[string]any{
+			"consec_failures": 0,
+			"last_success_at": now,
+			"last_used_at":    now,
+			"updated_at":      now,
+		}).Error
+}
+
 func (r *repo) Get(ctx context.Context, id int64) (*Account, error) {
 	var a Account
 	err := r.db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL", id).First(&a).Error

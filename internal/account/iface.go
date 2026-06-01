@@ -34,6 +34,12 @@ type SelectHint struct {
 type Repo interface {
 	Create(ctx context.Context, a *Account) error
 	Update(ctx context.Context, a *Account) error
+	// Reactivate 把账号从 cooldown 恢复到 active,并清掉 cooldown_until / consec_failures。
+	// 使用 map-based 更新,绕过 GORM 对零值字段的跳过语义。
+	Reactivate(ctx context.Context, id int64) error
+	// ResetFailures 把 consec_failures 重置为 0 并刷新 last_success_at / last_used_at。
+	// 使用 map-based 更新,确保零值能写入。
+	ResetFailures(ctx context.Context, id int64) error
 	Get(ctx context.Context, id int64) (*Account, error)
 	ListByChannel(ctx context.Context, channelID int64) ([]*Account, error)
 	ListByShareTag(ctx context.Context, tag string) ([]*Account, error)
@@ -56,6 +62,9 @@ type Breaker interface {
 	MarkExpired(ctx context.Context, accountID int64, reason string) error
 	MarkInvalid(ctx context.Context, accountID int64, reason string) error
 	IncConsecFailure(ctx context.Context, accountID int64) (int, error)
+	// RunReaperOnce 执行一次 reaper:把 cooldown_until 已过期的账号恢复成 active,
+	// 返回本轮处理数量。供 Run() 周期调用,也供 wire/tests 直接驱动。
+	RunReaperOnce(ctx context.Context) (int, error)
 	Run(ctx context.Context) error
 	Close() error
 }
