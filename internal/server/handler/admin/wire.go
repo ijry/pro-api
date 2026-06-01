@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ijry/pro-api/internal/account"
 	"github.com/ijry/pro-api/internal/app"
 	"github.com/ijry/pro-api/internal/notice"
 )
@@ -37,4 +38,19 @@ func WireAdminNotice(a *app.Application, actorOf func(*gin.Context) int64) (*Not
 		return nil, errors.New("admin: notice service not wired")
 	}
 	return NewNoticeHandler(svc, actorOf), nil
+}
+
+// WireAdminAccount 构造 AccountHandler 并返回。
+//
+// 依赖 app.AccountSvc 已被 accountwire.WireAccount 装配为 *account.Facade。
+// 未装配时返回 error,由调用方决定是否致命(M1 可视作 skip)。
+func WireAdminAccount(a *app.Application, actorOf func(*gin.Context) int64) (*AccountHandler, error) {
+	if a == nil {
+		return nil, errors.New("admin: app is nil")
+	}
+	facade := account.FacadeFrom(a)
+	if facade == nil {
+		return nil, errors.New("admin: account facade not wired")
+	}
+	return NewAccountHandler(facade, a.Audit, actorOf), nil
 }

@@ -133,3 +133,7 @@ func (f *fakeRepo) AppendEvent(_ context.Context, id int64, t string, p any) err
 	f.events = append(f.events, fakeRepoEvent{id, t, p})
 	return nil
 }
+
+func (f *fakeRepo) ListEvents(_ context.Context, _ int64, _, _ int) ([]*account.AccountEvent, int64, error) {
+	return nil, 0, nil
+}

@@ -33,6 +33,7 @@ import (
 	"github.com/ijry/pro-api/internal/ratelimit"
 	"github.com/ijry/pro-api/internal/relay"
 	"github.com/ijry/pro-api/internal/server"
+	"github.com/ijry/pro-api/internal/server/handler/admin"
 	relayhdr "github.com/ijry/pro-api/internal/server/handler/relay"
 	paymenthdr "github.com/ijry/pro-api/internal/server/handler/payment"
 	userhdr "github.com/ijry/pro-api/internal/server/handler/user"
@@ -229,6 +230,9 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	// 日志 & 统计路由(M1-08)
 	wireLogHandlers(a, adminGroup, userGroup)
 
+	// 号池路由(M2b P9)
+	wireAccountHandler(a, adminGroup, log)
+
 	// 在线支付路由(M2a B4)
 	wirePaymentRoutes(eng, a, log)
 
@@ -284,6 +288,50 @@ func wireSettingHandler(a *app.Application, adminG *gin.RouterGroup) {
 	_ = a
 	_ = adminG
 	// TODO: internal/server/handler/admin.WireAdminSetting
+}
+
+// wireAccountHandler 挂载号池 admin 路由。
+//
+// 路由组先套 SessionAuth + RoleGate(2)(admin);
+// /accounts/:id/credentials/peek 额外套 RoleGate(3)(superadmin),
+// 因为该 endpoint 返回明文凭证。
+func wireAccountHandler(a *app.Application, adminG *gin.RouterGroup, log *zap.Logger) {
+	if a == nil {
+		return
+	}
+	sessStore := authhwire.SessionStoreFrom(a)
+	if sessStore == nil {
+		log.Warn("session store not available; admin account routes skipped")
+		return
+	}
+	actorOf := func(c *gin.Context) int64 { return middleware.UserID(c) }
+	h, err := admin.WireAdminAccount(a, actorOf)
+	if err != nil {
+		log.Warn("admin account handler wiring failed", zap.Error(err))
+		return
+	}
+	// adminGroup 已带 ErrorResponse("json");再加 SessionAuth + RoleGate(2)。
+	accG := adminG.Group("",
+		middleware.SessionAuth(sessStore, a.Clock),
+		middleware.RoleGate(2),
+	)
+	// 普通 admin 可访问的 13 个 endpoint。
+	accG.GET("/accounts", h.List)
+	accG.GET("/accounts/stats/overview", h.Stats)
+	accG.GET("/accounts/:id", h.Get)
+	accG.POST("/accounts", h.Create)
+	accG.POST("/accounts/import", h.Import)
+	accG.PATCH("/accounts/:id", h.Patch)
+	accG.DELETE("/accounts/:id", h.Delete)
+	accG.POST("/accounts/:id/enable", h.Enable)
+	accG.POST("/accounts/:id/disable", h.Disable)
+	accG.POST("/accounts/:id/test", h.Test)
+	accG.POST("/accounts/:id/refresh_token", h.RefreshToken)
+	accG.POST("/accounts/:id/clear_cooldown", h.ClearCooldown)
+	accG.GET("/accounts/:id/events", h.Events)
+	// 唯一需要 superadmin 的 endpoint。
+	superG := accG.Group("", middleware.RoleGate(3))
+	superG.GET("/accounts/:id/credentials/peek", h.PeekCredentials)
 }
 
 // wireLogHandlers 挂载日志 handler。

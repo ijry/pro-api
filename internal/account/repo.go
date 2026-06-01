@@ -176,6 +176,34 @@ func (r *repo) Delete(ctx context.Context, id int64) error {
 		Updates(map[string]any{"deleted_at": now, "updated_at": now}).Error
 }
 
+// ListEvents 按 id DESC 查某账号的事件,支持 page/size 分页。
+// page < 1 视作 1,size <= 0 视作 20,size > 200 截断到 200。
+func (r *repo) ListEvents(ctx context.Context, accountID int64, page, size int) ([]*AccountEvent, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if size <= 0 {
+		size = 20
+	}
+	if size > 200 {
+		size = 200
+	}
+	var total int64
+	if err := r.db.WithContext(ctx).Model(&AccountEvent{}).
+		Where("account_id = ?", accountID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var out []*AccountEvent
+	if err := r.db.WithContext(ctx).
+		Where("account_id = ?", accountID).
+		Order("id DESC").
+		Limit(size).Offset((page - 1) * size).
+		Find(&out).Error; err != nil {
+		return nil, 0, err
+	}
+	return out, total, nil
+}
+
 func (r *repo) AppendEvent(ctx context.Context, accountID int64, eventType string, payload any) error {
 	var raw json.RawMessage
 	if payload != nil {

@@ -47,6 +47,9 @@ type Repo interface {
 	ListForReaper(ctx context.Context, now time.Time, limit int) ([]*Account, error)
 	Delete(ctx context.Context, id int64) error
 	AppendEvent(ctx context.Context, accountID int64, eventType string, payload any) error
+	// ListEvents 返回某账号的事件,按 id DESC 排序,支持 page/size 分页。
+	// 返回的 total 是该账号事件总数(忽略 page/size)。
+	ListEvents(ctx context.Context, accountID int64, page, size int) ([]*AccountEvent, int64, error)
 }
 
 // Selector 从 channel 的账号池中挑一个 account。
