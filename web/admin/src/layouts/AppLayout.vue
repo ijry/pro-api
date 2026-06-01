@@ -45,8 +45,6 @@ const menuOptions: MenuOption[] = [
     ],
   },
   { label: () => h(RouterLink, { to: '/settings' }, { default: () => t('nav.settings') }), key: 'settings' },
-  { type: 'divider', key: 'div1' },
-  { label: t('nav.m3_coming'), key: 'm3', disabled: true },
 ]
 
 const activeMenu = computed(() => String(route.name ?? 'dashboard'))
