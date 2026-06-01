@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ijry/pro-api/internal/account"
+	accountwire "github.com/ijry/pro-api/internal/account/wire"
 	"github.com/ijry/pro-api/internal/adapter"
 	"github.com/ijry/pro-api/internal/adapterreg"
 	"github.com/ijry/pro-api/internal/app"
@@ -130,12 +132,23 @@ func run() error {
 		return fmt.Errorf("channel wire: %w", err)
 	}
 
+	// ── 号池 ──────────────────────────────────────────────────────
+	if err := accountwire.WireAccount(ctx, application); err != nil {
+		return fmt.Errorf("account wire: %w", err)
+	}
+	accountFacade := account.FacadeFrom(application)
+
 	// ── 适配器 & Relay ───────────────────────────────────────────
 	adapterReg := adapter.NewRegistry()
 	adapterreg.WireAdapters(adapterReg, application.Tokenize)
 	application.AdapterReg = adapterReg
 
-	relaySvc := relay.New(adapterReg)
+	// accountFacade 实现 relay.AccountFacade(隐式接口);为 nil 时 relay 跳过号池分支。
+	var af relay.AccountFacade
+	if accountFacade != nil {
+		af = accountFacade
+	}
+	relaySvc := relay.New(adapterReg, af)
 	application.Relay = relaySvc
 
 	// ── 支付:手动充值 + 兑换码 ──────────────────────────────────

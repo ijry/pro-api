@@ -3,6 +3,8 @@ package channel
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/ijry/pro-api/internal/adapter"
 )
 
 // Channel 是 channels 表的 ORM 模型与领域对象。
@@ -61,6 +63,24 @@ type Credential struct {
 
 // IsZero 判断凭证是否为空。
 func (c Credential) IsZero() bool { return c.APIKey == "" }
+
+// ToAdapter 把 channel.Credential 转换成 adapter.Credential。
+// Extra 做浅拷贝避免被下游意外修改。
+func (c Credential) ToAdapter() adapter.Credential {
+	ac := adapter.Credential{
+		APIKey:  c.APIKey,
+		Secret:  c.Secret,
+		Region:  c.Region,
+		BaseURL: c.BaseURL,
+	}
+	if len(c.Extra) > 0 {
+		ac.Extra = make(map[string]string, len(c.Extra))
+		for k, v := range c.Extra {
+			ac.Extra[k] = v
+		}
+	}
+	return ac
+}
 
 // ModelOverride 是单渠道模型倍率覆盖。nil 字段用模型字典默认值。
 type ModelOverride struct {
