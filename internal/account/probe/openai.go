@@ -2,6 +2,7 @@ package probe
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -35,5 +36,8 @@ func (o *OpenAI) Probe(ctx context.Context, cred account.AccountCred) (http.Head
 	}
 	defer resp.Body.Close()
 	_, _ = io.Copy(io.Discard, resp.Body)
+	if resp.StatusCode >= 400 {
+		return resp.Header, fmt.Errorf("openai probe: status %d", resp.StatusCode)
+	}
 	return resp.Header, nil
 }

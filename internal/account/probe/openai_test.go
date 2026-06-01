@@ -37,3 +37,15 @@ func TestOpenAI_Probe_FallsBackToAPIKey(t *testing.T) {
 	_, err := p.Probe(context.Background(), account.AccountCred{APIKey: "sk-proj-K"})
 	require.NoError(t, err)
 }
+
+func TestOpenAI_Non2xxReturnsError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"error":{"message":"invalid api key"}}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	p := probe.NewOpenAI(srv.URL)
+	_, err := p.Probe(context.Background(), account.AccountCred{APIKey: "sk-bad"})
+	require.Error(t, err)
+}
