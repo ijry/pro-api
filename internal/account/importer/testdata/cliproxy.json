@@ -1,0 +1,1 @@
+{"accounts":[{"provider":"anthropic","email":"x@example.com","credentials":{"access_token":"sk-ant-oat01-eeee","refresh_token":"sk-ant-ort01-ffff"}},{"provider":"openai","email":"y@example.com","credentials":{"refresh_token":"rt_OPENAI_yy"}}]}

@@ -1,6 +1,8 @@
 package account
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"strings"
 	"time"
@@ -93,4 +95,20 @@ func MaskEmail(email string) string {
 		return "***"
 	}
 	return email[:1] + "***" + email[at:]
+}
+
+// DedupKey 计算账号去重键。优先级:external_account_id → email → sha256(access_token)。
+// 返回空串表示该账号无可识别的去重维度。
+func (a *Account) DedupKey() string {
+	if a.ExternalAccountID != "" {
+		return "ext:" + a.ExternalAccountID
+	}
+	if a.Email != "" {
+		return "email:" + strings.ToLower(a.Email)
+	}
+	if a.Cred.AccessToken != "" {
+		h := sha256.Sum256([]byte(a.Cred.AccessToken))
+		return "atsha:" + hex.EncodeToString(h[:8])
+	}
+	return ""
 }
