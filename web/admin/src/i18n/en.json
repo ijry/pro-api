@@ -1,4 +1,28 @@
 {
+  "auth": {
+    "relogin": "Switch Account"
+  },
+  "common": {
+    "back_home": "Back to Home"
+  },
+  "forbidden": {
+    "title": "Access Denied",
+    "desc": "Your account doesn't have permission to access this page."
+  },
+  "login": {
+    "title": "Admin Sign In",
+    "subtitle": "proapi Admin",
+    "email": "Email",
+    "identity": "Email or Username",
+    "identity_placeholder": "Enter email or username",
+    "password": "Password",
+    "submit": "Sign In",
+    "oauth_login": "Sign in with OAuth",
+    "errors": {
+      "not_admin": "This account is not an admin",
+      "wrong_password": "Wrong email or password"
+    }
+  },
   "nav": {
     "login": "Sign In",
     "logout": "Sign Out",
@@ -29,7 +53,6 @@
     "settings": "Settings",
     "forbidden": "Forbidden",
     "not_found": "Not Found",
-    "m3_coming": "M3 Modules (Coming)",
     "new": "New",
     "mappings": "Mappings",
     "requests": "Requests",
@@ -39,18 +62,8 @@
     "redeem": "Redeem",
     "batch_new": "New Batch"
   },
-  "login": {
-    "title": "Admin Sign In",
-    "subtitle": "proapi Admin",
-    "email": "Email",
-    "identity": "Email or Username",
-    "identity_placeholder": "Enter email or username",
-    "password": "Password",
-    "submit": "Sign In",
-    "oauth_login": "Sign in with OAuth",
-    "errors": {
-      "not_admin": "This account is not an admin",
-      "wrong_password": "Wrong email or password"
-    }
+  "notfound": {
+    "title": "Page Not Found",
+    "desc": "The page you're looking for doesn't exist. Please check the URL."
   }
 }

@@ -1,4 +1,28 @@
 {
+  "auth": {
+    "relogin": "切换账号"
+  },
+  "common": {
+    "back_home": "返回首页"
+  },
+  "forbidden": {
+    "title": "无权访问",
+    "desc": "你的账号没有访问此页面的权限"
+  },
+  "login": {
+    "title": "登录管理后台",
+    "subtitle": "proapi 管理员",
+    "email": "邮箱",
+    "identity": "邮箱 / 账号",
+    "identity_placeholder": "请输入邮箱或账号",
+    "password": "密码",
+    "submit": "登 录",
+    "oauth_login": "使用 OAuth 登录",
+    "errors": {
+      "not_admin": "此账号不是管理员",
+      "wrong_password": "邮箱或密码错误"
+    }
+  },
   "nav": {
     "login": "登录",
     "logout": "退出登录",
@@ -29,7 +53,6 @@
     "settings": "系统设置",
     "forbidden": "无权访问",
     "not_found": "页面不存在",
-    "m3_coming": "M3 模块 (开发中)",
     "new": "新建",
     "mappings": "模型映射",
     "requests": "请求",
@@ -39,18 +62,8 @@
     "redeem": "兑换码",
     "batch_new": "批量生成"
   },
-  "login": {
-    "title": "登录管理后台",
-    "subtitle": "proapi 管理员",
-    "email": "邮箱",
-    "identity": "邮箱 / 账号",
-    "identity_placeholder": "请输入邮箱或账号",
-    "password": "密码",
-    "submit": "登 录",
-    "oauth_login": "使用 OAuth 登录",
-    "errors": {
-      "not_admin": "此账号不是管理员",
-      "wrong_password": "邮箱或密码错误"
-    }
+  "notfound": {
+    "title": "页面不存在",
+    "desc": "你访问的页面不存在,请检查 URL"
   }
 }
