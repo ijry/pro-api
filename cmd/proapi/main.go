@@ -266,6 +266,9 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 		log.Warn("session store not available; playground routes skipped")
 	}
 
+	// Invite 路由(邀请返佣)
+	wireInviteRoutes(eng, a, log)
+
 	_ = ctx
 	return nil
 }
@@ -379,4 +382,24 @@ func wirePaymentRoutes(eng *gin.Engine, a *app.Application, log *zap.Logger) {
 	// Webhook:公开,无需认证
 	payWebhookG := eng.Group("/api/pay", middleware.ErrorResponse("json"))
 	payWebhookG.POST("/webhook/:provider", payH.Webhook)
+}
+
+// wireInviteRoutes mounts GET /api/user/invites/{me,invitees,records} — all require SessionAuth.
+func wireInviteRoutes(eng *gin.Engine, a *app.Application, log *zap.Logger) {
+	sessStore := authhwire.SessionStoreFrom(a)
+	if sessStore == nil {
+		log.Warn("session store not available; invite routes skipped")
+		return
+	}
+	userOf := func(c *gin.Context) int64 { return middleware.UserID(c) }
+	h, err := userhdr.WireInvite(a, userOf)
+	if err != nil {
+		log.Warn("invite handler wiring failed", zap.Error(err))
+		return
+	}
+	inviteG := eng.Group("/api/user/invites",
+		middleware.ErrorResponse("json"),
+		middleware.SessionAuth(sessStore, a.Clock),
+	)
+	h.Register(inviteG)
 }
