@@ -9,6 +9,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, r *Record) error
 	ListByInviter(ctx context.Context, inviterID int64, limit, offset int) ([]*Record, error)
+	CountByInviter(ctx context.Context, inviterID int64) (int64, error)
 }
 
 type gormRepo struct{ db *gorm.DB }
@@ -27,4 +28,12 @@ func (r *gormRepo) ListByInviter(ctx context.Context, inviterID int64, limit, of
 		Limit(limit).Offset(offset).
 		Find(&list).Error
 	return list, err
+}
+
+func (r *gormRepo) CountByInviter(ctx context.Context, inviterID int64) (int64, error) {
+	var n int64
+	err := r.db.WithContext(ctx).Model(&Record{}).
+		Where("inviter_id = ?", inviterID).
+		Count(&n).Error
+	return n, err
 }
