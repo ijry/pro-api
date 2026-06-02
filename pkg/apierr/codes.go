@@ -69,6 +69,18 @@ const (
 
 	CodeChannelDisabled  Code = 40013
 	CodeChannelMisconfig Code = 40014
+
+	// === Account Pool (M2b) ===
+	CodeAccountNotFound      Code = 41001
+	CodeAccountDisabled      Code = 41002
+	CodeAccountPoolEmpty     Code = 41003
+	CodeAccountCredExpired   Code = 41004
+	CodeAccountImportFormat  Code = 41005
+	CodeAccountImportFields  Code = 41006
+	CodeAccountRefreshFailed Code = 41007
+	CodeAccountDuplicate     Code = 41008
+	CodeAccountOAuthState    Code = 41009
+	CodeAccountOAuthRejected Code = 41010
 )
 
 // httpStatusByCode 把错误码映射到 HTTP status。
@@ -110,6 +122,14 @@ func httpStatusByCode(c Code) int {
 		return http.StatusServiceUnavailable
 	case c == CodeNotFound:
 		return http.StatusNotFound
+	case c == CodeAccountNotFound:
+		return http.StatusNotFound
+	case c == CodeAccountDisabled || c == CodeAccountPoolEmpty || c == CodeAccountCredExpired || c == CodeAccountRefreshFailed:
+		return http.StatusServiceUnavailable
+	case c == CodeAccountImportFormat || c == CodeAccountImportFields || c == CodeAccountOAuthState || c == CodeAccountOAuthRejected:
+		return http.StatusBadRequest
+	case c == CodeAccountDuplicate:
+		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
 	}

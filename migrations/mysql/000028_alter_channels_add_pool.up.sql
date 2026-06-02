@@ -1,0 +1,3 @@
+ALTER TABLE channels ADD COLUMN pool_enabled TINYINT NOT NULL DEFAULT 0 COMMENT '0=单 key,1=号池';
+ALTER TABLE channels ADD COLUMN account_strategy VARCHAR(16) NOT NULL DEFAULT 'top_k';
+ALTER TABLE channels ADD COLUMN account_top_k TINYINT NOT NULL DEFAULT 3;

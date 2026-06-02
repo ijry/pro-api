@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/adapter"
+	"github.com/ijry/pro-api/internal/channel"
 	"github.com/ijry/pro-api/internal/protocol/anthropic"
 	"github.com/ijry/pro-api/internal/protocol/gemini"
 	"github.com/ijry/pro-api/internal/protocol/ir"
@@ -50,9 +51,17 @@ func (h *Handler) RegisterGeminiRoutes(g *gin.RouterGroup) {
 	g.POST("/models/:model/streamGenerateContent", h.GeminiStreamGenerateContent)
 }
 
-// providerAndCred extracts provider name and credential from context.
-// In M1, these will be injected by channel middleware. Falls back to defaults.
-func providerAndCred(c *gin.Context) (string, adapter.Credential) {
+// channelFromContext 从 gin context 中提取选定的 *channel.Channel。
+// 优先取上层中间件注入的 "relay:channel";否则用 "relay:provider" + "relay:credential"
+// 合成一个 PoolEnabled=0 的临时 Channel(兼容尚未接入 channel middleware 的链路)。
+// Authorization: Bearer ... header 是最后兜底。
+func channelFromContext(c *gin.Context) *channel.Channel {
+	if v, ok := c.Get("relay:channel"); ok {
+		if ch, ok := v.(*channel.Channel); ok && ch != nil {
+			return ch
+		}
+	}
+
 	provider := "openai"
 	if v, ok := c.Get("relay:provider"); ok {
 		if s, ok := v.(string); ok && s != "" {
@@ -72,7 +81,18 @@ func providerAndCred(c *gin.Context) (string, adapter.Credential) {
 			cred.APIKey = auth[7:]
 		}
 	}
-	return provider, cred
+
+	return &channel.Channel{
+		Provider: provider,
+		BaseURL:  cred.BaseURL,
+		Cred: channel.Credential{
+			APIKey:  cred.APIKey,
+			Secret:  cred.Secret,
+			Region:  cred.Region,
+			BaseURL: cred.BaseURL,
+			Extra:   cred.Extra,
+		},
+	}
 }
 
 // ChatCompletions handles POST /v1/chat/completions
@@ -82,14 +102,14 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	provider, cred := providerAndCred(c)
+	ch := channelFromContext(c)
 
 	if req.Stream {
-		h.streamChat(c, req, cred, provider)
+		h.streamChat(c, req, ch)
 		return
 	}
 
-	resp, err := h.relay.Chat(c.Request.Context(), req, cred, provider)
+	resp, _, err := h.relay.Chat(c.Request.Context(), req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -97,8 +117,8 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 	c.JSON(http.StatusOK, openai.EncodeChat(resp))
 }
 
-func (h *Handler) streamChat(c *gin.Context, req *ir.ChatRequest, cred adapter.Credential, provider string) {
-	reader, err := h.relay.ChatStream(c.Request.Context(), req, cred, provider)
+func (h *Handler) streamChat(c *gin.Context, req *ir.ChatRequest, ch *channel.Channel) {
+	reader, _, err := h.relay.ChatStream(c.Request.Context(), req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -143,9 +163,9 @@ func (h *Handler) Completions(c *gin.Context) {
 		return
 	}
 	chatReq := completionReq.ToChat()
-	provider, cred := providerAndCred(c)
+	ch := channelFromContext(c)
 
-	resp, err := h.relay.Chat(c.Request.Context(), chatReq, cred, provider)
+	resp, _, err := h.relay.Chat(c.Request.Context(), chatReq, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -160,9 +180,9 @@ func (h *Handler) Embeddings(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	provider, cred := providerAndCred(c)
+	ch := channelFromContext(c)
 
-	resp, err := h.relay.Embed(c.Request.Context(), req, cred, provider)
+	resp, _, err := h.relay.Embed(c.Request.Context(), req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -184,10 +204,10 @@ func (h *Handler) AnthropicMessages(c *gin.Context) {
 		return
 	}
 
-	provider, cred := providerAndCred(c)
+	ch := channelFromContext(c)
 
 	if req.Stream {
-		reader, relayErr := h.relay.ChatStream(c.Request.Context(), req, cred, provider)
+		reader, _, relayErr := h.relay.ChatStream(c.Request.Context(), req, ch)
 		if relayErr != nil {
 			middleware.SetErr(c, mapErr(relayErr))
 			return
@@ -225,7 +245,7 @@ func (h *Handler) AnthropicMessages(c *gin.Context) {
 		return
 	}
 
-	irResp, relayErr := h.relay.Chat(c.Request.Context(), req, cred, provider)
+	irResp, _, relayErr := h.relay.Chat(c.Request.Context(), req, ch)
 	if relayErr != nil {
 		middleware.SetErr(c, mapErr(relayErr))
 		return
@@ -249,9 +269,9 @@ func (h *Handler) GeminiGenerateContent(c *gin.Context) {
 		return
 	}
 
-	provider, cred := providerAndCred(c)
+	ch := channelFromContext(c)
 
-	irResp, relayErr := h.relay.Chat(c.Request.Context(), req, cred, provider)
+	irResp, _, relayErr := h.relay.Chat(c.Request.Context(), req, ch)
 	if relayErr != nil {
 		middleware.SetErr(c, mapErr(relayErr))
 		return
@@ -276,9 +296,9 @@ func (h *Handler) GeminiStreamGenerateContent(c *gin.Context) {
 	}
 	req.Stream = true
 
-	provider, cred := providerAndCred(c)
+	ch := channelFromContext(c)
 
-	reader, relayErr := h.relay.ChatStream(c.Request.Context(), req, cred, provider)
+	reader, _, relayErr := h.relay.ChatStream(c.Request.Context(), req, ch)
 	if relayErr != nil {
 		middleware.SetErr(c, mapErr(relayErr))
 		return
@@ -327,8 +347,8 @@ func (h *Handler) Images(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	provider, cred := providerAndCred(c)
-	resp, err := h.relay.GenerateImage(c.Request.Context(), &req, cred, provider)
+	ch := channelFromContext(c)
+	resp, _, err := h.relay.GenerateImage(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -360,8 +380,8 @@ func (h *Handler) Speech(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	provider, cred := providerAndCred(c)
-	resp, err := h.relay.TextToSpeech(c.Request.Context(), &req, cred, provider)
+	ch := channelFromContext(c)
+	resp, _, err := h.relay.TextToSpeech(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -400,8 +420,8 @@ func (h *Handler) Transcriptions(c *gin.Context) {
 		req.Model = "whisper-1"
 	}
 
-	provider, cred := providerAndCred(c)
-	resp, err := h.relay.Transcribe(c.Request.Context(), &req, cred, provider)
+	ch := channelFromContext(c)
+	resp, _, err := h.relay.Transcribe(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return

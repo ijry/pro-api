@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ijry/pro-api/internal/adapter"
 	"github.com/ijry/pro-api/internal/channel"
 	"github.com/ijry/pro-api/internal/protocol/openai"
 	"github.com/ijry/pro-api/internal/relay"
@@ -57,25 +56,8 @@ func (h *PlaygroundHandler) Chat(c *gin.Context) {
 		return
 	}
 
-	// 将 channel.Credential 转为 adapter.Credential
-	cred := adapter.Credential{
-		APIKey:  ch.Cred.APIKey,
-		Secret:  ch.Cred.Secret,
-		Region:  ch.Cred.Region,
-		BaseURL: ch.Cred.BaseURL,
-	}
-	if len(ch.Cred.Extra) > 0 {
-		cred.Extra = make(map[string]string, len(ch.Cred.Extra))
-		for k, v := range ch.Cred.Extra {
-			cred.Extra[k] = v
-		}
-	}
-	if cred.BaseURL == "" {
-		cred.BaseURL = ch.BaseURL
-	}
-
-	// 非流式调用
-	resp, err := h.deps.Relay.Chat(c.Request.Context(), req, cred, ch.Provider)
+	// 非流式调用(relay 内部根据 ch.PoolEnabled 自动走号池或直调)
+	resp, _, err := h.deps.Relay.Chat(c.Request.Context(), req, ch)
 	if err != nil {
 		var ae *apierr.Error
 		if errors.As(err, &ae) {

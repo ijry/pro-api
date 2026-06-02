@@ -53,6 +53,16 @@ export const routes: RouteRecordRaw[] = [
         meta: { roles: [3], title: 'nav.channel_mappings', breadcrumb: ['channels', ':id', 'mappings'] },
       },
       {
+        path: 'accounts', name: 'accounts',
+        component: () => import('@/views/accounts/index.vue'),
+        meta: { roles: [3], title: 'nav.accounts', breadcrumb: ['accounts'] },
+      },
+      {
+        path: 'accounts/:id', name: 'account-detail',
+        component: () => import('@/views/accounts/Detail.vue'),
+        meta: { roles: [3], title: 'nav.account_detail', breadcrumb: ['accounts', ':id'] },
+      },
+      {
         path: 'models', name: 'models',
         component: () => import('@/views/models/List.vue'),
         meta: { roles: [3], title: 'nav.models', breadcrumb: ['models'] },

@@ -21,6 +21,18 @@ type Config struct {
 	Database  DatabaseConfig `mapstructure:"database"`
 	Redis     RedisConfig    `mapstructure:"redis"`
 	SMTP      SMTPConfig     `mapstructure:"smtp"`
+	Account   AccountConfig  `mapstructure:"account"`
+}
+
+// AccountConfig 是号池/OAuth/Probe 相关配置(M2b)。
+// 默认值见 system_settings seed (000029_seed_account_settings)。
+type AccountConfig struct {
+	OAuthAnthropicTokenURL string `mapstructure:"oauth_anthropic_token_url"`
+	OAuthAnthropicClientID string `mapstructure:"oauth_anthropic_client_id"`
+	OAuthOpenAITokenURL    string `mapstructure:"oauth_openai_token_url"`
+	OAuthOpenAIClientID    string `mapstructure:"oauth_openai_client_id"`
+	AnthropicProbeBase     string `mapstructure:"anthropic_probe_base"`
+	OpenAIProbeBase        string `mapstructure:"openai_probe_base"`
 }
 
 // ServerConfig 描述 HTTP server 启动参数。

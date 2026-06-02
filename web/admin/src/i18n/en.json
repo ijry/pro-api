@@ -35,6 +35,8 @@
     "channel_new": "New Channel",
     "channel_detail": "Channel Detail",
     "channel_mappings": "Model Mappings",
+    "accounts": "Account Pool",
+    "account_detail": "Account Detail",
     "models": "Model Catalog",
     "pricing": "Pricing & Ratio",
     "tokens": "API Tokens",
@@ -65,5 +67,133 @@
   "notfound": {
     "title": "Page Not Found",
     "desc": "The page you're looking for doesn't exist. Please check the URL."
+  },
+  "accounts": {
+    "title": "Account Pool",
+    "kpi": {
+      "total": "Total",
+      "active": "Active",
+      "cooldown": "Cooldown",
+      "expired": "Expired",
+      "low_5h": "Low 5h Quota",
+      "expiring": "Token Expiring"
+    },
+    "filter": {
+      "channel": "Channel",
+      "provider": "Provider",
+      "tier": "Tier",
+      "status": "Status",
+      "keyword": "Keyword",
+      "all": "All",
+      "search": "Search",
+      "reset": "Reset"
+    },
+    "columns": {
+      "id": "ID",
+      "name": "Name",
+      "channel": "Channel",
+      "share_tag": "Share Tag",
+      "provider": "Provider",
+      "tier": "Tier",
+      "cred_type": "Cred Type",
+      "status": "Status",
+      "quota_5h": "5h Quota",
+      "quota_week": "Week Quota",
+      "consec_failures": "Consec Fail",
+      "last_used_at": "Last Used",
+      "actions": "Actions"
+    },
+    "status": {
+      "0": "Active",
+      "1": "Disabled",
+      "2": "Cooldown",
+      "3": "Expired",
+      "4": "Invalid"
+    },
+    "cred_type": {
+      "oauth": "OAuth",
+      "apikey": "API Key",
+      "token_pasted": "Token Paste"
+    },
+    "actions": {
+      "add": "+ Add Account",
+      "test": "Test",
+      "refresh": "Refresh Token",
+      "clear_cd": "End Cooldown",
+      "edit": "Edit",
+      "disable": "Disable",
+      "enable": "Enable",
+      "delete": "Delete",
+      "peek": "View Full Credentials",
+      "view": "Detail"
+    },
+    "add_dialog": {
+      "title": "Add Codex Account",
+      "tabs": {
+        "oauth": "OAuth Authorize",
+        "token_json": "Token / JSON",
+        "apikey": "API Key",
+        "import": "Bulk Import"
+      },
+      "channel_label": "Channel",
+      "channel_placeholder": "Select a channel",
+      "share_tag_label": "Share Tag (optional)",
+      "share_tag_placeholder": "Tag to share quota across accounts",
+      "name_label": "Account Name (optional)",
+      "name_placeholder": "Parsed from credentials by default",
+      "oauth_disabled": "Direct OAuth authorization will ship in M2",
+      "token_text_label": "Token / JSON",
+      "token_text_placeholder": "Paste access_token, refresh_token or full JSON",
+      "apikey_label": "API Key",
+      "apikey_placeholder": "sk-…",
+      "format_label": "Format",
+      "format_auto": "Auto detect",
+      "import_text_label": "Bulk Content",
+      "import_text_placeholder": "One token / api key / JSON per line",
+      "preview": "Parse & Preview",
+      "submit": "Import",
+      "cancel": "Cancel",
+      "imported": "Imported {n} account(s)",
+      "preview_total": "Parsed {n} account(s)",
+      "preview_errors": "{n} failed to parse"
+    },
+    "detail": {
+      "basic": "Basic Info",
+      "quota_5h": "5h Window",
+      "quota_week": "Week Window",
+      "token_health": "Token Health",
+      "token_expires_at": "access_token Expires",
+      "refresh_token_valid": "refresh_token Status",
+      "refresh_valid_unknown": "Unknown",
+      "refresh_valid_ok": "Valid",
+      "refresh_valid_invalid": "Invalid",
+      "consec_failures": "Consec Failures",
+      "events": "Recent Events",
+      "no_events": "No events",
+      "peek": "View Full Credentials",
+      "peek_confirm": "Type the account name to confirm",
+      "peek_confirm_placeholder": "Enter account name",
+      "peek_warning": "Viewing credentials is recorded in audit log",
+      "peek_credentials": "Credentials",
+      "back": "Back to list"
+    },
+    "confirm": {
+      "delete_title": "Delete account?",
+      "delete_content": "This cannot be undone. Delete {name}?",
+      "disable_title": "Disable account?",
+      "disable_content": "Disabled accounts no longer participate in scheduling.",
+      "clear_cd_title": "End cooldown?",
+      "clear_cd_content": "Force clear cooldown; the account becomes schedulable immediately."
+    },
+    "toast": {
+      "test_ok": "Test passed",
+      "test_fail": "Test failed",
+      "refreshed": "Token refreshed",
+      "enabled": "Account enabled",
+      "disabled": "Account disabled",
+      "cd_cleared": "Cooldown cleared",
+      "deleted": "Account deleted"
+    },
+    "empty": "No accounts yet, add one"
   }
 }

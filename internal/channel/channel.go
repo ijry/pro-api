@@ -3,6 +3,8 @@ package channel
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/ijry/pro-api/internal/adapter"
 )
 
 // Channel 是 channels 表的 ORM 模型与领域对象。
@@ -15,9 +17,12 @@ type Channel struct {
 	Priority    int16           `gorm:"column:priority"               json:"priority"`
 	Weight      int             `gorm:"column:weight"                 json:"weight"`
 	Status      int8            `gorm:"column:status"                 json:"status"`
-	Tags        json.RawMessage `gorm:"column:tags;type:json"         json:"tags"`
-	Extra       json.RawMessage `gorm:"column:extra;type:json"        json:"extra"`
-	CreatedAt   time.Time       `gorm:"column:created_at"             json:"created_at"`
+	Tags            json.RawMessage `gorm:"column:tags;type:json"             json:"tags"`
+	Extra           json.RawMessage `gorm:"column:extra;type:json"            json:"extra"`
+	PoolEnabled     int8            `gorm:"column:pool_enabled"               json:"pool_enabled"`
+	AccountStrategy string          `gorm:"column:account_strategy;size:16"   json:"account_strategy"`
+	AccountTopK     int8            `gorm:"column:account_top_k"              json:"account_top_k"`
+	CreatedAt       time.Time       `gorm:"column:created_at"                 json:"created_at"`
 	UpdatedAt   time.Time       `gorm:"column:updated_at"             json:"updated_at"`
 	DeletedAt   *time.Time      `gorm:"column:deleted_at;index"       json:"deleted_at,omitempty"`
 
@@ -58,6 +63,24 @@ type Credential struct {
 
 // IsZero 判断凭证是否为空。
 func (c Credential) IsZero() bool { return c.APIKey == "" }
+
+// ToAdapter 把 channel.Credential 转换成 adapter.Credential。
+// Extra 做浅拷贝避免被下游意外修改。
+func (c Credential) ToAdapter() adapter.Credential {
+	ac := adapter.Credential{
+		APIKey:  c.APIKey,
+		Secret:  c.Secret,
+		Region:  c.Region,
+		BaseURL: c.BaseURL,
+	}
+	if len(c.Extra) > 0 {
+		ac.Extra = make(map[string]string, len(c.Extra))
+		for k, v := range c.Extra {
+			ac.Extra[k] = v
+		}
+	}
+	return ac
+}
 
 // ModelOverride 是单渠道模型倍率覆盖。nil 字段用模型字典默认值。
 type ModelOverride struct {
