@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/app"
 	"github.com/ijry/pro-api/internal/channel"
+	"github.com/ijry/pro-api/internal/invite"
 	"github.com/ijry/pro-api/internal/notice"
 	"github.com/ijry/pro-api/internal/relay"
 )
@@ -45,4 +46,18 @@ func WirePlayground(a *app.Application) (*PlaygroundHandler, error) {
 		Setting: a.Setting,
 		Log:     a.Log,
 	}), nil
+}
+
+// WireInvite constructs an InviteHandler for the user API group.
+//
+// wallet=nil is safe: HTTP handlers only call read methods (GetSummary,
+// ListInvitees, ListRecords). OnOrderPaid — the only method that uses the
+// wallet — is called exclusively from the payment service which wires its
+// own invite.Service instance with a real wallet.
+func WireInvite(a *app.Application, userOf func(*gin.Context) int64) (*InviteHandler, error) {
+	if a == nil {
+		return nil, errors.New("user: app is nil")
+	}
+	svc := invite.Wire(a, nil)
+	return NewInviteHandler(svc, userOf), nil
 }
