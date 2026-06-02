@@ -22,6 +22,7 @@ type Channel struct {
 	PoolEnabled     int8            `gorm:"column:pool_enabled"               json:"pool_enabled"`
 	AccountStrategy string          `gorm:"column:account_strategy;size:16"   json:"account_strategy"`
 	AccountTopK     int8            `gorm:"column:account_top_k"              json:"account_top_k"`
+	GroupID         int64           `gorm:"column:group_id;default:0"         json:"group_id"`
 	CreatedAt       time.Time       `gorm:"column:created_at"                 json:"created_at"`
 	UpdatedAt   time.Time       `gorm:"column:updated_at"             json:"updated_at"`
 	DeletedAt   *time.Time      `gorm:"column:deleted_at;index"       json:"deleted_at,omitempty"`
