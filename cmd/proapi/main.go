@@ -30,6 +30,7 @@ import (
 	monline "github.com/ijry/pro-api/internal/payment/online"
 	"github.com/ijry/pro-api/internal/payment/redeem"
 	"github.com/ijry/pro-api/internal/payment"
+	"github.com/ijry/pro-api/internal/pricing"
 	"github.com/ijry/pro-api/internal/ratelimit"
 	"github.com/ijry/pro-api/internal/relay"
 	"github.com/ijry/pro-api/internal/server"
@@ -111,6 +112,11 @@ func run() error {
 	// ── 计费 ──────────────────────────────────────────────────────
 	if err := billing.WireBilling(application); err != nil {
 		return fmt.Errorf("billing wire: %w", err)
+	}
+
+	// ── 定价 ──────────────────────────────────────────────────────
+	if err := pricing.WirePricing(ctx, application); err != nil {
+		log.Warn("pricing wire failed, billing estimates will be zero", zap.Error(err))
 	}
 
 	// ── 公告 ──────────────────────────────────────────────────────
