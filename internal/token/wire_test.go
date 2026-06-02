@@ -25,6 +25,7 @@ func TestWireToken_AssignsStoreAndCloser(t *testing.T) {
 		CREATE TABLE api_tokens (
 			id INTEGER PRIMARY KEY,
 			user_id INTEGER NOT NULL,
+			group_id INTEGER NOT NULL DEFAULT 0,
 			name TEXT NOT NULL DEFAULT '',
 			key_hash TEXT NOT NULL UNIQUE,
 			key_prefix TEXT NOT NULL,
