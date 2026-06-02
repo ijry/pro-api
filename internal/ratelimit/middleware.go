@@ -20,9 +20,10 @@ const (
 	CtxKeyClientModel = "proapi:client_model"
 	// CtxKeyGroupID 与 token.CtxKeyGroupID 同值。
 	CtxKeyGroupID = token.CtxKeyGroupID
-	// CtxKeyGroupRatio 由 group lookup 填(可选)。
-	CtxKeyGroupRatio = "proapi:group_ratio"
 )
+
+// CtxKeyGroupRatio is imported from middleware package to avoid circular imports.
+var CtxKeyGroupRatio = middleware.CtxKeyGroupRatio
 
 // contextPlanResolver 是从 gin.Context 派生 PlanInput 的钩子。
 // 默认实现走 token / middleware 的 ctx keys;测试可替换。
