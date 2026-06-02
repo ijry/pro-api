@@ -22,6 +22,7 @@ const menuOptions: MenuOption[] = [
   { label: () => h(RouterLink, { to: '/users' }, { default: () => t('nav.users') }), key: 'users' },
   { label: () => h(RouterLink, { to: '/groups' }, { default: () => t('nav.groups') }), key: 'groups' },
   { label: () => h(RouterLink, { to: '/channels' }, { default: () => t('nav.channels') }), key: 'channels' },
+  { label: () => h(RouterLink, { to: '/accounts' }, { default: () => t('nav.accounts') }), key: 'accounts' },
   { label: () => h(RouterLink, { to: '/models' }, { default: () => t('nav.models') }), key: 'models' },
   { label: () => h(RouterLink, { to: '/pricing' }, { default: () => t('nav.pricing') }), key: 'pricing' },
   { label: () => h(RouterLink, { to: '/tokens' }, { default: () => t('nav.tokens') }), key: 'tokens' },
