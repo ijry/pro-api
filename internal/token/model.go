@@ -10,6 +10,7 @@ import (
 type Token struct {
 	ID            int64           `gorm:"primaryKey;column:id"`
 	UserID        int64           `gorm:"column:user_id;index"`
+	GroupID       int64           `gorm:"column:group_id;default:0"`
 	Name          string          `gorm:"column:name;size:64"`
 	KeyHash       string          `gorm:"column:key_hash;size:64;uniqueIndex"`
 	KeyPrefix     string          `gorm:"column:key_prefix;size:32"`
@@ -46,6 +47,7 @@ const (
 type View struct {
 	ID            int64
 	UserID        int64
+	GroupID       int64
 	Name          string
 	KeyPrefix     string
 	QuotaLimit    *int64
@@ -66,6 +68,7 @@ func (t *Token) ToView() *View {
 	v := &View{
 		ID:         t.ID,
 		UserID:     t.UserID,
+		GroupID:    t.GroupID,
 		Name:       t.Name,
 		KeyPrefix:  t.KeyPrefix,
 		QuotaLimit: t.QuotaLimit,
