@@ -46,6 +46,9 @@ func (s *channelSelector) Select(_ context.Context, model string, hint SelectHin
 		if !tagsMatch(c.Tags, hint.Tags) {
 			continue
 		}
+		if hint.GroupID > 0 && c.GroupID != 0 && c.GroupID != hint.GroupID {
+			continue
+		}
 		filtered = append(filtered, c)
 	}
 	if len(filtered) == 0 {
