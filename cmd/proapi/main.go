@@ -22,6 +22,7 @@ import (
 	authhwire "github.com/ijry/pro-api/internal/auth/wire"
 	"github.com/ijry/pro-api/internal/billing"
 	"github.com/ijry/pro-api/internal/channel"
+	"github.com/ijry/pro-api/internal/group"
 	ilog "github.com/ijry/pro-api/internal/log"
 	"github.com/ijry/pro-api/internal/notice"
 	"github.com/ijry/pro-api/internal/observability/logger"
@@ -242,11 +243,27 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	// 在线支付路由(M2a B4)
 	wirePaymentRoutes(eng, a, log)
 
-	// 代理路由(/v1/*) — TokenAuth 保护(M1-03/04)
+	// 代理路由(/v1/*) — TokenAuth 保护 + GroupRatio + ratelimit
+	var groupRatioLookup middleware.GroupRatioLookup
+	if gs, ok := a.GroupSvc.(group.Service); ok {
+		groupRatioLookup = func(ctx context.Context, id int64) (float64, error) {
+			return gs.RatioFor(ctx, id)
+		}
+	}
 	v1 := eng.Group("/v1", middleware.ErrorResponse("openai"))
-	// TokenAuth 由 M1-03 提供;M1 先留 placeholder,实际路由由 relay handler 挂
+	v1.Use(middleware.GroupRatioMiddleware(groupRatioLookup))
+	if limiter, ok := a.Limiter.(ratelimit.Limiter); ok {
+		if planner := ratelimit.PlannerFrom(a); planner != nil {
+			v1.Use(ratelimit.Middleware(limiter, planner, a.Setting, log))
+		}
+	}
 	if relaySvc, ok := a.Relay.(*relay.Service); ok {
-		relayH := relayhdr.New(relayhdr.Deps{Relay: relaySvc})
+		relayH := relayhdr.New(relayhdr.Deps{
+			Relay:   relaySvc,
+			Pricing: pricing.PricingFrom(a),
+			Biller:  billerFrom(a),
+			LogSvc:  ilog.StoreFrom(a),
+		})
 		relayH.Register(v1)
 		// M2a: Anthropic 入口 /v1/messages
 		relayH.RegisterAnthropicRoutes(v1)
@@ -388,6 +405,12 @@ func wirePaymentRoutes(eng *gin.Engine, a *app.Application, log *zap.Logger) {
 	// Webhook:公开,无需认证
 	payWebhookG := eng.Group("/api/pay", middleware.ErrorResponse("json"))
 	payWebhookG.POST("/webhook/:provider", payH.Webhook)
+}
+
+// billerFrom extracts billing.Biller from app.Biller.
+func billerFrom(a *app.Application) billing.Biller {
+	b, _ := a.Biller.(billing.Biller)
+	return b
 }
 
 // wireInviteRoutes mounts GET /api/user/invites/{me,invitees,records} — all require SessionAuth.
