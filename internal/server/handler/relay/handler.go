@@ -4,30 +4,45 @@
 package relay
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/adapter"
+	"github.com/ijry/pro-api/internal/billing"
 	"github.com/ijry/pro-api/internal/channel"
+	ilog "github.com/ijry/pro-api/internal/log"
+	"github.com/ijry/pro-api/internal/pricing"
 	"github.com/ijry/pro-api/internal/protocol/anthropic"
 	"github.com/ijry/pro-api/internal/protocol/gemini"
 	"github.com/ijry/pro-api/internal/protocol/ir"
 	"github.com/ijry/pro-api/internal/protocol/openai"
 	relaySvc "github.com/ijry/pro-api/internal/relay"
 	"github.com/ijry/pro-api/internal/server/middleware"
+	"github.com/ijry/pro-api/internal/token"
 	"github.com/ijry/pro-api/pkg/apierr"
 )
 
+// Deps holds all dependencies for the relay Handler.
+// Pricing, Biller, and LogSvc are optional; nil = skip that feature.
+type Deps struct {
+	Relay   *relaySvc.Service
+	Pricing pricing.Pricing  // optional; nil = skip billing
+	Biller  billing.Biller   // optional; nil = skip billing
+	LogSvc  ilog.Store       // optional; nil = skip logging
+}
+
 // Handler handles relay (proxy) endpoints.
 type Handler struct {
-	relay *relaySvc.Service
+	deps Deps
 }
 
 // New constructs a relay Handler.
-func New(r *relaySvc.Service) *Handler {
-	return &Handler{relay: r}
+func New(deps Deps) *Handler {
+	return &Handler{deps: deps}
 }
 
 // Register attaches OpenAI-format routes to the given router group.
@@ -109,17 +124,118 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
-	resp, _, err := h.relay.Chat(c.Request.Context(), req, ch)
+	ctx := c.Request.Context()
+	userID := token.UserIDFromContext(ctx)
+	groupID := token.GroupIDFromContext(ctx)
+	var tokenID int64
+	if tv, ok := token.FromContext(ctx); ok {
+		tokenID = tv.ID
+	}
+
+	// Pre-deduct
+	var reservationID string
+	if h.deps.Pricing != nil && h.deps.Biller != nil {
+		var br float64
+		if v, ok := c.Get(middleware.CtxKeyBillingGroupRatio); ok {
+			if f, ok := v.(float64); ok {
+				br = f
+			}
+		}
+		estCost := h.deps.Pricing.EstimateMax(ctx, req.Model, pricing.EstimateInput{
+			InputTokens:       countInputTokens(req),
+			MaxOutTokens:      h.deps.Pricing.DefaultMaxOut(ctx, req.Model),
+			Stream:            false,
+			BillingGroupRatio: br,
+		})
+		if estCost > 0 {
+			var err2 error
+			reservationID, err2 = h.deps.Biller.Reserve(ctx, userID, tokenID, estCost)
+			if err2 != nil {
+				middleware.SetErr(c, apierr.New(apierr.CodeBalanceInsufficient, "insufficient quota"))
+				return
+			}
+		}
+	}
+
+	start := time.Now()
+	resp, _, err := h.deps.Relay.Chat(ctx, req, ch)
+	latencyMS := int(time.Since(start).Milliseconds())
+
 	if err != nil {
+		if reservationID != "" && h.deps.Biller != nil {
+			_ = h.deps.Biller.Refund(ctx, reservationID)
+		}
+		h.writeLog(ctx, c, req.Model, groupID, tokenID, latencyMS, false,
+			0, 0, 0, 0, pricing.Ratios{}, http.StatusBadGateway, err.Error())
 		middleware.SetErr(c, mapErr(err))
 		return
 	}
+
+	var actualCost int64
+	var ratios pricing.Ratios
+	if h.deps.Pricing != nil && resp.Usage.PromptTokens+resp.Usage.CompletionTokens > 0 {
+		result := h.deps.Pricing.Compute(ctx, pricing.ComputeInput{
+			Model:        req.Model,
+			GroupID:      groupID,
+			InputTokens:  resp.Usage.PromptTokens,
+			OutputTokens: resp.Usage.CompletionTokens,
+			CachedTokens: resp.Usage.CachedTokens,
+		})
+		actualCost = result.Quota
+		ratios = result.Ratios
+		if reservationID != "" && h.deps.Biller != nil {
+			_ = h.deps.Biller.Commit(ctx, reservationID, actualCost)
+		}
+	} else if reservationID != "" && h.deps.Biller != nil {
+		_ = h.deps.Biller.Refund(ctx, reservationID)
+	}
+
+	h.writeLog(ctx, c, req.Model, groupID, tokenID, latencyMS, false,
+		resp.Usage.PromptTokens, resp.Usage.CompletionTokens, resp.Usage.CachedTokens,
+		actualCost, ratios, http.StatusOK, "")
 	c.JSON(http.StatusOK, openai.EncodeChat(resp))
 }
 
 func (h *Handler) streamChat(c *gin.Context, req *ir.ChatRequest, ch *channel.Channel) {
-	reader, _, err := h.relay.ChatStream(c.Request.Context(), req, ch)
+	ctx := c.Request.Context()
+	userID := token.UserIDFromContext(ctx)
+	groupID := token.GroupIDFromContext(ctx)
+	var tokenID int64
+	if tv, ok := token.FromContext(ctx); ok {
+		tokenID = tv.ID
+	}
+
+	// Pre-deduct
+	var reservationID string
+	if h.deps.Pricing != nil && h.deps.Biller != nil {
+		var br float64
+		if v, ok := c.Get(middleware.CtxKeyBillingGroupRatio); ok {
+			if f, ok := v.(float64); ok {
+				br = f
+			}
+		}
+		estCost := h.deps.Pricing.EstimateMax(ctx, req.Model, pricing.EstimateInput{
+			InputTokens:       countInputTokens(req),
+			MaxOutTokens:      h.deps.Pricing.DefaultMaxOut(ctx, req.Model),
+			Stream:            true,
+			BillingGroupRatio: br,
+		})
+		if estCost > 0 {
+			var err2 error
+			reservationID, err2 = h.deps.Biller.Reserve(ctx, userID, tokenID, estCost)
+			if err2 != nil {
+				middleware.SetErr(c, apierr.New(apierr.CodeBalanceInsufficient, "insufficient quota"))
+				return
+			}
+		}
+	}
+
+	start := time.Now()
+	reader, _, err := h.deps.Relay.ChatStream(ctx, req, ch)
 	if err != nil {
+		if reservationID != "" && h.deps.Biller != nil {
+			_ = h.deps.Biller.Refund(ctx, reservationID)
+		}
 		middleware.SetErr(c, mapErr(err))
 		return
 	}
@@ -136,23 +252,62 @@ func (h *Handler) streamChat(c *gin.Context, req *ir.ChatRequest, ch *channel.Ch
 	}
 	sw := openai.NewStreamWriter(c.Writer, flushFn)
 
+	var finalUsage *ir.Usage
 	for {
-		chunk, err := reader.Next(c.Request.Context())
+		chunk, err := reader.Next(ctx)
 		if err != nil {
 			if err == io.EOF {
 				_ = sw.WriteDone()
-				return
+				break
 			}
 			_, _ = fmt.Fprintf(c.Writer, "data: {\"error\":\"stream error: %s\"}\n\n", err.Error())
 			if hasFlusher {
 				flusher.Flush()
 			}
+			if reservationID != "" && h.deps.Biller != nil {
+				_ = h.deps.Biller.Refund(ctx, reservationID)
+			}
 			return
+		}
+		// Capture usage from final chunk (non-nil only on final chunk)
+		if chunk.Usage != nil {
+			finalUsage = chunk.Usage
 		}
 		if err := sw.WriteChunk(chunk); err != nil {
 			return
 		}
 	}
+
+	latencyMS := int(time.Since(start).Milliseconds())
+
+	// Commit or refund after streaming completes
+	var actualCost int64
+	var ratios pricing.Ratios
+	if finalUsage != nil && h.deps.Pricing != nil && finalUsage.PromptTokens+finalUsage.CompletionTokens > 0 {
+		result := h.deps.Pricing.Compute(ctx, pricing.ComputeInput{
+			Model:        req.Model,
+			GroupID:      groupID,
+			InputTokens:  finalUsage.PromptTokens,
+			OutputTokens: finalUsage.CompletionTokens,
+			CachedTokens: finalUsage.CachedTokens,
+		})
+		actualCost = result.Quota
+		ratios = result.Ratios
+		if reservationID != "" && h.deps.Biller != nil {
+			_ = h.deps.Biller.Commit(ctx, reservationID, actualCost)
+		}
+	} else if reservationID != "" && h.deps.Biller != nil {
+		_ = h.deps.Biller.Refund(ctx, reservationID)
+	}
+
+	var inTok, outTok, cachedTok int
+	if finalUsage != nil {
+		inTok = finalUsage.PromptTokens
+		outTok = finalUsage.CompletionTokens
+		cachedTok = finalUsage.CachedTokens
+	}
+	h.writeLog(ctx, c, req.Model, groupID, tokenID, latencyMS, true,
+		inTok, outTok, cachedTok, actualCost, ratios, http.StatusOK, "")
 }
 
 // Completions handles POST /v1/completions (legacy)
@@ -165,7 +320,7 @@ func (h *Handler) Completions(c *gin.Context) {
 	chatReq := completionReq.ToChat()
 	ch := channelFromContext(c)
 
-	resp, _, err := h.relay.Chat(c.Request.Context(), chatReq, ch)
+	resp, _, err := h.deps.Relay.Chat(c.Request.Context(), chatReq, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -182,7 +337,7 @@ func (h *Handler) Embeddings(c *gin.Context) {
 	}
 	ch := channelFromContext(c)
 
-	resp, _, err := h.relay.Embed(c.Request.Context(), req, ch)
+	resp, _, err := h.deps.Relay.Embed(c.Request.Context(), req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -207,7 +362,7 @@ func (h *Handler) AnthropicMessages(c *gin.Context) {
 	ch := channelFromContext(c)
 
 	if req.Stream {
-		reader, _, relayErr := h.relay.ChatStream(c.Request.Context(), req, ch)
+		reader, _, relayErr := h.deps.Relay.ChatStream(c.Request.Context(), req, ch)
 		if relayErr != nil {
 			middleware.SetErr(c, mapErr(relayErr))
 			return
@@ -245,7 +400,7 @@ func (h *Handler) AnthropicMessages(c *gin.Context) {
 		return
 	}
 
-	irResp, _, relayErr := h.relay.Chat(c.Request.Context(), req, ch)
+	irResp, _, relayErr := h.deps.Relay.Chat(c.Request.Context(), req, ch)
 	if relayErr != nil {
 		middleware.SetErr(c, mapErr(relayErr))
 		return
@@ -271,7 +426,7 @@ func (h *Handler) GeminiGenerateContent(c *gin.Context) {
 
 	ch := channelFromContext(c)
 
-	irResp, _, relayErr := h.relay.Chat(c.Request.Context(), req, ch)
+	irResp, _, relayErr := h.deps.Relay.Chat(c.Request.Context(), req, ch)
 	if relayErr != nil {
 		middleware.SetErr(c, mapErr(relayErr))
 		return
@@ -298,7 +453,7 @@ func (h *Handler) GeminiStreamGenerateContent(c *gin.Context) {
 
 	ch := channelFromContext(c)
 
-	reader, _, relayErr := h.relay.ChatStream(c.Request.Context(), req, ch)
+	reader, _, relayErr := h.deps.Relay.ChatStream(c.Request.Context(), req, ch)
 	if relayErr != nil {
 		middleware.SetErr(c, mapErr(relayErr))
 		return
@@ -348,7 +503,7 @@ func (h *Handler) Images(c *gin.Context) {
 		return
 	}
 	ch := channelFromContext(c)
-	resp, _, err := h.relay.GenerateImage(c.Request.Context(), &req, ch)
+	resp, _, err := h.deps.Relay.GenerateImage(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -381,7 +536,7 @@ func (h *Handler) Speech(c *gin.Context) {
 		return
 	}
 	ch := channelFromContext(c)
-	resp, _, err := h.relay.TextToSpeech(c.Request.Context(), &req, ch)
+	resp, _, err := h.deps.Relay.TextToSpeech(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -421,7 +576,7 @@ func (h *Handler) Transcriptions(c *gin.Context) {
 	}
 
 	ch := channelFromContext(c)
-	resp, _, err := h.relay.Transcribe(c.Request.Context(), &req, ch)
+	resp, _, err := h.deps.Relay.Transcribe(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
 		return
@@ -432,4 +587,55 @@ func (h *Handler) Transcriptions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"text": resp.Text})
+}
+
+// countInputTokens approximates the number of input tokens in a chat request.
+func countInputTokens(req *ir.ChatRequest) int {
+	n := 0
+	for _, m := range req.Messages {
+		for _, p := range m.Content {
+			if p.Text != "" {
+				n += len(p.Text) / 4
+			}
+		}
+	}
+	if n < 10 {
+		n = 10
+	}
+	return n
+}
+
+// writeLog writes an API request log entry via LogSvc (no-op if LogSvc is nil).
+func (h *Handler) writeLog(ctx context.Context, c *gin.Context, model string,
+	groupID, tokenID int64, latencyMS int, stream bool,
+	in, out, cached int, cost int64, ratios pricing.Ratios,
+	statusCode int, errMsg string,
+) {
+	if h.deps.LogSvc == nil {
+		return
+	}
+	userID := token.UserIDFromContext(ctx)
+	gid := groupID
+	e := ilog.Event{
+		UserID:             userID,
+		TokenID:            tokenID,
+		GroupID:            &gid,
+		ClientModel:        model,
+		Protocol:           "openai",
+		Endpoint:           c.FullPath(),
+		IP:                 c.ClientIP(),
+		UserAgent:          c.Request.UserAgent(),
+		StatusCode:         statusCode,
+		LatencyMS:          latencyMS,
+		Stream:             stream,
+		InputTokens:        in,
+		OutputTokens:       out,
+		CachedTokens:       cached,
+		TotalQuota:         cost,
+		BillingInputRatio:  ratios.Input,
+		BillingOutputRatio: ratios.Output,
+		BillingGroupRatio:  ratios.Group,
+		ErrorMsg:           errMsg,
+	}
+	h.deps.LogSvc.Write(ctx, e)
 }

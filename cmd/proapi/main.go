@@ -246,7 +246,7 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	v1 := eng.Group("/v1", middleware.ErrorResponse("openai"))
 	// TokenAuth 由 M1-03 提供;M1 先留 placeholder,实际路由由 relay handler 挂
 	if relaySvc, ok := a.Relay.(*relay.Service); ok {
-		relayH := relayhdr.New(relaySvc)
+		relayH := relayhdr.New(relayhdr.Deps{Relay: relaySvc})
 		relayH.Register(v1)
 		// M2a: Anthropic 入口 /v1/messages
 		relayH.RegisterAnthropicRoutes(v1)
