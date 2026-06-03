@@ -27,12 +27,13 @@ import (
 )
 
 // Deps holds all dependencies for the relay Handler.
-// Pricing, Biller, and LogSvc are optional; nil = skip that feature.
+// Pricing, Biller, LogSvc, and Channel are optional; nil = skip that feature.
 type Deps struct {
 	Relay   *relaySvc.Service
 	Pricing pricing.Pricing  // optional; nil = skip billing
 	Biller  billing.Biller   // optional; nil = skip billing
 	LogSvc  ilog.Store       // optional; nil = skip logging
+	Channel channel.Selector // optional; nil = fall back to Bearer token direct mode
 }
 
 // Handler handles relay (proxy) endpoints.
@@ -64,6 +65,24 @@ func (h *Handler) RegisterAnthropicRoutes(g *gin.RouterGroup) {
 func (h *Handler) RegisterGeminiRoutes(g *gin.RouterGroup) {
 	g.POST("/models/:model/generateContent", h.GeminiGenerateContent)
 	g.POST("/models/:model/streamGenerateContent", h.GeminiStreamGenerateContent)
+}
+
+// resolveChannel returns the channel to use for this request.
+// Priority: (1) channel selected by Selector (using model + groupID hint),
+// (2) "relay:channel" context key set by an upstream middleware,
+// (3) fallback to Bearer token direct mode.
+func (h *Handler) resolveChannel(c *gin.Context, model string) *channel.Channel {
+	if h.deps.Channel != nil {
+		groupID := token.GroupIDFromContext(c.Request.Context())
+		ch, err := h.deps.Channel.Select(c.Request.Context(), model, channel.SelectHint{
+			GroupID: groupID,
+		})
+		if err == nil && ch != nil {
+			return ch
+		}
+		// On selector error, fall through to context/bearer fallback
+	}
+	return channelFromContext(c)
 }
 
 // channelFromContext 从 gin context 中提取选定的 *channel.Channel。
@@ -112,12 +131,16 @@ func channelFromContext(c *gin.Context) *channel.Channel {
 
 // ChatCompletions handles POST /v1/chat/completions
 func (h *Handler) ChatCompletions(c *gin.Context) {
+	if h.deps.Relay == nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInternal, "relay not configured"))
+		return
+	}
 	req, err := openai.DecodeChat(c.Request.Body, openai.DecodeOptions{AllowUnknownFields: true})
 	if err != nil {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	ch := channelFromContext(c)
+	ch := h.resolveChannel(c, req.Model)
 
 	if req.Stream {
 		h.streamChat(c, req, ch)

@@ -91,6 +91,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 	}
 	in := tokensvc.CreateInput{
 		UserID:        uid,
+		GroupID:       req.GroupID,
 		Name:          req.Name,
 		QuotaLimit:    req.QuotaLimit,
 		AllowedModels: req.AllowedModels,

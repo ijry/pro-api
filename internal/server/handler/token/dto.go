@@ -61,6 +61,7 @@ type ListResponse struct {
 // CreateRequest 是 POST /api/{user,admin}/tokens 的请求体。
 type CreateRequest struct {
 	Name          string     `json:"name"`
+	GroupID       int64      `json:"group_id"`       // 0 = inherit user's group
 	QuotaLimit    *int64     `json:"quota_limit"`
 	AllowedModels []string   `json:"allowed_models"`
 	AllowedIPs    []string   `json:"allowed_ips"`

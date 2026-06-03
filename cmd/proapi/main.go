@@ -258,11 +258,17 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 		}
 	}
 	if relaySvc, ok := a.Relay.(*relay.Service); ok {
+		chFacade := channel.FacadeFrom(a)
+		var chSelector channel.Selector
+		if chFacade != nil {
+			chSelector = chFacade.Selector
+		}
 		relayH := relayhdr.New(relayhdr.Deps{
 			Relay:   relaySvc,
 			Pricing: pricing.PricingFrom(a),
 			Biller:  billerFrom(a),
 			LogSvc:  ilog.StoreFrom(a),
+			Channel: chSelector,
 		})
 		relayH.Register(v1)
 		// M2a: Anthropic 入口 /v1/messages

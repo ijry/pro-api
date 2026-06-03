@@ -22,6 +22,7 @@ type idGenerator interface {
 // CreateInput 是 Create 调用的参数。
 type CreateInput struct {
 	UserID        int64
+	GroupID       int64 // 0 = inherit user's group
 	Name          string
 	QuotaLimit    *int64
 	AllowedModels []string
@@ -162,6 +163,7 @@ func (r *repo) Create(ctx context.Context, in CreateInput) (string, *View, error
 	row := Token{
 		ID:            r.idgen.Generate(),
 		UserID:        in.UserID,
+		GroupID:       in.GroupID,
 		Name:          in.Name,
 		KeyHash:       hash,
 		KeyPrefix:     prefixForDisplay(plaintext, r.prefixShowLen),
