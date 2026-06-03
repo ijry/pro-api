@@ -5,6 +5,7 @@ export interface Channel {
   base_url: string
   priority: number; weight: number
   status: 0 | 1 | 2
+  group_id?: number
   tags: string[]
   extra: Record<string, unknown>
   credentials_masked?: { api_key?: string }
@@ -15,7 +16,7 @@ export interface Channel {
 
 export interface ChannelListParams {
   page?: number; size?: number; keyword?: string
-  provider?: string; status?: 0 | 1 | 2; tags?: string[]
+  provider?: string; status?: 0 | 1 | 2; tags?: string[]; group_id?: number
 }
 
 export interface ChannelInput {
@@ -23,6 +24,7 @@ export interface ChannelInput {
   credentials: { api_key?: string; secret?: string; region?: string; extra?: Record<string, string> }
   priority: number; weight: number
   status: 0 | 1
+  group_id?: number
   tags: string[]; extra: Record<string, unknown>
 }
 

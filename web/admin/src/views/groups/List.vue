@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { h, ref, onMounted } from 'vue'
-import { NDataTable, NButton, NTag, NSpace, useMessage, type DataTableColumns } from 'naive-ui'
+import { NDataTable, NButton, NTag, NSpace, NSpin, NCheckbox, NCheckboxGroup, useMessage, type DataTableColumns } from 'naive-ui'
 import ListPage from '@/components/ListPage.vue'
 import FormDrawer from '@/components/FormDrawer.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { NFormItem, NInput, NInputNumber } from 'naive-ui'
 import { groupApi, type Group, type GroupInput } from '@/api/group'
+import { channelApi, type Channel } from '@/api/channel'
 
 const message = useMessage()
 const data = ref<Group[]>([])
@@ -17,6 +18,11 @@ const editingId = ref(0)
 const form = ref<GroupInput>({ name: '', display_name: '', ratio: 1, priority: 0 })
 const confirmState = ref({ show: false, type: '', id: 0, title: '', content: '' })
 
+const allChannels = ref<Channel[]>([])
+const channelLoading = ref(false)
+const selectedChannelIds = ref<number[]>([])
+const originalChannelIds = ref<number[]>([])
+
 async function load() {
   loading.value = true
   try {
@@ -25,11 +31,25 @@ async function load() {
   } catch (_) { /* handled */ } finally { loading.value = false }
 }
 
+async function loadChannels(groupId: number) {
+  channelLoading.value = true
+  try {
+    const res = await channelApi.list({ size: 100 })
+    allChannels.value = res.items
+    const ids = res.items.filter(c => c.group_id === groupId).map(c => c.id)
+    selectedChannelIds.value = [...ids]
+    originalChannelIds.value = [...ids]
+  } catch (_) { /* handled */ } finally { channelLoading.value = false }
+}
+
 onMounted(load)
 
 function openCreate() {
   drawerMode.value = 'create'
   form.value = { name: '', display_name: '', ratio: 1, priority: 0 }
+  selectedChannelIds.value = []
+  originalChannelIds.value = []
+  allChannels.value = []
   drawerShow.value = true
 }
 
@@ -37,15 +57,30 @@ function openEdit(row: Group) {
   drawerMode.value = 'edit'
   editingId.value = row.id
   form.value = { name: row.name, display_name: row.display_name, ratio: row.ratio, priority: row.priority }
+  selectedChannelIds.value = []
+  originalChannelIds.value = []
   drawerShow.value = true
+  loadChannels(row.id)
 }
 
 async function handleSubmit() {
   drawerLoading.value = true
   try {
-    if (drawerMode.value === 'create') { await groupApi.create(form.value); message.success('分组已创建') }
-    else { await groupApi.patch(editingId.value, form.value); message.success('分组已更新') }
-    drawerShow.value = false; load()
+    if (drawerMode.value === 'create') {
+      await groupApi.create(form.value)
+      message.success('分组已创建')
+    } else {
+      await groupApi.patch(editingId.value, form.value)
+      const added = selectedChannelIds.value.filter(id => !originalChannelIds.value.includes(id))
+      const removed = originalChannelIds.value.filter(id => !selectedChannelIds.value.includes(id))
+      await Promise.all([
+        ...added.map(id => channelApi.patch(id, { group_id: editingId.value })),
+        ...removed.map(id => channelApi.patch(id, { group_id: 0 })),
+      ])
+      message.success('分组已更新')
+    }
+    drawerShow.value = false
+    load()
   } catch (_) { /* handled */ } finally { drawerLoading.value = false }
 }
 
@@ -89,6 +124,28 @@ const columns: DataTableColumns<Group> = [
     <NFormItem label="显示名"><NInput v-model:value="form.display_name" /></NFormItem>
     <NFormItem label="倍率"><NInputNumber v-model:value="form.ratio" :min="0" :step="0.01" style="width:100%" /></NFormItem>
     <NFormItem label="优先级"><NInputNumber v-model:value="form.priority" style="width:100%" /></NFormItem>
+
+    <NFormItem v-if="drawerMode === 'edit'" label="绑定渠道">
+      <NSpin v-if="channelLoading" size="small" />
+      <NCheckboxGroup v-else v-model:value="selectedChannelIds">
+        <NSpace vertical :size="8">
+          <NCheckbox
+            v-for="ch in allChannels"
+            :key="ch.id"
+            :value="ch.id"
+          >
+            <NSpace align="center" :size="6">
+              <span>{{ ch.name }}</span>
+              <NTag size="small" :bordered="false">{{ ch.provider }}</NTag>
+              <span
+                v-if="ch.group_id && ch.group_id !== editingId"
+                style="font-size:11px;color:var(--n-color-warning)"
+              >已绑定其他分组</span>
+            </NSpace>
+          </NCheckbox>
+        </NSpace>
+      </NCheckboxGroup>
+    </NFormItem>
   </FormDrawer>
 
   <ConfirmDialog v-model:show="confirmState.show" :title="confirmState.title" :content="confirmState.content" :type="confirmState.type==='delete'?'error':'warning'" @confirm="handleConfirm" />

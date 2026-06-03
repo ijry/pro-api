@@ -86,7 +86,16 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/channels\/\d+\/test$/,        handler: () => ({ ok: true, latency_ms: 142 }) },
   { pattern: /^\/api\/admin\/channels\/\d+\/health$/,      handler: () => ({ state: 'closed', consec_fail: 0, opened_at: null }) },
   { pattern: /^\/api\/admin\/channels\/\d+\/?$/,           handler: (m, u) => m === 'GET' ? channelById(u) : ok() },
-  { pattern: /^\/api\/admin\/channels$/,                   handler: (m, _u, p) => m === 'GET' ? paginate(channels as any[], p as PageParams) : ok() },
+  { pattern: /^\/api\/admin\/channels$/,                   handler: (m, _u, p) => {
+    if (m !== 'GET') return ok()
+    const pp = p as PageParams & { group_id?: string | number }
+    let list = channels as any[]
+    if (pp?.group_id !== undefined && pp.group_id !== '') {
+      const gid = Number(pp.group_id)
+      list = list.filter(c => c.group_id === gid)
+    }
+    return paginate(list, pp)
+  }},
 
   // API Keys (admin)
   { pattern: /^\/api\/admin\/apikeys\/\d+$/,               handler: (m, _u, _p) => m === 'GET' ? clone((adminTokens as any[])[0]) : ok() },
