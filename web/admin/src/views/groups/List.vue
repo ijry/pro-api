@@ -22,12 +22,21 @@ const allChannels = ref<Channel[]>([])
 const channelLoading = ref(false)
 const selectedChannelIds = ref<number[]>([])
 const originalChannelIds = ref<number[]>([])
+const channelCountByGroup = ref<Record<number, number>>({})
 
 async function load() {
   loading.value = true
   try {
-    const res = await groupApi.list()
-    data.value = res.items
+    const [groupRes, chanRes] = await Promise.all([
+      groupApi.list(),
+      channelApi.list({ size: 100 }),
+    ])
+    data.value = groupRes.items
+    const counts: Record<number, number> = {}
+    for (const ch of chanRes.items) {
+      if (ch.group_id) counts[ch.group_id] = (counts[ch.group_id] ?? 0) + 1
+    }
+    channelCountByGroup.value = counts
   } catch (_) { /* handled */ } finally { loading.value = false }
 }
 
@@ -100,6 +109,7 @@ const columns: DataTableColumns<Group> = [
   { title: '显示名', key: 'display_name', width: 140 },
   { title: '倍率', key: 'ratio', width: 80 },
   { title: '优先级', key: 'priority', width: 80 },
+  { title: '渠道数', key: 'channels', width: 70, render: (row) => channelCountByGroup.value[row.id] ?? 0 },
   { title: '状态', key: 'status', width: 90, render: (row) => h(NTag, { type: row.status===0?'success':'error', size: 'small' }, { default: () => row.status===0?'正常':'禁用' }) },
   { title: '操作', key: 'actions', width: 200, render: (row) => h(NSpace, { size: 'small' }, { default: () => [
     h(NButton, { size: 'small', onClick: () => openEdit(row) }, { default: () => '编辑' }),

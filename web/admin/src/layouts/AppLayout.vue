@@ -53,7 +53,21 @@ function handleMenuSelect(key: string) {
   }
 }
 
-const activeMenu = computed(() => String(route.name ?? 'dashboard'))
+const subRouteToMenuKey: Record<string, string> = {
+  'channel-detail': 'channels',
+  'channel-new': 'channels',
+  'channel-mappings': 'channels',
+  'user-detail': 'users',
+  'account-detail': 'accounts',
+  'notice-detail': 'notices',
+  'notice-new': 'notices',
+  'payments-redeem-batch': 'payments-redeem',
+}
+
+const activeMenu = computed(() => {
+  const name = String(route.name ?? 'dashboard')
+  return subRouteToMenuKey[name] ?? name
+})
 
 const userDropdownOptions = [
   { label: t('nav.profile'), key: 'profile' },
