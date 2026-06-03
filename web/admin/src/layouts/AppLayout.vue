@@ -4,8 +4,8 @@ import {
   NMenu, NButton, NIcon, NDropdown, NBreadcrumb, NBreadcrumbItem,
   NTag, NSpace, NText,
 } from 'naive-ui'
-import { computed, h } from 'vue'
-import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { useI18n } from 'vue-i18n'
@@ -17,36 +17,42 @@ const router = useRouter()
 const app = useAppStore()
 const userStore = useUserStore()
 
-const menuOptions: MenuOption[] = [
-  { label: () => h(RouterLink, { to: '/' }, { default: () => t('nav.dashboard') }), key: 'dashboard' },
-  { label: () => h(RouterLink, { to: '/users' }, { default: () => t('nav.users') }), key: 'users' },
-  { label: () => h(RouterLink, { to: '/groups' }, { default: () => t('nav.groups') }), key: 'groups' },
-  { label: () => h(RouterLink, { to: '/channels' }, { default: () => t('nav.channels') }), key: 'channels' },
-  { label: () => h(RouterLink, { to: '/accounts' }, { default: () => t('nav.accounts') }), key: 'accounts' },
-  { label: () => h(RouterLink, { to: '/models' }, { default: () => t('nav.models') }), key: 'models' },
-  { label: () => h(RouterLink, { to: '/pricing' }, { default: () => t('nav.pricing') }), key: 'pricing' },
-  { label: () => h(RouterLink, { to: '/tokens' }, { default: () => t('nav.tokens') }), key: 'tokens' },
+const menuOptions = computed<MenuOption[]>(() => [
+  { label: t('nav.dashboard'), key: 'dashboard' },
+  { label: t('nav.users'), key: 'users' },
+  { label: t('nav.groups'), key: 'groups' },
+  { label: t('nav.channels'), key: 'channels' },
+  { label: t('nav.accounts'), key: 'accounts' },
+  { label: t('nav.models'), key: 'models' },
+  { label: t('nav.pricing'), key: 'pricing' },
+  { label: t('nav.tokens'), key: 'tokens' },
   {
     label: t('nav.logs'),
     key: 'logs',
     children: [
-      { label: () => h(RouterLink, { to: '/logs/requests' }, { default: () => t('nav.logs_requests') }), key: 'logs-requests' },
-      { label: () => h(RouterLink, { to: '/logs/errors' }, { default: () => t('nav.logs_errors') }), key: 'logs-errors' },
-      { label: () => h(RouterLink, { to: '/logs/audit' }, { default: () => t('nav.logs_audit') }), key: 'logs-audit' },
+      { label: t('nav.logs_requests'), key: 'logs-requests' },
+      { label: t('nav.logs_errors'), key: 'logs-errors' },
+      { label: t('nav.logs_audit'), key: 'logs-audit' },
     ],
   },
-  { label: () => h(RouterLink, { to: '/stats' }, { default: () => t('nav.stats') }), key: 'stats' },
-  { label: () => h(RouterLink, { to: '/notices' }, { default: () => t('nav.notices') }), key: 'notices' },
+  { label: t('nav.stats'), key: 'stats' },
+  { label: t('nav.notices'), key: 'notices' },
   {
     label: t('nav.payments'),
     key: 'payments',
     children: [
-      { label: () => h(RouterLink, { to: '/payments/recharges' }, { default: () => t('nav.payments_recharges') }), key: 'payments-recharges' },
-      { label: () => h(RouterLink, { to: '/payments/redeem' }, { default: () => t('nav.payments_redeem') }), key: 'payments-redeem' },
+      { label: t('nav.payments_recharges'), key: 'payments-recharges' },
+      { label: t('nav.payments_redeem'), key: 'payments-redeem' },
     ],
   },
-  { label: () => h(RouterLink, { to: '/settings' }, { default: () => t('nav.settings') }), key: 'settings' },
-]
+  { label: t('nav.settings'), key: 'settings' },
+])
+
+function handleMenuSelect(key: string) {
+  if (router.hasRoute(key)) {
+    router.push({ name: key })
+  }
+}
 
 const activeMenu = computed(() => String(route.name ?? 'dashboard'))
 
@@ -96,6 +102,7 @@ const breadcrumbs = computed(() => {
         :options="menuOptions"
         :value="activeMenu"
         :default-expanded-keys="['logs', 'payments']"
+        @update:value="handleMenuSelect"
       />
     </NLayoutSider>
 
@@ -141,7 +148,7 @@ const breadcrumbs = computed(() => {
       <NLayoutContent class="p-4 overflow-auto" style="height: calc(100vh - 56px)">
         <RouterView v-slot="{ Component }">
           <Transition name="fade" mode="out-in">
-            <component :is="Component" />
+            <component :is="Component" :key="route.fullPath" />
           </Transition>
         </RouterView>
       </NLayoutContent>
