@@ -38,12 +38,14 @@ import (
 	"github.com/ijry/pro-api/internal/server/handler/admin"
 	relayhdr "github.com/ijry/pro-api/internal/server/handler/relay"
 	paymenthdr "github.com/ijry/pro-api/internal/server/handler/payment"
+	tokenhdr "github.com/ijry/pro-api/internal/server/handler/token"
 	userhdr "github.com/ijry/pro-api/internal/server/handler/user"
 	"github.com/ijry/pro-api/internal/server/handler/logh"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	"github.com/ijry/pro-api/internal/token"
 	"github.com/ijry/pro-api/internal/version"
 	"github.com/ijry/pro-api/internal/wallet"
+	"github.com/ijry/pro-api/pkg/apierr"
 	"go.uber.org/zap"
 )
 
@@ -298,6 +300,12 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	// Invite 路由(邀请返佣)
 	wireInviteRoutes(eng, a, log)
 
+	// API Key 路由(/api/user/apikeys + /api/admin/apikeys)
+	wireApikeyRoutes(eng, a, log)
+
+	// 公开分组列表(供用户创建 apikey 时选择分组)
+	wirePublicGroupsRoute(publicGroup, a)
+
 	_ = ctx
 	return nil
 }
@@ -437,4 +445,70 @@ func wireInviteRoutes(eng *gin.Engine, a *app.Application, log *zap.Logger) {
 		middleware.SessionAuth(sessStore, a.Clock),
 	)
 	h.Register(inviteG)
+}
+
+// wireApikeyRoutes mounts /api/user/apikeys/* and /api/admin/apikeys/*.
+func wireApikeyRoutes(eng *gin.Engine, a *app.Application, log *zap.Logger) {
+	ts, ok := a.TokenStore.(token.Store)
+	if !ok || ts == nil {
+		log.Warn("token store not wired; apikey routes skipped")
+		return
+	}
+	sessStore := authhwire.SessionStoreFrom(a)
+	if sessStore == nil {
+		log.Warn("session store not available; apikey routes skipped")
+		return
+	}
+
+	// 用户侧:SessionAuth + CSRF(CSRF 在 authhttp 注册的 userG 上已挂;此处独立 group 需自带)
+	userOf := func(c *gin.Context) int64 { return middleware.UserID(c) }
+	userH := tokenhdr.NewUserHandler(ts, userOf)
+	userApikeyG := eng.Group("/api/user/apikeys",
+		middleware.ErrorResponse("json"),
+		middleware.SessionAuth(sessStore, a.Clock),
+	)
+	userH.Register(userApikeyG)
+
+	// 管理员侧:SessionAuth + RoleGate(2)
+	adminH := tokenhdr.NewAdminHandler(ts)
+	adminApikeyG := eng.Group("/api/admin/apikeys",
+		middleware.ErrorResponse("json"),
+		middleware.SessionAuth(sessStore, a.Clock),
+		middleware.RoleGate(2),
+	)
+	adminH.Register(adminApikeyG)
+}
+
+// wirePublicGroupsRoute mounts GET /api/public/groups — returns active groups for self-selection.
+func wirePublicGroupsRoute(publicG *gin.RouterGroup, a *app.Application) {
+	gs, ok := a.GroupSvc.(group.Service)
+	if !ok || gs == nil {
+		return
+	}
+	publicG.GET("/groups", func(c *gin.Context) {
+		groups, err := gs.List(c.Request.Context())
+		if err != nil {
+			middleware.SetErr(c, apierr.Wrap(apierr.CodeInternal, "list groups", err))
+			return
+		}
+		type groupItem struct {
+			ID          int64   `json:"id"`
+			Name        string  `json:"name"`
+			DisplayName string  `json:"display_name"`
+			Ratio       float64 `json:"ratio"`
+		}
+		items := make([]groupItem, 0, len(groups))
+		for _, g := range groups {
+			if g.Status != 0 {
+				continue
+			}
+			items = append(items, groupItem{
+				ID:          g.ID,
+				Name:        g.Name,
+				DisplayName: g.DisplayName,
+				Ratio:       g.Ratio,
+			})
+		}
+		c.JSON(http.StatusOK, gin.H{"items": items})
+	})
 }

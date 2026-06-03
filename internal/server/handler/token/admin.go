@@ -10,7 +10,7 @@ import (
 	"github.com/ijry/pro-api/pkg/apierr"
 )
 
-// AdminHandler 提供 /api/admin/tokens/* 路由。
+// AdminHandler 提供 /api/admin/apikeys/* 路由。
 //
 // 与 UserHandler 区别:
 //
@@ -37,7 +37,7 @@ func (h *AdminHandler) Register(g *gin.RouterGroup) {
 	g.DELETE("/:id", h.Delete)
 }
 
-// List GET /api/admin/tokens
+// List GET /api/admin/apikeys
 func (h *AdminHandler) List(c *gin.Context) {
 	page, size := parsePagination(c)
 	filter := tokensvc.ListFilter{
@@ -65,7 +65,7 @@ func (h *AdminHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, ListResponse{Items: dtos, Total: total, Page: page, Size: size})
 }
 
-// Detail GET /api/admin/tokens/:id
+// Detail GET /api/admin/apikeys/:id
 func (h *AdminHandler) Detail(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -79,7 +79,7 @@ func (h *AdminHandler) Detail(c *gin.Context) {
 	c.JSON(http.StatusOK, toDTO(view))
 }
 
-// Patch PATCH /api/admin/tokens/:id
+// Patch PATCH /api/admin/apikeys/:id
 func (h *AdminHandler) Patch(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -102,7 +102,7 @@ func (h *AdminHandler) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, toDTO(updated))
 }
 
-// Delete DELETE /api/admin/tokens/:id
+// Delete DELETE /api/admin/apikeys/:id
 func (h *AdminHandler) Delete(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {

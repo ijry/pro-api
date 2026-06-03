@@ -58,7 +58,7 @@ type ListResponse struct {
 	Size  int       `json:"size"`
 }
 
-// CreateRequest 是 POST /api/{user,admin}/tokens 的请求体。
+// CreateRequest 是 POST /api/{user,admin}/apikeys 的请求体。
 type CreateRequest struct {
 	Name          string     `json:"name"`
 	GroupID       int64      `json:"group_id"`       // 0 = inherit user's group
@@ -79,7 +79,7 @@ type CreateResponse struct {
 
 const plaintextWarning = "This is the only time you can view the plaintext key. Store it securely."
 
-// PatchRequest 是 PATCH /api/{user,admin}/tokens/{id} 的请求体。
+// PatchRequest 是 PATCH /api/{user,admin}/apikeys/{id} 的请求体。
 // 字段全部可选;ClearQuotaLimit / ClearExpiresAt 与对应字段配合实现"清空"。
 type PatchRequest struct {
 	Name            *string    `json:"name"`

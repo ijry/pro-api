@@ -20,7 +20,7 @@ import (
 // 返回 0 视为"未登录" → CodeNotLoggedIn(401)。
 type SessionUserExtractor func(c *gin.Context) int64
 
-// UserHandler 提供 /api/user/tokens/* 路由的 handler。
+// UserHandler 提供 /api/user/apikeys/* 路由的 handler。
 type UserHandler struct {
 	store  tokensvc.Store
 	userOf SessionUserExtractor
@@ -46,7 +46,7 @@ func (h *UserHandler) Register(g *gin.RouterGroup) {
 
 // === handlers ===
 
-// List GET /api/user/tokens
+// List GET /api/user/apikeys
 func (h *UserHandler) List(c *gin.Context) {
 	uid := h.mustUser(c)
 	if uid == 0 {
@@ -74,7 +74,7 @@ func (h *UserHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, ListResponse{Items: dtos, Total: total, Page: page, Size: size})
 }
 
-// Create POST /api/user/tokens
+// Create POST /api/user/apikeys
 func (h *UserHandler) Create(c *gin.Context) {
 	uid := h.mustUser(c)
 	if uid == 0 {
@@ -112,7 +112,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 	})
 }
 
-// Detail GET /api/user/tokens/:id
+// Detail GET /api/user/apikeys/:id
 func (h *UserHandler) Detail(c *gin.Context) {
 	uid := h.mustUser(c)
 	if uid == 0 {
@@ -130,7 +130,7 @@ func (h *UserHandler) Detail(c *gin.Context) {
 	c.JSON(http.StatusOK, toDTO(view))
 }
 
-// Patch PATCH /api/user/tokens/:id
+// Patch PATCH /api/user/apikeys/:id
 func (h *UserHandler) Patch(c *gin.Context) {
 	uid := h.mustUser(c)
 	if uid == 0 {
@@ -161,7 +161,7 @@ func (h *UserHandler) Patch(c *gin.Context) {
 	c.JSON(http.StatusOK, toDTO(updated))
 }
 
-// Delete DELETE /api/user/tokens/:id — 软禁用(Revoke)。
+// Delete DELETE /api/user/apikeys/:id — 软禁用(Revoke)。
 func (h *UserHandler) Delete(c *gin.Context) {
 	uid := h.mustUser(c)
 	if uid == 0 {
@@ -182,7 +182,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "revoked"})
 }
 
-// Regenerate POST /api/user/tokens/:id/regenerate
+// Regenerate POST /api/user/apikeys/:id/regenerate
 func (h *UserHandler) Regenerate(c *gin.Context) {
 	uid := h.mustUser(c)
 	if uid == 0 {
