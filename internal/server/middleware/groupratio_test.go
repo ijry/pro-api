@@ -33,7 +33,7 @@ func TestGroupRatioMiddleware_SetsRatio(t *testing.T) {
 	var gotRatio float64
 	r.GET("/test",
 		func(c *gin.Context) {
-			c.Set("proapi:group_id", int64(5))
+			c.Set("proapi:token", &MockTokenView{GroupID: 5})
 			c.Next()
 		},
 		GroupRatioMiddleware(lookup),
@@ -55,7 +55,7 @@ func TestGroupRatioMiddleware_SetsRatio(t *testing.T) {
 	}
 }
 
-func TestGroupRatioMiddleware_TokenGroupOverridesUser(t *testing.T) {
+func TestGroupRatioMiddleware_TokenGroupID_WrittenToContext(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
@@ -66,13 +66,11 @@ func TestGroupRatioMiddleware_TokenGroupOverridesUser(t *testing.T) {
 	var gotGroupID int64
 	r.GET("/test",
 		func(c *gin.Context) {
-			c.Set("proapi:group_id", int64(3))
 			c.Set("proapi:token", &MockTokenView{GroupID: 7})
 			c.Next()
 		},
 		GroupRatioMiddleware(lookup),
 		func(c *gin.Context) {
-			// Extract group ID from context the same way groupIDFromContext does.
 			v, _ := c.Get("proapi:group_id")
 			if id, ok := v.(int64); ok {
 				gotGroupID = id
@@ -86,6 +84,6 @@ func TestGroupRatioMiddleware_TokenGroupOverridesUser(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	if gotGroupID != 7 {
-		t.Errorf("want group_id=7 (token override), got %d", gotGroupID)
+		t.Errorf("want group_id=7 (from token), got %d", gotGroupID)
 	}
 }

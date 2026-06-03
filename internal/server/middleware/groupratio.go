@@ -30,44 +30,29 @@ type GroupRatioLookup func(ctx context.Context, groupID int64) (float64, error)
 
 // GroupRatioMiddleware resolves the current request's group ratio and injects it into context.
 //
-// Order of operations:
-//  1. If token.View.GroupID > 0, override proapi:group_id with the token-level group
-//  2. Look up ratio for the resolved groupID
-//  3. Set proapi:group_ratio (for ratelimit) and proapi:billing_group_ratio (for relay handler)
+// Group is taken exclusively from token.GroupID. If the token has no group (GroupID == 0),
+// no ratio is applied — there is no user-level fallback.
 func GroupRatioMiddleware(lookup GroupRatioLookup) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 1. Token-level group overrides user-level group
+		var gid int64
 		if tv, ok := c.Get(ctxKeyToken); ok {
-			// Try to extract GroupID from the token object.
-			// It should be *token.View with a GroupID field > 0.
 			type tokenWithGroup interface {
 				GetGroupID() int64
 			}
-			if twg, ok := tv.(tokenWithGroup); ok && twg.GetGroupID() > 0 {
-				c.Set(ctxKeyGroupID, twg.GetGroupID())
+			if twg, ok := tv.(tokenWithGroup); ok {
+				gid = twg.GetGroupID()
 			}
 		}
-
-		// 2. Look up ratio
-		gid := groupIDFromContext(c)
-		if gid > 0 && lookup != nil {
-			if ratio, err := lookup(c.Request.Context(), gid); err == nil {
-				c.Set(CtxKeyGroupRatio, ratio)
-				c.Set(CtxKeyBillingGroupRatio, ratio)
+		if gid > 0 {
+			c.Set(ctxKeyGroupID, gid)
+			if lookup != nil {
+				if ratio, err := lookup(c.Request.Context(), gid); err == nil {
+					c.Set(CtxKeyGroupRatio, ratio)
+					c.Set(CtxKeyBillingGroupRatio, ratio)
+				}
 			}
 		}
 
 		c.Next()
 	}
-}
-
-// groupIDFromContext extracts the group id from the gin context.
-// This duplicates token.GroupIDFromContext to avoid circular imports.
-func groupIDFromContext(c *gin.Context) int64 {
-	if v, ok := c.Get(ctxKeyGroupID); ok {
-		if id, ok := v.(int64); ok {
-			return id
-		}
-	}
-	return 0
 }

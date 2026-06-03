@@ -40,12 +40,12 @@ func (f *fakeStore) IncrementUsage(int64, int64)                            {}
 func (f *fakeStore) TouchLastUsed(int64, time.Time)                         {}
 func (f *fakeStore) Close() error                                           { return nil }
 
-func setupAuthGin(t *testing.T, store Store, lookup UserLookup) *gin.Engine {
+func setupAuthGin(t *testing.T, store Store) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	r.Use(middleware.ErrorResponse("openai"))
-	r.Use(TokenAuth(store, lookup))
+	r.Use(TokenAuth(store))
 	r.GET("/x", func(c *gin.Context) {
 		v, ok := FromContext(c)
 		uid := UserIDFromContext(c)
@@ -61,7 +61,7 @@ func setupAuthGin(t *testing.T, store Store, lookup UserLookup) *gin.Engine {
 }
 
 func TestTokenAuth_MissingHeader_ReturnsInvalidToken(t *testing.T) {
-	r := setupAuthGin(t, &fakeStore{}, nil)
+	r := setupAuthGin(t, &fakeStore{})
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -71,7 +71,7 @@ func TestTokenAuth_MissingHeader_ReturnsInvalidToken(t *testing.T) {
 }
 
 func TestTokenAuth_NonBearer_ReturnsInvalidToken(t *testing.T) {
-	r := setupAuthGin(t, &fakeStore{}, nil)
+	r := setupAuthGin(t, &fakeStore{})
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Basic xxx")
 	rec := httptest.NewRecorder()
@@ -82,7 +82,7 @@ func TestTokenAuth_NonBearer_ReturnsInvalidToken(t *testing.T) {
 }
 
 func TestTokenAuth_BadPrefix_ReturnsInvalidToken(t *testing.T) {
-	r := setupAuthGin(t, &fakeStore{}, nil)
+	r := setupAuthGin(t, &fakeStore{})
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Bearer sk-not-pa")
 	rec := httptest.NewRecorder()
@@ -94,7 +94,7 @@ func TestTokenAuth_BadPrefix_ReturnsInvalidToken(t *testing.T) {
 
 func TestTokenAuth_ValidKey_InjectsContext(t *testing.T) {
 	store := &fakeStore{view: &View{ID: 7, UserID: 42}}
-	r := setupAuthGin(t, store, nil)
+	r := setupAuthGin(t, store)
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Bearer pa-anyplaceholder")
 	rec := httptest.NewRecorder()
@@ -111,7 +111,7 @@ func TestTokenAuth_ValidKey_InjectsContext(t *testing.T) {
 
 func TestTokenAuth_StoreError_Forwarded(t *testing.T) {
 	store := &fakeStore{err: apierr.New(apierr.CodeTokenExpired, "expired")}
-	r := setupAuthGin(t, store, nil)
+	r := setupAuthGin(t, store)
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Bearer pa-xxxxxxxxxxxxxxxxxxxx")
 	rec := httptest.NewRecorder()
@@ -123,7 +123,7 @@ func TestTokenAuth_StoreError_Forwarded(t *testing.T) {
 
 func TestTokenAuth_IPNotAllowed_ReturnsForbidden(t *testing.T) {
 	store := &fakeStore{view: &View{ID: 1, UserID: 1, AllowedIPs: []string{"10.0.0.0/8"}}}
-	r := setupAuthGin(t, store, nil)
+	r := setupAuthGin(t, store)
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Bearer pa-xxxxxxxxxxxxxxxxxxxx")
 	req.RemoteAddr = "1.2.3.4:9999"
@@ -136,7 +136,7 @@ func TestTokenAuth_IPNotAllowed_ReturnsForbidden(t *testing.T) {
 
 func TestTokenAuth_XForwardedFor_UsedAsRealIP(t *testing.T) {
 	store := &fakeStore{view: &View{ID: 1, UserID: 1, AllowedIPs: []string{"10.0.0.0/8"}}}
-	r := setupAuthGin(t, store, nil)
+	r := setupAuthGin(t, store)
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Bearer pa-xxxxxxxxxxxxxxxxxxxx")
 	req.Header.Set("X-Forwarded-For", "10.1.2.3, 8.8.8.8")
@@ -148,30 +148,6 @@ func TestTokenAuth_XForwardedFor_UsedAsRealIP(t *testing.T) {
 	}
 }
 
-func TestTokenAuth_GroupIDFromUserLookup_Injected(t *testing.T) {
-	store := &fakeStore{view: &View{ID: 1, UserID: 99}}
-	called := false
-	lookup := func(_ context.Context, uid int64) (int64, bool) {
-		called = true
-		if uid == 99 {
-			return 7, true
-		}
-		return 0, false
-	}
-	r := setupAuthGin(t, store, lookup)
-	req := httptest.NewRequest(http.MethodGet, "/x", nil)
-	req.Header.Set("Authorization", "Bearer pa-xxxxxxxxxxxxxxxxxxxx")
-	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, req)
-	if !called {
-		t.Fatal("lookup not called")
-	}
-	var body map[string]any
-	_ = json.Unmarshal(rec.Body.Bytes(), &body)
-	if body["group_id"].(float64) != 7 {
-		t.Fatalf("want group_id=7, got %v", body["group_id"])
-	}
-}
 
 func TestExtractBearer_CaseInsensitiveScheme(t *testing.T) {
 	for _, h := range []string{"Bearer pa-x", "bearer pa-x", "BEARER pa-x"} {

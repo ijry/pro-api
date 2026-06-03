@@ -17,13 +17,10 @@ const (
 	CtxKeyToken = "proapi:token"
 	// CtxKeyUserID 存放当前 token 关联的 user_id(int64)。
 	CtxKeyUserID = "proapi:user_id"
-	// CtxKeyGroupID 存放当前 user 所属 group_id(int64),若 UserLookup 未注入则不会有该键。
+	// CtxKeyGroupID 存放 token 显式指定的 group_id(int64);token.group_id == 0 时不设此键。
+	// 由 GroupRatioMiddleware 从 token.GroupID 写入,不做用户级兜底。
 	CtxKeyGroupID = "proapi:group_id"
 )
-
-// UserLookup 是 M1-02 注入的可选 helper,用于补全 ctx 中的 group_id。
-// 注入 nil 时 TokenAuth 跳过 group 查询。
-type UserLookup func(ctx context.Context, userID int64) (groupID int64, ok bool)
 
 // TokenAuth 接受 "Authorization: Bearer pa-xxx",解析并注入 ctx。
 //
@@ -31,7 +28,8 @@ type UserLookup func(ctx context.Context, userID int64) (groupID int64, ok bool)
 //   - 成功 → c.Set(CtxKeyToken, view); c.Set(CtxKeyUserID, view.UserID)
 //
 // IP 白名单校验在此立即进行;模型白名单留给 handler 选 model 后调用。
-func TokenAuth(s Store, userLookup UserLookup) gin.HandlerFunc {
+// group_id 不在此处注入;由 GroupRatioMiddleware 从 token.GroupID 读取并写入 CtxKeyGroupID。
+func TokenAuth(s Store) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		raw := c.GetHeader("Authorization")
 		key, ok := extractBearer(raw)
@@ -51,11 +49,6 @@ func TokenAuth(s Store, userLookup UserLookup) gin.HandlerFunc {
 		}
 		c.Set(CtxKeyToken, view)
 		c.Set(CtxKeyUserID, view.UserID)
-		if userLookup != nil {
-			if gid, ok := userLookup(c.Request.Context(), view.UserID); ok {
-				c.Set(CtxKeyGroupID, gid)
-			}
-		}
 		c.Next()
 	}
 }
