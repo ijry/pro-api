@@ -24,7 +24,6 @@ const menuOptions = computed<MenuOption[]>(() => [
   { label: t('nav.channels'), key: 'channels' },
   { label: t('nav.accounts'), key: 'accounts' },
   { label: t('nav.models'), key: 'models' },
-  { label: t('nav.pricing'), key: 'pricing' },
   { label: t('nav.tokens'), key: 'tokens' },
   {
     label: t('nav.logs'),

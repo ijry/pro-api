@@ -68,11 +68,6 @@ export const routes: RouteRecordRaw[] = [
         meta: { roles: [3], title: 'nav.models', breadcrumb: ['models'] },
       },
       {
-        path: 'pricing', name: 'pricing',
-        component: () => import('@/views/pricing/List.vue'),
-        meta: { roles: [3], title: 'nav.pricing', breadcrumb: ['pricing'] },
-      },
-      {
         path: 'tokens', name: 'tokens',
         component: () => import('@/views/tokens/List.vue'),
         meta: { roles: [3], title: 'nav.tokens', breadcrumb: ['tokens'] },
