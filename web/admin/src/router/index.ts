@@ -1,13 +1,13 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 import { routes } from './routes'
 import { installGuards } from './guard'
 
-const baseUrl = import.meta.env.VITE_DEMO_MOCK === 'true'
-  ? import.meta.env.BASE_URL
-  : '/admin/'
+const isDemo = import.meta.env.VITE_DEMO_MOCK === 'true'
 
 export const router = createRouter({
-  history: createWebHistory(baseUrl),
+  history: isDemo
+    ? createWebHashHistory()
+    : createWebHistory('/admin/'),
   routes,
 })
 
