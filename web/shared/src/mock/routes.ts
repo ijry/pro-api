@@ -80,7 +80,11 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/stats\/by_channel$/,          handler: () => clone(statsByChannel) },
   { pattern: /^\/api\/admin\/stats\/by_user$/,             handler: () => clone(statsByUser) },
 
-  { pattern: /^\/api\/admin\/channels\/\d+\/mappings$/,    handler: () => [] },
+  { pattern: /^\/api\/admin\/channels\/batch_test$/,        handler: () => ({ results: (channels as any[]).slice(0, 3).map((c: any) => ({ ok: true, latency_ms: 120 + Math.floor(c.id * 17), channel_id: c.id })) }) },
+  { pattern: /^\/api\/admin\/channels\/\d+\/model_mappings$/, handler: (m) => m === 'GET' ? { items: [] } : { items: [] } },
+  { pattern: /^\/api\/admin\/channels\/\d+\/mappings$/,    handler: () => ({ items: [] }) },
+  { pattern: /^\/api\/admin\/channels\/\d+\/test$/,        handler: () => ({ ok: true, latency_ms: 142 }) },
+  { pattern: /^\/api\/admin\/channels\/\d+\/health$/,      handler: () => ({ state: 'closed', consec_fail: 0, opened_at: null }) },
   { pattern: /^\/api\/admin\/channels\/\d+\/?$/,           handler: (m, u) => m === 'GET' ? channelById(u) : ok() },
   { pattern: /^\/api\/admin\/channels$/,                   handler: (m, _u, p) => m === 'GET' ? paginate(channels as any[], p as PageParams) : ok() },
 
@@ -88,7 +92,11 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/apikeys\/\d+$/,               handler: (m, _u, _p) => m === 'GET' ? clone((adminTokens as any[])[0]) : ok() },
   { pattern: /^\/api\/admin\/apikeys$/,                    handler: (_m, _u, p) => paginate(adminTokens as any[], p as PageParams) },
 
-  { pattern: /^\/api\/admin\/model_catalogs\/\d+$/,        handler: (m, _u, _p) => m === 'GET' ? clone((models as any[])[0]) : ok() },
+  { pattern: /^\/api\/admin\/model_catalogs\/(\d+)$/,      handler: (m, u) => {
+    const id = Number((u.match(/\/model_catalogs\/(\d+)/) || [])[1])
+    const found = (models as any[]).find((m: any) => m.id === id) ?? (models as any[])[0]
+    return m === 'GET' ? clone(found) : ok()
+  }},
   { pattern: /^\/api\/admin\/model_catalogs$/,             handler: (m, _u, p) => m === 'GET' ? paginate(models as any[], p as PageParams) : ok() },
 
   { pattern: /^\/api\/admin\/logs\/requests$/,             handler: (_m, _u, p) => paginate(logRequests as any[], p as PageParams) },
@@ -102,6 +110,10 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/payments\/manual_recharges\/\d+\/(approve|reject)$/, handler: () => clone((adminRecharges as any[])[0]) },
   { pattern: /^\/api\/admin\/payments\/manual_recharges\/\d+$/,                   handler: () => clone((adminRecharges as any[])[0]) },
   { pattern: /^\/api\/admin\/payments\/manual_recharges$/,                        handler: (_m, _u, p) => paginate(adminRecharges as any[], p as PageParams) },
+  { pattern: /^\/api\/admin\/payments\/redeem_codes\/batch$/,                     handler: (_m, _u, p: any) => ({ batch_no: `BATCH-DEMO-${Date.now()}`, count: p?.count ?? 5, codes: Array.from({ length: p?.count ?? 5 }, (_, i) => `DEMO-${String(i + 1).padStart(4, '0')}`) }) },
+  { pattern: /^\/api\/admin\/payments\/redeem_codes\/disable$/,                   handler: () => ({ disabled: 1 }) },
+  { pattern: /^\/api\/admin\/payments\/redeem_codes\/\d+\/disable$/,              handler: writeOk },
+  { pattern: /^\/api\/admin\/payments\/redeem_codes$/,                            handler: (_m, _u, p) => paginate([], p as PageParams) },
   { pattern: /^\/api\/admin\/payments\/redeem\/\d+$/,                             handler: writeOk },
   { pattern: /^\/api\/admin\/payments\/redeem$/,                                  handler: (_m, _u, p) => paginate([], p as PageParams) },
 
@@ -128,6 +140,8 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/pricing\/rules$/,             handler: (m, _u, p) => m === 'GET' ? paginate(pricingRules as any[], p as PageParams) : ok() },
 
   // Accounts / 号池 (admin)
+  { pattern: /^\/api\/admin\/accounts\/import$/,           handler: () => ({ imported: 0, preview: [], errors: [], account_ids: [] }) },
+  { pattern: /^\/api\/admin\/accounts\/\d+\/events$/,      handler: (_m, _u, p) => paginate([], p as PageParams) },
   { pattern: /^\/api\/admin\/accounts\/\d+\/[a-z_]+$/,     handler: writeOk },
   { pattern: /^\/api\/admin\/accounts\/stats\/overview$/,  handler: () => ({ total: 7, active: 5, cooldown: 1, disabled: 1, error: 0 }) },
   { pattern: /^\/api\/admin\/accounts\/\d+$/,              handler: (m, u) => {
