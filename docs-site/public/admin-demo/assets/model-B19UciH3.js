@@ -1,0 +1,1 @@
+import{an as m,bO as t,bS as e,aJ as s}from"./index-ClKeNBH9.js";const l={list:a=>s("/api/admin/model_catalogs",a),create:a=>e("/api/admin/model_catalogs",a),patch:(a,o)=>t(`/api/admin/model_catalogs/${a}`,o),remove:a=>m(`/api/admin/model_catalogs/${a}`)};export{l as m};

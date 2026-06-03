@@ -12,6 +12,9 @@ hero:
     - theme: brand
       text: Get Started (Chinese only for now)
       link: /zh/guide/quickstart
+    - theme: brand
+      text: Admin Demo
+      link: /admin-demo/
     - theme: alt
       text: View on GitHub
       link: https://github.com/ijry/pro-api

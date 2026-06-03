@@ -29,7 +29,7 @@ export interface TokenPatch {
 }
 
 export const tokenApi = {
-  list: (p: TokenListParams) => get<Page<Token>>('/api/admin/tokens', p as Record<string, unknown>),
-  patch: (id: number, b: TokenPatch) => patch<Token>(`/api/admin/tokens/${id}`, b),
-  remove: (id: number) => del<{ status: string }>(`/api/admin/tokens/${id}`),
+  list: (p: TokenListParams) => get<Page<Token>>('/api/admin/apikeys', p as Record<string, unknown>),
+  patch: (id: number, b: TokenPatch) => patch<Token>(`/api/admin/apikeys/${id}`, b),
+  remove: (id: number) => del<{ status: string }>(`/api/admin/apikeys/${id}`),
 }

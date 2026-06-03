@@ -12,6 +12,9 @@ hero:
     - theme: brand
       text: 5 分钟跑起来
       link: /zh/guide/quickstart
+    - theme: brand
+      text: 管理后台演示
+      link: /admin-demo/
     - theme: alt
       text: 在 GitHub 上查看
       link: https://github.com/ijry/pro-api

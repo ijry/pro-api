@@ -1,0 +1,40 @@
+{
+  "groups": [
+    {
+      "name": "basic",
+      "items": [
+        { "key": "site.name",         "value": "proapi Demo",            "description": "站点名称",           "is_sensitive": false },
+        { "key": "site.logo",         "value": "/logo.svg",              "description": "Logo URL",           "is_sensitive": false },
+        { "key": "site.footer",       "value": "Powered by proapi",      "description": "页脚文字",           "is_sensitive": false },
+        { "key": "register.enabled",  "value": true,                     "description": "是否开放注册",       "is_sensitive": false },
+        { "key": "register.invite_only", "value": false,                 "description": "仅邀请注册",         "is_sensitive": false }
+      ]
+    },
+    {
+      "name": "billing",
+      "items": [
+        { "key": "billing.enabled",         "value": true,               "description": "启用计费",           "is_sensitive": false },
+        { "key": "billing.quota_unit",       "value": "usd",             "description": "配额单位",           "is_sensitive": false },
+        { "key": "billing.default_quota",    "value": 500000,            "description": "新用户初始配额",     "is_sensitive": false },
+        { "key": "billing.recharge_enabled", "value": true,              "description": "允许手动充值申请",   "is_sensitive": false }
+      ]
+    },
+    {
+      "name": "auth",
+      "items": [
+        { "key": "auth.github_oauth",  "value": { "client_id": "Ov23li****demo", "client_secret": "ENC(v1,...)", "redirect_url": "" }, "description": "GitHub OAuth 配置", "is_sensitive": true },
+        { "key": "auth.google_oauth",  "value": { "client_id": "", "client_secret": "" },  "description": "Google OAuth 配置",  "is_sensitive": true },
+        { "key": "session.ttl_days",   "value": 30,                      "description": "Session 有效期（天）", "is_sensitive": false }
+      ]
+    },
+    {
+      "name": "smtp",
+      "items": [
+        { "key": "smtp.host",     "value": "smtp.example.com",           "description": "SMTP 服务器",        "is_sensitive": false },
+        { "key": "smtp.port",     "value": 587,                          "description": "SMTP 端口",          "is_sensitive": false },
+        { "key": "smtp.username", "value": "noreply@example.com",        "description": "发件地址",           "is_sensitive": false },
+        { "key": "smtp.password", "value": "ENC(v1,...)",                "description": "SMTP 密码",          "is_sensitive": true }
+      ]
+    }
+  ]
+}

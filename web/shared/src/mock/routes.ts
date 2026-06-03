@@ -24,6 +24,12 @@ import oauthBindings from './data/oauth-bindings.json'
 import inviteSummary from './data/invite-summary.json'
 import inviteInvitees from './data/invite-invitees.json'
 import inviteRecords from './data/invite-records.json'
+import groups from './data/groups.json'
+import users from './data/users.json'
+import userDetail from './data/user-detail.json'
+import pricingRules from './data/pricing-rules.json'
+import settings from './data/settings.json'
+import accounts from './data/accounts.json'
 
 export type MockMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 export type MockHandler = (method: MockMethod, url: string, params?: unknown) => unknown
@@ -44,7 +50,7 @@ const channelById = (url: string) => {
 }
 
 const userTokenById = (url: string) => {
-  const m = url.match(/\/tokens\/([^/?]+)/)
+  const m = url.match(/\/(?:tokens|apikeys)\/([^/?]+)/)
   const id = m ? m[1] : ''
   const found = (userTokens as any[]).find((t) => t.id === id)
   return found ? clone(found) : clone((userTokens as any[])[0])
@@ -78,8 +84,9 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/channels\/\d+\/?$/,           handler: (m, u) => m === 'GET' ? channelById(u) : ok() },
   { pattern: /^\/api\/admin\/channels$/,                   handler: (m, _u, p) => m === 'GET' ? paginate(channels as any[], p as PageParams) : ok() },
 
-  { pattern: /^\/api\/admin\/tokens\/\d+$/,                handler: (m, _u, _p) => m === 'GET' ? clone((adminTokens as any[])[0]) : ok() },
-  { pattern: /^\/api\/admin\/tokens$/,                     handler: (_m, _u, p) => paginate(adminTokens as any[], p as PageParams) },
+  // API Keys (admin)
+  { pattern: /^\/api\/admin\/apikeys\/\d+$/,               handler: (m, _u, _p) => m === 'GET' ? clone((adminTokens as any[])[0]) : ok() },
+  { pattern: /^\/api\/admin\/apikeys$/,                    handler: (_m, _u, p) => paginate(adminTokens as any[], p as PageParams) },
 
   { pattern: /^\/api\/admin\/model_catalogs\/\d+$/,        handler: (m, _u, _p) => m === 'GET' ? clone((models as any[])[0]) : ok() },
   { pattern: /^\/api\/admin\/model_catalogs$/,             handler: (m, _u, p) => m === 'GET' ? paginate(models as any[], p as PageParams) : ok() },
@@ -95,11 +102,49 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/payments\/manual_recharges\/\d+\/(approve|reject)$/, handler: () => clone((adminRecharges as any[])[0]) },
   { pattern: /^\/api\/admin\/payments\/manual_recharges\/\d+$/,                   handler: () => clone((adminRecharges as any[])[0]) },
   { pattern: /^\/api\/admin\/payments\/manual_recharges$/,                        handler: (_m, _u, p) => paginate(adminRecharges as any[], p as PageParams) },
+  { pattern: /^\/api\/admin\/payments\/redeem\/\d+$/,                             handler: writeOk },
+  { pattern: /^\/api\/admin\/payments\/redeem$/,                                  handler: (_m, _u, p) => paginate([], p as PageParams) },
 
-{ pattern: /^\/api\/admin\/users\/\d+\/quota$/,          handler: () => ({ ok: true, balance_after: 8650000 }) },
+  // Groups (admin)
+  { pattern: /^\/api\/admin\/groups\/\d+$/,                handler: (m, u) => {
+    const id = Number((u.match(/\/groups\/(\d+)/) || [])[1])
+    const found = (groups as any[]).find((g) => g.id === id) ?? (groups as any[])[0]
+    return m === 'GET' ? clone(found) : ok()
+  }},
+  { pattern: /^\/api\/admin\/groups$/,                     handler: (m, _u, _p) => m === 'GET' ? { items: clone(groups) } : ok() },
 
-  // 兜底:其他 admin 子模块返回空(分页或数组),避免白屏
-  { pattern: /^\/api\/admin\/(pricing|ratelimit|groups?|users|settings|redeem|payments)/, handler: (_m, _u, p) => paginate([], p as PageParams) },
+  // Users (admin)
+  { pattern: /^\/api\/admin\/users\/\d+\/quota$/,          handler: () => ({ ok: true, balance_after: 8650000 }) },
+  { pattern: /^\/api\/admin\/users\/\d+\/reset_password$/, handler: () => ({ ok: true, temp_password: 'Demo@2026!' }) },
+  { pattern: /^\/api\/admin\/users\/\d+$/,                 handler: (m, _u, _p) => m === 'GET' ? clone(userDetail) : ok() },
+  { pattern: /^\/api\/admin\/users$/,                      handler: (_m, _u, p) => paginate(users as any[], p as PageParams) },
+
+  // Pricing (admin)
+  { pattern: /^\/api\/admin\/pricing\/rules\/\d+$/,        handler: (m, u) => {
+    const id = Number((u.match(/\/rules\/(\d+)/) || [])[1])
+    const found = (pricingRules as any[]).find((r) => r.id === id) ?? (pricingRules as any[])[0]
+    return m === 'GET' ? clone(found) : ok()
+  }},
+  { pattern: /^\/api\/admin\/pricing\/rules$/,             handler: (m, _u, p) => m === 'GET' ? paginate(pricingRules as any[], p as PageParams) : ok() },
+
+  // Accounts / 号池 (admin)
+  { pattern: /^\/api\/admin\/accounts\/\d+\/[a-z_]+$/,     handler: writeOk },
+  { pattern: /^\/api\/admin\/accounts\/stats\/overview$/,  handler: () => ({ total: 7, active: 5, cooldown: 1, disabled: 1, error: 0 }) },
+  { pattern: /^\/api\/admin\/accounts\/\d+$/,              handler: (m, u) => {
+    const id = Number((u.match(/\/accounts\/(\d+)/) || [])[1])
+    const found = (accounts as any[]).find((a) => a.id === id) ?? (accounts as any[])[0]
+    return m === 'GET' ? clone(found) : ok()
+  }},
+  { pattern: /^\/api\/admin\/accounts$/,                   handler: (m, _u, p) => m === 'GET' ? paginate(accounts as any[], p as PageParams) : ok() },
+
+  // Settings (admin)
+  { pattern: /^\/api\/admin\/settings\/test_smtp$/,        handler: () => ({ ok: true, stubbed: true }) },
+  { pattern: /^\/api\/admin\/settings\/[^/?]+$/,           handler: writeOk },
+  { pattern: /^\/api\/admin\/settings$/,                   handler: () => clone(settings) },
+
+  // Ratelimit (admin)
+  { pattern: /^\/api\/admin\/ratelimit\/keys\/[^/?]+\/reset$/, handler: writeOk },
+  { pattern: /^\/api\/admin\/ratelimit\/keys\/[^/?]+\/stats$/, handler: () => ({ key: 'demo:key', count: 42, window_seconds: 60, ttl_ms: 28000 }) },
 
   // ============ user =============
   { pattern: /^\/api\/user\/profile$/,                     handler: (m, _u, _p) => m === 'GET' ? clone(userProfile) : clone(userProfile) },
@@ -110,9 +155,10 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/user\/wallet\/ledger$/,              handler: (_m, _u, p) => paginate(ledger as any[], p as PageParams) },
   { pattern: /^\/api\/user\/wallet$/,                      handler: () => clone(userWallet) },
 
-  { pattern: /^\/api\/user\/tokens\/[^/?]+\/regenerate$/,  handler: () => ({ view: clone((userTokens as any[])[0]), plaintext_key: 'sk-prx-demo-regenerated-xxxxxxxxxxxx' }) },
-  { pattern: /^\/api\/user\/tokens\/[^/?]+$/,              handler: (m, u, _p) => m === 'GET' ? userTokenById(u) : (m === 'POST' ? { view: clone((userTokens as any[])[0]), plaintext_key: 'sk-prx-demo-xxxxxxxxxxxx' } : ok()) },
-  { pattern: /^\/api\/user\/tokens(\?.*)?$/,               handler: (m, _u, _p) => m === 'GET' ? clone({ items: userTokens, total: (userTokens as any[]).length }) : ({ view: clone((userTokens as any[])[0]), plaintext_key: 'sk-prx-demo-new-xxxxxxxxxxxx' }) },
+  // API Keys (user)
+  { pattern: /^\/api\/user\/apikeys\/[^/?]+\/regenerate$/, handler: () => ({ view: clone((userTokens as any[])[0]), plaintext_key: 'sk-prx-demo-regenerated-xxxxxxxxxxxx' }) },
+  { pattern: /^\/api\/user\/apikeys\/[^/?]+$/,             handler: (m, u, _p) => m === 'GET' ? userTokenById(u) : (m === 'POST' ? { view: clone((userTokens as any[])[0]), plaintext_key: 'sk-prx-demo-xxxxxxxxxxxx' } : ok()) },
+  { pattern: /^\/api\/user\/apikeys(\?.*)?$/,              handler: (m, _u, _p) => m === 'GET' ? clone({ items: userTokens, total: (userTokens as any[]).length }) : ({ view: clone((userTokens as any[])[0]), plaintext_key: 'sk-prx-demo-new-xxxxxxxxxxxx' }) },
 
   { pattern: /^\/api\/user\/usage(\?.*)?$/,                handler: () => clone(usage) },
 
@@ -132,8 +178,9 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/user\/invites\/invitees(\?.*)?$/,      handler: (_m, _u, p) => paginate(inviteInvitees as any[], p as PageParams) },
   { pattern: /^\/api\/user\/invites\/records(\?.*)?$/,       handler: (_m, _u, p) => paginate(inviteRecords as any[], p as PageParams) },
 
-  { pattern: /^\/api\/public\/models(\?.*)?$/,                 handler: () => clone(models) },
-  { pattern: /^\/api\/public\/notices(\?.*)?$/,                handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
+  { pattern: /^\/api\/public\/groups(\?.*)?$/,               handler: () => ({ items: (groups as any[]).filter((g) => g.status === 0) }) },
+  { pattern: /^\/api\/public\/models(\?.*)?$/,               handler: () => clone(models) },
+  { pattern: /^\/api\/public\/notices(\?.*)?$/,              handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
 ]
 
 export function routeMock(method: MockMethod, url: string, params?: unknown):
