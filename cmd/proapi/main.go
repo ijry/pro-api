@@ -27,20 +27,21 @@ import (
 	"github.com/ijry/pro-api/internal/notice"
 	"github.com/ijry/pro-api/internal/observability/logger"
 	"github.com/ijry/pro-api/internal/observability/metrics"
+	"github.com/ijry/pro-api/internal/payment"
 	mmanual "github.com/ijry/pro-api/internal/payment/manual"
 	monline "github.com/ijry/pro-api/internal/payment/online"
 	"github.com/ijry/pro-api/internal/payment/redeem"
-	"github.com/ijry/pro-api/internal/payment"
 	"github.com/ijry/pro-api/internal/pricing"
 	"github.com/ijry/pro-api/internal/ratelimit"
 	"github.com/ijry/pro-api/internal/relay"
 	"github.com/ijry/pro-api/internal/server"
 	"github.com/ijry/pro-api/internal/server/handler/admin"
-	relayhdr "github.com/ijry/pro-api/internal/server/handler/relay"
+	"github.com/ijry/pro-api/internal/server/handler/logh"
 	paymenthdr "github.com/ijry/pro-api/internal/server/handler/payment"
+	publichdr "github.com/ijry/pro-api/internal/server/handler/public"
+	relayhdr "github.com/ijry/pro-api/internal/server/handler/relay"
 	tokenhdr "github.com/ijry/pro-api/internal/server/handler/token"
 	userhdr "github.com/ijry/pro-api/internal/server/handler/user"
-	"github.com/ijry/pro-api/internal/server/handler/logh"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	"github.com/ijry/pro-api/internal/token"
 	"github.com/ijry/pro-api/internal/version"
@@ -229,12 +230,10 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	publicGroup := eng.Group("/api/public")
 
 	// 公告路由(M1-12)
-	if _, err := wireNoticeHandlers(a, adminGroup, userGroup, publicGroup); err != nil {
-		log.Warn("notice handlers failed", zap.Error(err))
-	}
+	wireNoticeHandlers(a, adminGroup, userGroup, publicGroup, log)
 
 	// 系统设置路由(M1-12)
-	wireSettingHandler(a, adminGroup)
+	wireSettingHandler(a, adminGroup, log)
 
 	// 日志 & 统计路由(M1-08)
 	wireLogHandlers(a, adminGroup, userGroup)
@@ -310,24 +309,58 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 	return nil
 }
 
-// wireNoticeHandlers 挂载公告 handler。
-func wireNoticeHandlers(a *app.Application, adminG, userG, publicG *gin.RouterGroup) (bool, error) {
-	// 注意:这些 Wire 函数在 M1-12 notice handler 中;重复调用不影响 NoticeSvc
-	// 只是注册 handler 到 router group
-	_ = a
-	_ = adminG
-	_ = userG
-	_ = publicG
-	// TODO: M1-12 handler 在 internal/server/handler/{admin,user,public}/
-	// 路由已在 authhwire.RegisterRoutes 或各自 wire 内注册,这里保持空实现
-	return true, nil
+// wireNoticeHandlers 挂载公告 handler:
+//   - public:无鉴权(/api/public/notices)
+//   - user:SessionAuth(/api/user/notices)
+//   - admin:SessionAuth + RoleGate(2)(/api/admin/notices)
+func wireNoticeHandlers(a *app.Application, adminG, userG, publicG *gin.RouterGroup, log *zap.Logger) {
+	if notice.ServiceFrom(a) == nil {
+		log.Warn("notice service not wired; notice routes skipped")
+		return
+	}
+	actorOf := func(c *gin.Context) int64 { return middleware.UserID(c) }
+
+	// public:无鉴权
+	if h, err := publichdr.WirePublicNotice(a); err != nil {
+		log.Warn("public notice handler wiring failed", zap.Error(err))
+	} else {
+		h.Register(publicG)
+	}
+
+	sessStore := authhwire.SessionStoreFrom(a)
+	if sessStore == nil {
+		log.Warn("session store not available; admin/user notice routes skipped")
+		return
+	}
+	// user:登录可见
+	if h, err := userhdr.WireUserNotice(a, actorOf); err != nil {
+		log.Warn("user notice handler wiring failed", zap.Error(err))
+	} else {
+		h.Register(userG.Group("", middleware.SessionAuth(sessStore, a.Clock)))
+	}
+	// admin:RoleGate(2)
+	if h, err := admin.WireAdminNotice(a, actorOf); err != nil {
+		log.Warn("admin notice handler wiring failed", zap.Error(err))
+	} else {
+		h.Register(adminG.Group("", middleware.SessionAuth(sessStore, a.Clock), middleware.RoleGate(2)))
+	}
 }
 
-// wireSettingHandler 挂载系统设置 handler。
-func wireSettingHandler(a *app.Application, adminG *gin.RouterGroup) {
-	_ = a
-	_ = adminG
-	// TODO: internal/server/handler/admin.WireAdminSetting
+// wireSettingHandler 挂载系统设置 handler(SessionAuth + RoleGate(2),/api/admin/settings)。
+// mailer 暂传 nil:test_smtp 走 stub,待邮件子系统接入后注入真实 Mailer。
+func wireSettingHandler(a *app.Application, adminG *gin.RouterGroup, log *zap.Logger) {
+	sessStore := authhwire.SessionStoreFrom(a)
+	if sessStore == nil {
+		log.Warn("session store not available; admin setting routes skipped")
+		return
+	}
+	actorOf := func(c *gin.Context) int64 { return middleware.UserID(c) }
+	h, err := admin.WireAdminSetting(a, nil, actorOf)
+	if err != nil {
+		log.Warn("admin setting handler wiring failed", zap.Error(err))
+		return
+	}
+	h.Register(adminG.Group("", middleware.SessionAuth(sessStore, a.Clock), middleware.RoleGate(2)))
 }
 
 // wireAccountHandler 挂载号池 admin 路由。
