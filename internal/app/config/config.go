@@ -27,12 +27,18 @@ type Config struct {
 // AccountConfig 是号池/OAuth/Probe 相关配置(M2b)。
 // 默认值见 system_settings seed (000029_seed_account_settings)。
 type AccountConfig struct {
-	OAuthAnthropicTokenURL string `mapstructure:"oauth_anthropic_token_url"`
-	OAuthAnthropicClientID string `mapstructure:"oauth_anthropic_client_id"`
-	OAuthOpenAITokenURL    string `mapstructure:"oauth_openai_token_url"`
-	OAuthOpenAIClientID    string `mapstructure:"oauth_openai_client_id"`
-	AnthropicProbeBase     string `mapstructure:"anthropic_probe_base"`
-	OpenAIProbeBase        string `mapstructure:"openai_probe_base"`
+	OAuthAnthropicTokenURL    string   `mapstructure:"oauth_anthropic_token_url"`
+	OAuthAnthropicClientID    string   `mapstructure:"oauth_anthropic_client_id"`
+	OAuthAnthropicAuthURL     string   `mapstructure:"oauth_anthropic_auth_url"`
+	OAuthAnthropicRedirectURI string   `mapstructure:"oauth_anthropic_redirect_uri"`
+	OAuthAnthropicScopes      []string `mapstructure:"oauth_anthropic_scopes"`
+	OAuthOpenAITokenURL       string   `mapstructure:"oauth_openai_token_url"`
+	OAuthOpenAIClientID       string   `mapstructure:"oauth_openai_client_id"`
+	OAuthOpenAIAuthURL        string   `mapstructure:"oauth_openai_auth_url"`
+	OAuthOpenAIRedirectURI    string   `mapstructure:"oauth_openai_redirect_uri"`
+	OAuthOpenAIScopes         []string `mapstructure:"oauth_openai_scopes"`
+	AnthropicProbeBase        string   `mapstructure:"anthropic_probe_base"`
+	OpenAIProbeBase           string   `mapstructure:"openai_probe_base"`
 }
 
 // ServerConfig 描述 HTTP server 启动参数。
@@ -67,7 +73,7 @@ type RedisConfig struct {
 // SMTPConfig 描述 SMTP 发件服务器。Host 为空时禁用 SMTP，回落到 stub。
 type SMTPConfig struct {
 	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`     // 25 / 465 / 587
+	Port     int    `mapstructure:"port"` // 25 / 465 / 587
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
 	From     string `mapstructure:"from"`     // "name <addr>" 或 "addr"

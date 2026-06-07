@@ -41,18 +41,24 @@ func WireAccount(ctx context.Context, a *app.Application) error {
 	var anthropicCfg, openaiCfg oauth.Config
 	if a.Config != nil {
 		anthropicCfg = oauth.Config{
-			TokenURL: a.Config.Account.OAuthAnthropicTokenURL,
-			ClientID: a.Config.Account.OAuthAnthropicClientID,
+			TokenURL:    a.Config.Account.OAuthAnthropicTokenURL,
+			AuthURL:     a.Config.Account.OAuthAnthropicAuthURL,
+			ClientID:    a.Config.Account.OAuthAnthropicClientID,
+			RedirectURI: a.Config.Account.OAuthAnthropicRedirectURI,
+			Scopes:      a.Config.Account.OAuthAnthropicScopes,
 		}
 		openaiCfg = oauth.Config{
-			TokenURL: a.Config.Account.OAuthOpenAITokenURL,
-			ClientID: a.Config.Account.OAuthOpenAIClientID,
+			TokenURL:    a.Config.Account.OAuthOpenAITokenURL,
+			AuthURL:     a.Config.Account.OAuthOpenAIAuthURL,
+			ClientID:    a.Config.Account.OAuthOpenAIClientID,
+			RedirectURI: a.Config.Account.OAuthOpenAIRedirectURI,
+			Scopes:      a.Config.Account.OAuthOpenAIScopes,
 		}
 	}
 	oa := oauth.NewFlow(map[string]oauth.Provider{
 		"anthropic": oauth.NewAnthropic(anthropicCfg),
 		"openai":    oauth.NewOpenAI(openaiCfg),
-	})
+	}, oauth.NewRedisStateStore(a.Cache))
 
 	tracker := quota.NewTracker(repo)
 
