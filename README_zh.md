@@ -6,7 +6,26 @@
 
 ## 当前状态
 
-🚧 M0 工程脚手架阶段 — 仅骨架可跑,业务功能在 M1 起逐步实现。
+🚧 **开发中 · 约 M2 阶段**(M0 / M1 已完成,M2 大部分就绪,M3 未开始)。本地可跑通「注册 → 建令牌 → 三协议调用 → 计费 → 看日志 → 充值」全链路。
+
+**已就绪**
+
+- **三协议入口与互转**:OpenAI `/v1`、Anthropic `/v1/messages`、Gemini `/v1beta`,任意入口可路由到任意上游
+- **18 个上游适配器**:openai / azure / anthropic / gemini / deepseek / moonshot / 智谱 / 通义 / 豆包 / groq / mistral / 零一 / openrouter / huggingface / minimax / 腾讯混元 / Cohere / 讯飞星火
+- **多模态**:对话(含流式)· 图像生成 · TTS · STT · Embeddings
+- **计费**:Redis Lua 预扣 / 提交 / 退款 · 模型倍率 · 分组倍率
+- **渠道**:CRUD + 优先级 + 权重 + 模型映射 + 熔断;账号池
+- **限流**:用户 / 令牌 / IP / 模型 / 分组 多维度
+- **鉴权**:邮箱密码 + 邮箱验证码 + Session;OAuth 六家(GitHub / Google / 微信 / 飞书 / 钉钉 / Discord)
+- **支付**:Stripe / 支付宝 / 微信 + 手动充值 + 兑换码
+- **邀请返佣** · **公告** · **系统设置** · **审计**
+- **前端**:后台(Naive UI 全页面)+ 用户前台(含 Playground / 模型广场 / 邀请)+ 文档站;中英双语
+
+**进行中 / 未完成**
+
+- 异步任务系统(asynq)与 Midjourney / Suno
+- 账号池 OAuth 拉号(PKCE 流程)
+- M3 企业版:SSO(OIDC / SAML / LDAP / CAS)、部门预算、审计可视化、OpenTelemetry
 
 路线图见 [`docs/superpowers/2026-05-21-proapi-总体路线图.md`](./docs/superpowers/2026-05-21-proapi-总体路线图.md)。
 
