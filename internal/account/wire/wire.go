@@ -36,7 +36,7 @@ func WireAccount(ctx context.Context, a *app.Application) error {
 	if clk == nil {
 		clk = clock.Real
 	}
-	repo := account.NewRepository(a.DB, a.Crypto, a.IDGen, clk)
+	repo := account.NewRepository(a.DB, a.Crypto, a.IDGen, clk, a.Log)
 
 	var anthropicCfg, openaiCfg oauth.Config
 	if a.Config != nil {

@@ -125,7 +125,7 @@ func TestRepo_CreateGet(t *testing.T) {
 	require.NoError(t, err)
 	idg, err := idgen.New(1)
 	require.NoError(t, err)
-	r := account.NewRepository(db, cr, idg, clock.Real)
+	r := account.NewRepository(db, cr, idg, clock.Real, nil)
 
 	a := &account.Account{
 		ChannelID: 100,
@@ -159,7 +159,7 @@ func TestRepo_ListByChannel(t *testing.T) {
 	require.NoError(t, err)
 	idg, err := idgen.New(2)
 	require.NoError(t, err)
-	r := account.NewRepository(db, cr, idg, clock.Real)
+	r := account.NewRepository(db, cr, idg, clock.Real, nil)
 	for i := 0; i < 3; i++ {
 		require.NoError(t, r.Create(ctx, &account.Account{
 			ChannelID: 200, Provider: "anthropic", CredType: "apikey",
@@ -180,7 +180,7 @@ func TestRepo_AppendEvent(t *testing.T) {
 	require.NoError(t, err)
 	idg, err := idgen.New(3)
 	require.NoError(t, err)
-	r := account.NewRepository(db, cr, idg, clock.Real)
+	r := account.NewRepository(db, cr, idg, clock.Real, nil)
 	a := &account.Account{
 		ChannelID: 300, Provider: "openai", CredType: "oauth",
 		Status: account.StatusActive, Weight: 100,

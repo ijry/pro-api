@@ -11,6 +11,7 @@ import (
 	"github.com/ijry/pro-api/internal/util/crypto"
 	"github.com/ijry/pro-api/internal/util/idgen"
 	"github.com/ijry/pro-api/pkg/apierr"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -19,11 +20,12 @@ type repo struct {
 	crypto *crypto.AESGCM
 	id     *idgen.Generator
 	clock  clock.Clock
+	log    *zap.Logger
 }
 
-// NewRepository 构造 Repo。
-func NewRepository(db *gorm.DB, c *crypto.AESGCM, id *idgen.Generator, clk clock.Clock) Repo {
-	return &repo{db: db, crypto: c, id: id, clock: clk}
+// NewRepository 构造 Repo。log 可为 nil(此时 hydrate 失败不记录)。
+func NewRepository(db *gorm.DB, c *crypto.AESGCM, id *idgen.Generator, clk clock.Clock, log *zap.Logger) Repo {
+	return &repo{db: db, crypto: c, id: id, clock: clk, log: log}
 }
 
 func (r *repo) Create(ctx context.Context, a *Account) error {
@@ -116,8 +118,10 @@ func (r *repo) ListByChannel(ctx context.Context, channelID int64) ([]*Account, 
 		return nil, err
 	}
 	for _, a := range out {
-		// TODO(P8): log hydrate failures via repo logger
-		_ = r.hydrate(a)
+		// hydrate 失败不影响其余账号入列,但需记录(否则凭证解密失败会静默)。
+		if err := r.hydrate(a); err != nil && r.log != nil {
+			r.log.Warn("account: hydrate failed", zap.Int64("account_id", a.ID), zap.Error(err))
+		}
 	}
 	return out, nil
 }
@@ -131,8 +135,10 @@ func (r *repo) ListByShareTag(ctx context.Context, tag string) ([]*Account, erro
 		return nil, err
 	}
 	for _, a := range out {
-		// TODO(P8): log hydrate failures via repo logger
-		_ = r.hydrate(a)
+		// hydrate 失败不影响其余账号入列,但需记录(否则凭证解密失败会静默)。
+		if err := r.hydrate(a); err != nil && r.log != nil {
+			r.log.Warn("account: hydrate failed", zap.Int64("account_id", a.ID), zap.Error(err))
+		}
 	}
 	return out, nil
 }
@@ -147,8 +153,10 @@ func (r *repo) ListForRefresher(ctx context.Context, before time.Time, limit int
 		return nil, err
 	}
 	for _, a := range out {
-		// TODO(P8): log hydrate failures via repo logger
-		_ = r.hydrate(a)
+		// hydrate 失败不影响其余账号入列,但需记录(否则凭证解密失败会静默)。
+		if err := r.hydrate(a); err != nil && r.log != nil {
+			r.log.Warn("account: hydrate failed", zap.Int64("account_id", a.ID), zap.Error(err))
+		}
 	}
 	return out, nil
 }
@@ -163,8 +171,10 @@ func (r *repo) ListForReaper(ctx context.Context, now time.Time, limit int) ([]*
 		return nil, err
 	}
 	for _, a := range out {
-		// TODO(P8): log hydrate failures via repo logger
-		_ = r.hydrate(a)
+		// hydrate 失败不影响其余账号入列,但需记录(否则凭证解密失败会静默)。
+		if err := r.hydrate(a); err != nil && r.log != nil {
+			r.log.Warn("account: hydrate failed", zap.Int64("account_id", a.ID), zap.Error(err))
+		}
 	}
 	return out, nil
 }
