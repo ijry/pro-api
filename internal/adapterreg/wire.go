@@ -6,6 +6,7 @@ import (
 	"github.com/ijry/pro-api/internal/adapter"
 	"github.com/ijry/pro-api/internal/adapter/anthropic"
 	"github.com/ijry/pro-api/internal/adapter/azure"
+	"github.com/ijry/pro-api/internal/adapter/cohere"
 	"github.com/ijry/pro-api/internal/adapter/deepseek"
 	"github.com/ijry/pro-api/internal/adapter/doubao"
 	"github.com/ijry/pro-api/internal/adapter/gemini"
@@ -18,12 +19,13 @@ import (
 	"github.com/ijry/pro-api/internal/adapter/openrouter"
 	"github.com/ijry/pro-api/internal/adapter/qwen"
 	"github.com/ijry/pro-api/internal/adapter/tencent"
+	"github.com/ijry/pro-api/internal/adapter/xunfei"
 	"github.com/ijry/pro-api/internal/adapter/yi"
 	"github.com/ijry/pro-api/internal/adapter/zhipu"
 	"github.com/ijry/pro-api/internal/util/tokenize"
 )
 
-// WireAdapters 向 Registry 注册所有 16 家 adapter，并注册 tokenizers。
+// WireAdapters 向 Registry 注册所有 18 家 adapter，并注册 tokenizers。
 //
 // 用法：
 //
@@ -45,7 +47,7 @@ func WireAdapters(reg adapter.Registry, tokReg *tokenize.Registry) {
 	reg.Register(qwen.New())
 	reg.Register(doubao.New())
 
-	// M2a 新增 8 家 adapter
+	// M2a 新增 7 家 adapter
 	reg.Register(groq.New())
 	reg.Register(mistral.New())
 	reg.Register(yi.New())
@@ -53,4 +55,8 @@ func WireAdapters(reg adapter.Registry, tokReg *tokenize.Registry) {
 	reg.Register(huggingface.New())
 	reg.Register(minimax.New())
 	reg.Register(tencent.New())
+
+	// M2b 新增 2 家 adapter（OpenAI 兼容端点）
+	reg.Register(cohere.New())
+	reg.Register(xunfei.New())
 }
