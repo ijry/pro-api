@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import {
   NModal, NTabs, NTabPane, NForm, NFormItem, NInput, NSelect,
   NButton, NSpace, NAlert, NDataTable, NTag, useMessage,
@@ -38,6 +38,7 @@ const common = ref({
 const tokenForm = ref({ text: '', format: 'auto' })
 const apikeyForm = ref({ text: '' })
 const importForm = ref({ text: '', format: 'auto' })
+const oauthProvider = ref<'anthropic' | 'openai'>('anthropic')
 
 const formatOptions: SelectOption[] = [
   { label: t('accounts.add_dialog.format_auto'), value: 'auto' },
@@ -51,6 +52,8 @@ const previewData = ref<Account[]>([])
 const previewErrors = ref<{ index: number; reason: string }[]>([])
 const submitting = ref(false)
 const previewing = ref(false)
+const oauthStarting = ref(false)
+let oauthMessageHandler: ((event: MessageEvent) => void) | null = null
 
 watch(() => props.show, (v) => {
   if (v) {
@@ -59,10 +62,24 @@ watch(() => props.show, (v) => {
     tokenForm.value = { text: '', format: 'auto' }
     apikeyForm.value = { text: '' }
     importForm.value = { text: '', format: 'auto' }
+    oauthProvider.value = 'anthropic'
     previewData.value = []
     previewErrors.value = []
   }
 })
+
+function clearOAuthMessageHandler() {
+  if (!oauthMessageHandler) return
+  window.removeEventListener('message', oauthMessageHandler)
+  oauthMessageHandler = null
+}
+
+onBeforeUnmount(clearOAuthMessageHandler)
+
+const providerOptions: SelectOption[] = [
+  { label: 'Anthropic', value: 'anthropic' },
+  { label: 'OpenAI', value: 'openai' },
+]
 
 const canSubmit = computed(() => {
   if (!common.value.channel_id) return false
@@ -71,6 +88,8 @@ const canSubmit = computed(() => {
   if (tab.value === 'import') return importForm.value.text.trim().length > 0
   return false
 })
+
+const canOAuthStart = computed(() => Boolean(common.value.channel_id && oauthProvider.value))
 
 async function doPreview() {
   if (!common.value.channel_id) {
@@ -134,6 +153,38 @@ async function doSubmit() {
   } catch (_) { /* handled */ } finally { submitting.value = false }
 }
 
+async function doOAuthStart() {
+  if (!common.value.channel_id) {
+    message.warning(t('accounts.add_dialog.channel_placeholder'))
+    return
+  }
+  oauthStarting.value = true
+  try {
+    const r = await accountApi.oauthStart({
+      channel_id: common.value.channel_id,
+      provider: oauthProvider.value,
+    })
+    clearOAuthMessageHandler()
+    oauthMessageHandler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      if ((event.data as { type?: string })?.type !== 'account_oauth_done') return
+      clearOAuthMessageHandler()
+      message.success(t('accounts.add_dialog.oauth_done'))
+      emit('imported')
+      emit('update:show', false)
+    }
+    window.addEventListener('message', oauthMessageHandler)
+    const popup = window.open(r.auth_url, 'proapi-account-oauth', 'width=560,height=720')
+    if (!popup) {
+      clearOAuthMessageHandler()
+      message.warning(t('accounts.add_dialog.oauth_popup_blocked'))
+      return
+    }
+    popup.focus()
+    message.info(t('accounts.add_dialog.oauth_started'))
+  } catch (_) { /* handled */ } finally { oauthStarting.value = false }
+}
+
 const previewColumns: DataTableColumns<Account> = [
   { title: '#', key: 'index', width: 50, render: (_row, idx) => idx + 1 },
   { title: t('accounts.columns.name'), key: 'name', width: 180 },
@@ -148,8 +199,16 @@ const previewColumns: DataTableColumns<Account> = [
   <NModal :show="props.show" preset="card" :title="t('accounts.add_dialog.title')" style="width:760px"
     @update:show="emit('update:show', $event)">
     <NTabs v-model:value="tab" type="line" animated>
-      <NTabPane name="oauth" :tab="t('accounts.add_dialog.tabs.oauth')" :disabled="true">
-        <NAlert type="info">{{ t('accounts.add_dialog.oauth_disabled') }}</NAlert>
+      <NTabPane name="oauth" :tab="t('accounts.add_dialog.tabs.oauth')">
+        <NAlert type="info" class="mb-3">{{ t('accounts.add_dialog.oauth_hint') }}</NAlert>
+        <NForm label-placement="top" size="small">
+          <NFormItem :label="t('accounts.add_dialog.channel_label')" required>
+            <NSelect v-model:value="common.channel_id" :options="channelOptions" :placeholder="t('accounts.add_dialog.channel_placeholder')" clearable />
+          </NFormItem>
+          <NFormItem :label="t('accounts.add_dialog.provider_label')" required>
+            <NSelect v-model:value="oauthProvider" :options="providerOptions" />
+          </NFormItem>
+        </NForm>
       </NTabPane>
 
       <NTabPane name="token_json" :tab="t('accounts.add_dialog.tabs.token_json')">
@@ -222,7 +281,10 @@ const previewColumns: DataTableColumns<Account> = [
         <NButton v-if="tab === 'import'" :loading="previewing" :disabled="!canSubmit" @click="doPreview">
           {{ t('accounts.add_dialog.preview') }}
         </NButton>
-        <NButton type="primary" :loading="submitting" :disabled="!canSubmit" @click="doSubmit">
+        <NButton v-if="tab === 'oauth'" type="primary" :loading="oauthStarting" :disabled="!canOAuthStart" @click="doOAuthStart">
+          {{ t('accounts.add_dialog.oauth_start') }}
+        </NButton>
+        <NButton v-else type="primary" :loading="submitting" :disabled="!canSubmit" @click="doSubmit">
           {{ t('accounts.add_dialog.submit') }}
         </NButton>
       </NSpace>

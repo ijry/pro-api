@@ -388,9 +388,12 @@ func wireAccountHandler(a *app.Application, adminG *gin.RouterGroup, log *zap.Lo
 		middleware.SessionAuth(sessStore, a.Clock),
 		middleware.RoleGate(2),
 	)
-	// 普通 admin 可访问的 13 个 endpoint。
+	// OAuth callback 不带 session,依赖一次性 state 校验。
+	adminG.GET("/accounts/oauth/callback", h.OAuthCallback)
+	// 普通 admin 可访问的 endpoint。
 	accG.GET("/accounts", h.List)
 	accG.GET("/accounts/stats/overview", h.Stats)
+	accG.POST("/accounts/oauth/start", h.OAuthStart)
 	accG.GET("/accounts/:id", h.Get)
 	accG.POST("/accounts", h.Create)
 	accG.POST("/accounts/import", h.Import)
