@@ -15,6 +15,7 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/account"
+	accountoauth "github.com/ijry/pro-api/internal/account/oauth"
 	"github.com/ijry/pro-api/internal/audit"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	"github.com/ijry/pro-api/pkg/apierr"
@@ -51,6 +53,8 @@ func NewAccountHandler(f *account.Facade, a audit.Logger, actorOf func(*gin.Cont
 func (h *AccountHandler) Register(r gin.IRouter) {
 	r.GET("/accounts", h.List)
 	r.GET("/accounts/stats/overview", h.Stats)
+	r.POST("/accounts/oauth/start", h.OAuthStart)
+	r.GET("/accounts/oauth/callback", h.OAuthCallback)
 	r.GET("/accounts/:id", h.Get)
 	r.POST("/accounts", h.Create)
 	r.POST("/accounts/import", h.Import)
@@ -119,26 +123,26 @@ func (h *AccountHandler) auditOne(c *gin.Context, action string, targetID int64,
 
 // listItem 是 List 返回的 item。绝不包含明文凭证或 Credentials 密文。
 type listItem struct {
-	ID                   int64       `json:"id"`
-	ChannelID            int64       `json:"channel_id"`
-	ShareTag             string      `json:"share_tag"`
-	Name                 string      `json:"name"`
-	Provider             string      `json:"provider"`
-	Tier                 string      `json:"tier"`
-	CredType             string      `json:"cred_type"`
-	Email                string      `json:"email"`
-	Status               int8        `json:"status"`
-	Priority             int16       `json:"priority"`
-	Weight               int         `json:"weight"`
-	ConsecFailures       int         `json:"consec_failures"`
-	RefreshTokenValid    int8        `json:"refresh_token_valid"`
-	CooldownUntil        *time.Time  `json:"cooldown_until,omitempty"`
-	LastUsedAt           *time.Time  `json:"last_used_at,omitempty"`
-	LastSuccessAt        *time.Time  `json:"last_success_at,omitempty"`
-	LastFailureAt        *time.Time  `json:"last_failure_at,omitempty"`
-	AccessTokenExpiresAt *time.Time  `json:"access_token_expires_at,omitempty"`
-	Quota5h              quotaItem   `json:"quota_5h"`
-	QuotaWeek            quotaItem   `json:"quota_week"`
+	ID                   int64      `json:"id"`
+	ChannelID            int64      `json:"channel_id"`
+	ShareTag             string     `json:"share_tag"`
+	Name                 string     `json:"name"`
+	Provider             string     `json:"provider"`
+	Tier                 string     `json:"tier"`
+	CredType             string     `json:"cred_type"`
+	Email                string     `json:"email"`
+	Status               int8       `json:"status"`
+	Priority             int16      `json:"priority"`
+	Weight               int        `json:"weight"`
+	ConsecFailures       int        `json:"consec_failures"`
+	RefreshTokenValid    int8       `json:"refresh_token_valid"`
+	CooldownUntil        *time.Time `json:"cooldown_until,omitempty"`
+	LastUsedAt           *time.Time `json:"last_used_at,omitempty"`
+	LastSuccessAt        *time.Time `json:"last_success_at,omitempty"`
+	LastFailureAt        *time.Time `json:"last_failure_at,omitempty"`
+	AccessTokenExpiresAt *time.Time `json:"access_token_expires_at,omitempty"`
+	Quota5h              quotaItem  `json:"quota_5h"`
+	QuotaWeek            quotaItem  `json:"quota_week"`
 }
 
 // detailItem 在 listItem 之外再加几个详情字段。同样不含明文凭证。
@@ -289,6 +293,11 @@ type acctCreateReq struct {
 	Weight    int    `json:"weight"`
 }
 
+type acctOAuthStartReq struct {
+	Provider  string `json:"provider"`
+	ChannelID int64  `json:"channel_id"`
+}
+
 // Create POST /accounts — 单条创建,与 Import 类似但只取第一条。dry_run 时不落库。
 func (h *AccountHandler) Create(c *gin.Context) {
 	var req acctCreateReq
@@ -367,6 +376,90 @@ func (h *AccountHandler) Create(c *gin.Context) {
 	})
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"id": a.ID}})
 }
+
+// OAuthStart POST /accounts/oauth/start — 启动账号池 OAuth PKCE 流程。
+func (h *AccountHandler) OAuthStart(c *gin.Context) {
+	if h.Facade.OAuth == nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInternal, "oauth 未就绪"))
+		return
+	}
+	var req acctOAuthStartReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "请求体不合法"))
+		return
+	}
+	if req.Provider == "" {
+		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "provider 必填"))
+		return
+	}
+	if req.ChannelID <= 0 {
+		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "channel_id 必填"))
+		return
+	}
+	authURL, state, err := h.Facade.OAuth.Start(c.Request.Context(), req.Provider, req.ChannelID)
+	if err != nil {
+		middleware.SetErr(c, apierr.Wrap(apierr.CodeAccountOAuthRejected, "oauth start failed", err))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"auth_url": authURL, "state": state}})
+}
+
+// OAuthCallback GET /accounts/oauth/callback — OAuth provider 回调入口(no-auth,state 校验)。
+func (h *AccountHandler) OAuthCallback(c *gin.Context) {
+	if h.Facade.OAuth == nil {
+		middleware.SetErr(c, apierr.New(apierr.CodeInternal, "oauth 未就绪"))
+		return
+	}
+	state := c.Query("state")
+	code := c.Query("code")
+	if state == "" {
+		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "state 必填"))
+		return
+	}
+	if code == "" {
+		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "code 必填"))
+		return
+	}
+	a, err := h.Facade.OAuth.Callback(c.Request.Context(), state, code)
+	if err != nil {
+		if errors.Is(err, accountoauth.ErrStateNotFound) {
+			middleware.SetErr(c, apierr.Wrap(apierr.CodeAccountOAuthState, "oauth state invalid", err))
+			return
+		}
+		middleware.SetErr(c, apierr.Wrap(apierr.CodeAccountOAuthRejected, "oauth callback failed", err))
+		return
+	}
+	if err := h.Facade.Repo.Create(c.Request.Context(), a); err != nil {
+		writeAcctErr(c, err)
+		return
+	}
+	_ = h.Facade.Repo.AppendEvent(c.Request.Context(), a.ID, "oauth_callback",
+		map[string]any{"provider": a.Provider, "channel_id": a.ChannelID})
+	if h.Facade.Probe != nil {
+		cc := c.Copy()
+		go func(acc *account.Account) {
+			_ = h.Facade.Probe.Run(cc.Request.Context(), acc)
+		}(a)
+	}
+	h.auditOne(c, "account.oauth_callback", a.ID, nil, map[string]any{
+		"id":         a.ID,
+		"channel_id": a.ChannelID,
+		"provider":   a.Provider,
+	})
+	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(accountOAuthDoneHTML))
+}
+
+const accountOAuthDoneHTML = `<!doctype html>
+<html><head><meta charset="utf-8"><title>OAuth complete</title></head>
+<body>
+<script>
+if (window.opener) {
+  window.opener.postMessage({ type: "account_oauth_done" }, window.location.origin);
+}
+window.close();
+</script>
+OAuth complete. You can close this window.
+</body></html>`
 
 // Import POST /accounts/import — 批量导入。支持 JSON body 或 multipart file。
 func (h *AccountHandler) Import(c *gin.Context) {
@@ -696,4 +789,3 @@ func (h *AccountHandler) Stats(c *gin.Context) {
 		"by_provider": gin.H{},
 	}})
 }
-

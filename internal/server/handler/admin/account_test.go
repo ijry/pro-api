@@ -251,6 +251,51 @@ func (f *fakeRefresher) RefreshOne(_ context.Context, id int64) error {
 }
 func (f *fakeRefresher) Close() error { return nil }
 
+// fakeOAuth records Start calls and returns a prepared account from Callback.
+type fakeOAuth struct {
+	mu              sync.Mutex
+	startProvider   string
+	startChannelID  int64
+	callbackState   string
+	callbackCode    string
+	callbackAccount *account.Account
+}
+
+func (f *fakeOAuth) Start(_ context.Context, provider string, channelID int64) (string, string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.startProvider = provider
+	f.startChannelID = channelID
+	return "https://oauth.example/authorize?state=st-1", "st-1", nil
+}
+
+func (f *fakeOAuth) Callback(_ context.Context, state, code string) (*account.Account, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.callbackState = state
+	f.callbackCode = code
+	if f.callbackAccount != nil {
+		return f.callbackAccount, nil
+	}
+	return &account.Account{
+		ChannelID:         42,
+		Provider:          "openai",
+		CredType:          "oauth",
+		Email:             "oauth@example.com",
+		Status:            account.StatusActive,
+		Weight:            100,
+		RefreshTokenValid: 1,
+		Cred: account.AccountCred{
+			AccessToken:  "at",
+			RefreshToken: "rt",
+		},
+	}, nil
+}
+
+func (f *fakeOAuth) ExchangeRefreshToken(context.Context, string, string) (*account.AccountCred, error) {
+	return nil, nil
+}
+
 // memAudit captures audit entries for assertions.
 type memAudit struct {
 	mu      sync.Mutex
@@ -277,16 +322,23 @@ func (m *memAudit) actions() []string {
 // --- harness ---
 
 func newAccountTestHarness() (*gin.Engine, *fakeRepo, *memAudit, *fakeProbe, *fakeRefresher) {
+	r, repo, aud, probe, ref, _ := newAccountTestHarnessWithOAuth()
+	return r, repo, aud, probe, ref
+}
+
+func newAccountTestHarnessWithOAuth() (*gin.Engine, *fakeRepo, *memAudit, *fakeProbe, *fakeRefresher, *fakeOAuth) {
 	gin.SetMode(gin.TestMode)
 	repo := newFakeRepo()
 	imp := &fakeImporter{format: "raw_api_key"}
 	probe := &fakeProbe{}
 	ref := &fakeRefresher{}
+	oauth := &fakeOAuth{}
 	facade := &account.Facade{
 		Repo:      repo,
 		Importer:  imp,
 		Probe:     probe,
 		Refresher: ref,
+		OAuth:     oauth,
 	}
 	aud := &memAudit{}
 	h := NewAccountHandler(facade, aud, func(c *gin.Context) int64 { return 7 })
@@ -294,7 +346,7 @@ func newAccountTestHarness() (*gin.Engine, *fakeRepo, *memAudit, *fakeProbe, *fa
 	r.Use(middleware.ErrorResponse("json"))
 	g := r.Group("/api/admin")
 	h.Register(g)
-	return r, repo, aud, probe, ref
+	return r, repo, aud, probe, ref, oauth
 }
 
 func doAcctReq(t *testing.T, r http.Handler, method, path, body string) *httptest.ResponseRecorder {
@@ -423,6 +475,81 @@ func TestAccountHandler_Create_Persists(t *testing.T) {
 	}
 }
 
+func TestAccountHandler_OAuthStart_OK(t *testing.T) {
+	r, _, _, _, _, oauth := newAccountTestHarnessWithOAuth()
+
+	rec := doAcctReq(t, r, http.MethodPost, "/api/admin/accounts/oauth/start",
+		`{"provider":"openai","channel_id":42}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Data struct {
+			AuthURL string `json:"auth_url"`
+			State   string `json:"state"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("unmarshal: %v body=%s", err, rec.Body.String())
+	}
+	if body.Data.AuthURL == "" || body.Data.State != "st-1" {
+		t.Fatalf("unexpected oauth start response: %+v", body.Data)
+	}
+	if oauth.startProvider != "openai" || oauth.startChannelID != 42 {
+		t.Fatalf("oauth start inputs: provider=%q channel=%d", oauth.startProvider, oauth.startChannelID)
+	}
+}
+
+func TestAccountHandler_OAuthStart_MissingChannelID(t *testing.T) {
+	r, _, _, _, _ := newAccountTestHarness()
+
+	rec := doAcctReq(t, r, http.MethodPost, "/api/admin/accounts/oauth/start",
+		`{"provider":"openai"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("want 400, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAccountHandler_OAuthCallback_PersistsAndReturnsDoneHTML(t *testing.T) {
+	r, repo, aud, _, _, oauth := newAccountTestHarnessWithOAuth()
+
+	rec := doAcctReq(t, r, http.MethodGet, "/api/admin/accounts/oauth/callback?state=st-1&code=code-1", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "account_oauth_done") {
+		t.Fatalf("callback should return popup completion HTML, got %s", rec.Body.String())
+	}
+	if len(repo.items) != 1 {
+		t.Fatalf("want 1 persisted account, got %d", len(repo.items))
+	}
+	var got *account.Account
+	for _, a := range repo.items {
+		got = a
+	}
+	if got.Provider != "openai" || got.CredType != "oauth" || got.ChannelID != 42 {
+		t.Fatalf("unexpected persisted account: %+v", got)
+	}
+	if oauth.callbackState != "st-1" || oauth.callbackCode != "code-1" {
+		t.Fatalf("oauth callback inputs: state=%q code=%q", oauth.callbackState, oauth.callbackCode)
+	}
+	if len(repo.events) != 1 || repo.events[0].eventType != "oauth_callback" || repo.events[0].accountID != got.ID {
+		t.Fatalf("oauth callback event missing: %+v", repo.events)
+	}
+	found := false
+	for _, e := range aud.entries {
+		if e.Action == "account.oauth_callback" {
+			found = true
+			if e.TargetID == nil || *e.TargetID != got.ID {
+				t.Fatalf("TargetID mismatch: %+v", e.TargetID)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("audit account.oauth_callback missing, got %v", aud.actions())
+	}
+}
+
 // Patch: update name + priority; row updated; audit account.patch written.
 func TestAccountHandler_Patch_OK(t *testing.T) {
 	r, repo, aud, _, _ := newAccountTestHarness()
@@ -460,7 +587,7 @@ func TestAccountHandler_PeekCredentials_AuditWritten(t *testing.T) {
 	a := &account.Account{
 		ChannelID: 1, Provider: "anthropic", CredType: "apikey",
 		Status: account.StatusActive, Weight: 100, Extra: json.RawMessage("{}"),
-		Cred:   account.AccountCred{APIKey: "sk-secret"},
+		Cred: account.AccountCred{APIKey: "sk-secret"},
 	}
 	_ = repo.Create(context.Background(), a)
 

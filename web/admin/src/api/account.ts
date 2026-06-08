@@ -101,11 +101,23 @@ export interface StatsResp {
   by_provider: Record<string, number>
 }
 
+export interface OAuthStartPayload {
+  provider: 'anthropic' | 'openai'
+  channel_id: number
+}
+
+export interface OAuthStartResp {
+  auth_url: string
+  state: string
+}
+
 export const accountApi = {
   list:  (p: ListParams) => get<ListResp>('/api/admin/accounts', p as Record<string, unknown>),
   get:   (id: number) => get<AccountDetail>(`/api/admin/accounts/${id}`),
   create:(payload: CreatePayload) => post<{ id?: number; preview?: Account }>('/api/admin/accounts', payload),
   import:(payload: ImportPayload) => post<ImportResp>('/api/admin/accounts/import', payload),
+  oauthStart: async (payload: OAuthStartPayload) =>
+    (await post<{ data: OAuthStartResp }>('/api/admin/accounts/oauth/start', payload)).data,
   patch: (id: number, p: Partial<Account>) => patch<AccountDetail>(`/api/admin/accounts/${id}`, p),
   delete:(id: number) => del<{ id: number }>(`/api/admin/accounts/${id}`),
   enable:(id: number) => post<{ id: number; status: number }>(`/api/admin/accounts/${id}/enable`, {}),
