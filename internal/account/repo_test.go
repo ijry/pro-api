@@ -176,8 +176,11 @@ func TestRepo_ListByChannel(t *testing.T) {
 	r := account.NewRepository(db, cr, idg, clock.Real, nil)
 	for i := 0; i < 3; i++ {
 		require.NoError(t, r.Create(ctx, &account.Account{
-			ChannelID: 200, Provider: "anthropic", CredType: "apikey",
-			Status: account.StatusActive, Weight: 100,
+			ChannelID:         200,
+			Provider:          "anthropic",
+			ExternalAccountID: fmt.Sprintf("list-%d", i),
+			CredType:          "apikey",
+			Status:            account.StatusActive, Weight: 100,
 			Extra: json.RawMessage("{}"),
 			Cred:  account.AccountCred{APIKey: "sk-x"},
 		}))
