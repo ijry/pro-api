@@ -66,7 +66,7 @@ func (m *smtpMailer) sendTLS(addr string, raw []byte, to string) error {
 	if err != nil {
 		return fmt.Errorf("smtp new client: %w", err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 	return m.doSend(c, raw, to)
 }
 
@@ -75,7 +75,7 @@ func (m *smtpMailer) sendSTARTTLS(addr string, raw []byte, to string) error {
 	if err != nil {
 		return fmt.Errorf("smtp dial: %w", err)
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	if ok, _ := c.Extension("STARTTLS"); ok {
 		tlsCfg := &tls.Config{

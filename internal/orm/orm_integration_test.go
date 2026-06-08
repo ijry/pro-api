@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ory/dockertest/v3"
 	"github.com/ijry/pro-api/internal/app/config"
+	"github.com/ory/dockertest/v3"
 )
 
 func mustPool(t *testing.T) *dockertest.Pool {
@@ -34,10 +34,10 @@ func TestOpen_MySQL(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = pool.Purge(res) })
 
-	dsn := fmt.Sprintf("root:proapi@tcp(127.0.0.1:%s)/proapi?charset=utf8mb4&parseTime=True&loc=UTC",
+	dsn := fmt.Sprintf("root:proapi@tcp(127.0.0.1:%s)/proapi?charset=utf8mb4&parseTime=True&loc=UTC&timeout=5s&readTimeout=5s&writeTimeout=5s",
 		res.GetPort("3306/tcp"))
 
-	pool.MaxWait = 90 * time.Second
+	pool.MaxWait = 120 * time.Second
 	if err := pool.Retry(func() error {
 		db, err := Open(config.DatabaseConfig{
 			Driver: "mysql", DSN: dsn,
@@ -46,8 +46,15 @@ func TestOpen_MySQL(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		sqlDB, _ := db.DB()
-		return sqlDB.Ping()
+		sqlDB, dbErr := db.DB()
+		if dbErr != nil {
+			return dbErr
+		}
+		if pingErr := sqlDB.Ping(); pingErr != nil {
+			_ = sqlDB.Close()
+			return pingErr
+		}
+		return sqlDB.Close()
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -76,10 +83,16 @@ func TestOpen_Postgres(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		sqlDB, _ := db.DB()
-		return sqlDB.Ping()
+		sqlDB, dbErr := db.DB()
+		if dbErr != nil {
+			return dbErr
+		}
+		if pingErr := sqlDB.Ping(); pingErr != nil {
+			_ = sqlDB.Close()
+			return pingErr
+		}
+		return sqlDB.Close()
 	}); err != nil {
 		t.Fatal(err)
 	}
 }
-

@@ -127,7 +127,7 @@ func (p *provider) fetchToken(ctx context.Context, code string) (*tokenResponse,
 	if err != nil {
 		return nil, apierr.Wrap(apierr.CodeUpstreamUnavail, "wechat token http", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	var tok tokenResponse
 	if err := json.Unmarshal(body, &tok); err != nil {
@@ -154,7 +154,7 @@ func (p *provider) fetchUserInfo(ctx context.Context, accessToken, openID string
 	if err != nil {
 		return nil, nil, apierr.Wrap(apierr.CodeUpstreamUnavail, "wechat userinfo http", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode/100 != 2 {
 		return nil, nil, apierr.New(apierr.CodeUpstreamError, fmt.Sprintf("wechat /userinfo http %d", resp.StatusCode))
 	}

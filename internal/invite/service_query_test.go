@@ -33,8 +33,8 @@ func (f *fakeSetting) GetString(_ context.Context, key, def string) string {
 	}
 	return v.(string)
 }
-func (f *fakeSetting) GetBool(_ context.Context, _ string, def bool) bool   { return def }
-func (f *fakeSetting) GetInt(_ context.Context, _ string, def int) int       { return def }
+func (f *fakeSetting) GetBool(_ context.Context, _ string, def bool) bool { return def }
+func (f *fakeSetting) GetInt(_ context.Context, _ string, def int) int    { return def }
 func (f *fakeSetting) GetFloat(_ context.Context, key string, def float64) float64 {
 	v, ok := f.kv[key]
 	if !ok {
@@ -42,7 +42,7 @@ func (f *fakeSetting) GetFloat(_ context.Context, key string, def float64) float
 	}
 	return v.(float64)
 }
-func (f *fakeSetting) GetJSON(_ context.Context, _ string, _ any) error { return nil }
+func (f *fakeSetting) GetJSON(_ context.Context, _ string, _ any) error      { return nil }
 func (f *fakeSetting) Put(_ context.Context, _ string, _ any, _ int64) error { return nil }
 func (f *fakeSetting) Close() error                                          { return nil }
 func (f *fakeSetting) GetSecret(_ context.Context, _ string, _ setting.Decryptor) (string, error) {
@@ -140,6 +140,18 @@ func TestMaskEmail(t *testing.T) {
 		if got != c.want {
 			t.Errorf("maskEmail(%q) = %q, want %q", c.in, got, c.want)
 		}
+	}
+}
+
+func TestOnOrderPaidReturnsUserLookupError(t *testing.T) {
+	db, svc := setupQueryDB(t)
+	ctx := context.Background()
+
+	if err := db.Exec(`DROP TABLE users`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.OnOrderPaid(ctx, 1, 20); err == nil {
+		t.Fatal("expected user lookup error")
 	}
 }
 

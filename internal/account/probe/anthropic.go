@@ -34,7 +34,7 @@ func (a *Anthropic) Probe(ctx context.Context, cred account.AccountCred) (http.H
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	_, _ = io.Copy(io.Discard, resp.Body)
 	if resp.StatusCode >= 400 {
 		return resp.Header, fmt.Errorf("anthropic probe: status %d", resp.StatusCode)
