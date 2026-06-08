@@ -21,7 +21,7 @@ type WalletCredit interface {
 // Deps holds dependencies for NewService.
 type Deps struct {
 	Repo    Repository
-	DB      *gorm.DB       // raw DB for cross-package queries without import cycles
+	DB      *gorm.DB // raw DB for cross-package queries without import cycles
 	Wallet  WalletCredit
 	Setting setting.Store
 	IDGen   *idgen.Generator
@@ -51,7 +51,10 @@ func (s *Service) OnOrderPaid(ctx context.Context, orderID, userID int64) error 
 		Table("users").
 		Select("invited_by").
 		Where("id = ?", userID).
-		Scan(&invitedBy).Error; err != nil || invitedBy == 0 {
+		Scan(&invitedBy).Error; err != nil {
+		return fmt.Errorf("invite: query inviter for user %d: %w", userID, err)
+	}
+	if invitedBy == 0 {
 		return nil // no inviter
 	}
 

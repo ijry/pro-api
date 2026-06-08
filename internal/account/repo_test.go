@@ -38,22 +38,36 @@ func newTestDB(t *testing.T) *gorm.DB {
 	}
 	t.Cleanup(func() { _ = pool.Purge(res) })
 
-	dsn := fmt.Sprintf("root:proapi@tcp(127.0.0.1:%s)/proapi?charset=utf8mb4&parseTime=True&loc=UTC",
+	dsn := fmt.Sprintf("root:proapi@tcp(127.0.0.1:%s)/proapi?charset=utf8mb4&parseTime=True&loc=UTC&timeout=5s&readTimeout=5s&writeTimeout=5s",
 		res.GetPort("3306/tcp"))
 
 	var db *gorm.DB
-	pool.MaxWait = 90 * time.Second
+	pool.MaxWait = 120 * time.Second
 	if err := pool.Retry(func() error {
 		var openErr error
-		db, openErr = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		candidate, openErr := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 		if openErr != nil {
 			return openErr
 		}
-		sqlDB, _ := db.DB()
-		return sqlDB.Ping()
+		sqlDB, dbErr := candidate.DB()
+		if dbErr != nil {
+			return dbErr
+		}
+		if pingErr := sqlDB.Ping(); pingErr != nil {
+			_ = sqlDB.Close()
+			return pingErr
+		}
+		db = candidate
+		return nil
 	}); err != nil {
 		t.Fatalf("could not connect to mysql: %v", err)
 	}
+	t.Cleanup(func() {
+		sqlDB, err := db.DB()
+		if err == nil {
+			_ = sqlDB.Close()
+		}
+	})
 
 	// Run account migrations via raw SQL.
 	sqls := []string{

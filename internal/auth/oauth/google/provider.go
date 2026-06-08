@@ -106,7 +106,7 @@ func (p *provider) Exchange(ctx context.Context, code, redirectURL string) (*oau
 	if err != nil {
 		return nil, "", apierr.Wrap(apierr.CodeUpstreamUnavail, "google token http", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	tokBody, _ := io.ReadAll(resp.Body)
 	var tok tokenResponse
 	if err := json.Unmarshal(tokBody, &tok); err != nil {
@@ -140,7 +140,7 @@ func (p *provider) fetchUserInfo(ctx context.Context, accessToken string) ([]byt
 	if err != nil {
 		return nil, nil, apierr.Wrap(apierr.CodeUpstreamUnavail, "google userinfo http", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode/100 != 2 {
 		return nil, nil, apierr.New(apierr.CodeUpstreamError, fmt.Sprintf("google /userinfo http %d", resp.StatusCode))
 	}

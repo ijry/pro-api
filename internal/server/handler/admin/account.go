@@ -477,7 +477,7 @@ func (h *AccountHandler) Import(c *gin.Context) {
 		if err == nil && fh != nil {
 			f, err := fh.Open()
 			if err == nil {
-				defer f.Close()
+				defer func() { _ = f.Close() }()
 				buf, _ := io.ReadAll(f)
 				text = string(buf)
 			}
