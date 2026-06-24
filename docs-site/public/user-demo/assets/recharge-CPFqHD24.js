@@ -1,0 +1,1 @@
+import{u as p,l as t}from"./index-DNhoM-_O.js";const r={create:(a,e)=>p("/api/user/payment/manual",{amount_cny:a,remark:e}),list:(a=1,e=20)=>t(`/api/user/payment/manual?page=${a}&page_size=${e}`),get:a=>t(`/api/user/payment/manual/${a}`),cancel:a=>p(`/api/user/payment/manual/${a}/cancel`)};export{r};

@@ -166,7 +166,7 @@ const enSidebar: DefaultTheme.Sidebar = [
 ]
 
 export default defineConfig({
-  title: 'proapi',
+  title: 'pro-api',
   description: '一站式大模型 API 中转网关 / All-in-one LLM API Gateway',
   base: process.env.DOCS_BASE || '/',
   cleanUrls: true,
