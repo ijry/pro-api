@@ -14,6 +14,13 @@ export interface ModelsResponse {
   models: ModelInfo[]
 }
 
+type RawModelsResponse = ModelsResponse | ModelInfo[]
+
+function normalizeModels(resp: RawModelsResponse): ModelsResponse {
+  if (Array.isArray(resp)) return { models: resp }
+  return { models: Array.isArray(resp.models) ? resp.models : [] }
+}
+
 export const modelApi = {
-  list: () => get<ModelsResponse>('/api/public/models'),
+  list: async () => normalizeModels(await get<RawModelsResponse>('/api/public/models')),
 }

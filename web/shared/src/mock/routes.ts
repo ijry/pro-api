@@ -56,6 +56,17 @@ const userTokenById = (url: string) => {
   return found ? clone(found) : clone((userTokens as any[])[0])
 }
 
+const publicModels = () => ({
+  models: (models as any[]).map((m) => ({
+    id: String(m.name ?? m.id),
+    name: m.name,
+    provider: m.family || 'Other',
+    context_length: m.max_input_tokens,
+    input_price_per_1k: m.default_input_ratio,
+    output_price_per_1k: m.default_output_ratio,
+  })),
+})
+
 const userLogItem = (e: any) => ({
   id: String(e.id),
   model: e.client_model,
@@ -202,7 +213,7 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/user\/invites\/records(\?.*)?$/,       handler: (_m, _u, p) => paginate(inviteRecords as any[], p as PageParams) },
 
   { pattern: /^\/api\/public\/groups(\?.*)?$/,               handler: () => ({ items: (groups as any[]).filter((g) => g.status === 0) }) },
-  { pattern: /^\/api\/public\/models(\?.*)?$/,               handler: () => clone(models) },
+  { pattern: /^\/api\/public\/models(\?.*)?$/,               handler: () => clone(publicModels()) },
   { pattern: /^\/api\/public\/notices(\?.*)?$/,              handler: (_m, _u, p) => paginate(notices as any[], p as PageParams) },
 ]
 
