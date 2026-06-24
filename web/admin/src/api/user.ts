@@ -5,7 +5,6 @@ export interface UserListParams {
   page?: number; size?: number; keyword?: string
   role?: 0 | 1 | 2 | 3
   status?: 0 | 1 | 2
-  group_id?: number
   order?: string
 }
 
@@ -19,14 +18,13 @@ export interface UserPatch {
   display_name?: string
   role?: 0 | 1 | 2 | 3
   status?: 0 | 1 | 2
-  group_id?: number
 }
 
 export interface ResetPasswordResp { ok: true; temp_password?: string }
 export interface QuotaAdjustResp { ok: true; balance_after: number }
 
 export const userApi = {
-  list: (p: UserListParams) => get<Page<AdminUser & { group_name: string; wallet?: { balance: number } }>>('/api/admin/users', p as Record<string, unknown>),
+  list: (p: UserListParams) => get<Page<AdminUser & { wallet?: { balance: number } }>>('/api/admin/users', p as Record<string, unknown>),
   detail: (id: number) => get<UserDetailResponse>(`/api/admin/users/${id}`),
   patch: (id: number, p: UserPatch) => patch<AdminUser>(`/api/admin/users/${id}`, p),
   resetPassword: (id: number, newPassword?: string) =>

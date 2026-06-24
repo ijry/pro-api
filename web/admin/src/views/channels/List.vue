@@ -22,7 +22,7 @@ const drawerShow = ref(false)
 const drawerMode = ref<'create'|'edit'>('create')
 const drawerLoading = ref(false)
 const editingId = ref<number>(0)
-const form = ref<ChannelInput>({ name: '', provider: 'openai', base_url: '', credentials: { api_key: '' }, priority: 0, weight: 1, status: 0, tags: [], extra: {} })
+const form = ref<ChannelInput>({ name: '', provider: 'openai', base_url: '', priority: 0, weight: 1, status: 0, tags: [], extra: {} })
 
 const testModal = ref({ show: false, channelId: 0, result: null as null|{ ok: boolean; latency_ms?: number; error?: string } })
 const confirmState = ref({ show: false, type: '', id: 0, title: '', content: '' })
@@ -51,14 +51,14 @@ onMounted(load)
 
 function openCreate() {
   drawerMode.value = 'create'
-  form.value = { name: '', provider: 'openai', base_url: '', credentials: { api_key: '' }, priority: 0, weight: 1, status: 0, tags: [], extra: {} }
+  form.value = { name: '', provider: 'openai', base_url: '', priority: 0, weight: 1, status: 0, tags: [], extra: {} }
   drawerShow.value = true
 }
 
 function openEdit(row: Channel) {
   drawerMode.value = 'edit'
   editingId.value = row.id
-  form.value = { name: row.name, provider: row.provider, base_url: row.base_url, credentials: { api_key: '' }, priority: row.priority, weight: row.weight, status: row.status as 0|1, tags: [...row.tags], extra: { ...row.extra } }
+  form.value = { name: row.name, provider: row.provider, base_url: row.base_url, priority: row.priority, weight: row.weight, status: row.status as 0|1, tags: [...row.tags], extra: { ...row.extra } }
   drawerShow.value = true
 }
 
@@ -129,7 +129,6 @@ const columns: DataTableColumns<Channel> = [
     <NFormItem label="名称"><NInput v-model:value="form.name" /></NFormItem>
     <NFormItem label="供应商"><NSelect v-model:value="form.provider" :options="providerOptions" /></NFormItem>
     <NFormItem label="Base URL"><NInput v-model:value="form.base_url" placeholder="https://api.openai.com/v1" /></NFormItem>
-    <NFormItem label="API Key"><NInput v-model:value="form.credentials.api_key" type="password" show-password-on="click" placeholder="sk-..." /></NFormItem>
     <NFormItem label="优先级"><NInputNumber v-model:value="form.priority" style="width:100%" /></NFormItem>
     <NFormItem label="权重"><NInputNumber v-model:value="form.weight" :min="1" style="width:100%" /></NFormItem>
   </FormDrawer>

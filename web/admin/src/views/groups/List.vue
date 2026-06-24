@@ -15,7 +15,7 @@ const drawerShow = ref(false)
 const drawerMode = ref<'create'|'edit'>('create')
 const drawerLoading = ref(false)
 const editingId = ref(0)
-const form = ref<GroupInput>({ name: '', display_name: '', ratio: 1, priority: 0 })
+const form = ref<GroupInput>({ name: '', display_name: '', ratio: 1 })
 const confirmState = ref({ show: false, type: '', id: 0, title: '', content: '' })
 
 const allChannels = ref<Channel[]>([])
@@ -55,7 +55,7 @@ onMounted(load)
 
 function openCreate() {
   drawerMode.value = 'create'
-  form.value = { name: '', display_name: '', ratio: 1, priority: 0 }
+  form.value = { name: '', display_name: '', ratio: 1 }
   selectedChannelIds.value = []
   originalChannelIds.value = []
   allChannels.value = []
@@ -65,7 +65,7 @@ function openCreate() {
 function openEdit(row: Group) {
   drawerMode.value = 'edit'
   editingId.value = row.id
-  form.value = { name: row.name, display_name: row.display_name, ratio: row.ratio, priority: row.priority }
+  form.value = { name: row.name, display_name: row.display_name, ratio: row.ratio }
   selectedChannelIds.value = []
   originalChannelIds.value = []
   drawerShow.value = true
@@ -108,7 +108,6 @@ const columns: DataTableColumns<Group> = [
   { title: '名称', key: 'name', width: 120 },
   { title: '显示名', key: 'display_name', width: 140 },
   { title: '倍率', key: 'ratio', width: 80 },
-  { title: '优先级', key: 'priority', width: 80 },
   { title: '渠道数', key: 'channels', width: 70, render: (row) => channelCountByGroup.value[row.id] ?? 0 },
   { title: '状态', key: 'status', width: 90, render: (row) => h(NTag, { type: row.status===0?'success':'error', size: 'small' }, { default: () => row.status===0?'正常':'禁用' }) },
   { title: '操作', key: 'actions', width: 200, render: (row) => h(NSpace, { size: 'small' }, { default: () => [
@@ -133,8 +132,6 @@ const columns: DataTableColumns<Group> = [
     <NFormItem label="名称（唯一标识）"><NInput v-model:value="form.name" :disabled="drawerMode==='edit'" /></NFormItem>
     <NFormItem label="显示名"><NInput v-model:value="form.display_name" /></NFormItem>
     <NFormItem label="倍率"><NInputNumber v-model:value="form.ratio" :min="0" :step="0.01" style="width:100%" /></NFormItem>
-    <NFormItem label="优先级"><NInputNumber v-model:value="form.priority" style="width:100%" /></NFormItem>
-
     <NFormItem v-if="drawerMode === 'edit'" label="绑定渠道">
       <NSpin v-if="channelLoading" size="small" />
       <NCheckboxGroup v-else v-model:value="selectedChannelIds">

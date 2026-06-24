@@ -21,7 +21,7 @@ export interface ChannelListParams {
 
 export interface ChannelInput {
   name: string; provider: string; base_url?: string
-  credentials: { api_key?: string; secret?: string; region?: string; extra?: Record<string, string> }
+  credentials?: { secret?: string; region?: string; extra?: Record<string, string> }
   priority: number; weight: number
   status: 0 | 1
   group_id?: number

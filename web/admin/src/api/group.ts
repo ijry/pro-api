@@ -6,7 +6,7 @@ export interface Group {
   created_at: string; updated_at: string
 }
 
-export interface GroupInput { name: string; display_name: string; ratio: number; priority: number }
+export interface GroupInput { name: string; display_name: string; ratio: number }
 
 export const groupApi = {
   list: () => get<{ items: Group[] }>('/api/admin/groups'),

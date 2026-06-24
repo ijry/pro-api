@@ -67,7 +67,6 @@ const tokenColumns: DataTableColumns<Token> = [
             <NDescriptionsItem label="状态">
               <NTag :type="statusLabels[detail.user.status]?.type" size="small">{{ statusLabels[detail.user.status]?.label }}</NTag>
             </NDescriptionsItem>
-            <NDescriptionsItem label="分组">{{ detail.user.group_name || '--' }}</NDescriptionsItem>
             <NDescriptionsItem label="最后登录">
               <TimeDisplay :value="detail.user.last_login_at" relative />
             </NDescriptionsItem>

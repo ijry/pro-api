@@ -11,12 +11,10 @@ import TimeDisplay from '@/components/TimeDisplay.vue'
 import MoneyDisplay from '@/components/MoneyDisplay.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { userApi } from '@/api/user'
-import { useDictStore } from '@/stores/dict'
 import type { AdminUser } from '@/api/auth'
 
 const message = useMessage()
 const router = useRouter()
-const dictStore = useDictStore()
 
 const data = ref<(AdminUser & { wallet?: { balance: number } })[]>([])
 const total = ref(0)
@@ -26,7 +24,6 @@ const filter = ref({
   keyword: '',
   role: null as number | null,
   status: null as number | null,
-  group_id: null as number | null,
   page: 1,
   size: 20,
 })
@@ -44,7 +41,6 @@ async function load() {
       keyword: filter.value.keyword || undefined,
       role: filter.value.role !== null ? filter.value.role as 0|1|2|3 : undefined,
       status: filter.value.status !== null ? filter.value.status as 0|1|2 : undefined,
-      group_id: filter.value.group_id ?? undefined,
     })
     data.value = res.items
     total.value = res.total
@@ -53,7 +49,6 @@ async function load() {
 }
 
 onMounted(() => {
-  dictStore.ensureGroups()
   load()
 })
 
@@ -87,7 +82,6 @@ const columns: DataTableColumns<AdminUser & { wallet?: { balance: number } }> = 
     title: '状态', key: 'status', width: 100,
     render: (row) => h(NTag, { type: statusLabels[row.status]?.type ?? 'default', size: 'small' }, { default: () => statusLabels[row.status]?.label ?? row.status }),
   },
-  { title: '分组', key: 'group_name', width: 100 },
   {
     title: '余额', key: 'wallet', width: 140,
     render: (row) => h(MoneyDisplay, { quota: row.wallet?.balance ?? 0 }),
@@ -176,7 +170,6 @@ async function handleQuotaSubmit() {
       <NInput v-model:value="filter.keyword" placeholder="搜索用户名/邮箱" clearable style="width: 200px" @update:value="() => { filter.page = 1; load() }" />
       <NSelect v-model:value="filter.role" placeholder="角色" :options="[{label:'User',value:0},{label:'Dept',value:1},{label:'Tenant',value:2},{label:'SuperAdmin',value:3}]" clearable style="width: 130px" @update:value="() => { filter.page = 1; load() }" />
       <NSelect v-model:value="filter.status" placeholder="状态" :options="[{label:'正常',value:0},{label:'禁用',value:1},{label:'待验证',value:2}]" clearable style="width: 100px" @update:value="() => { filter.page = 1; load() }" />
-      <NSelect v-model:value="filter.group_id" placeholder="分组" :options="dictStore.groupOptions" clearable style="width: 120px" @update:value="() => { filter.page = 1; load() }" />
     </template>
 
     <NDataTable
