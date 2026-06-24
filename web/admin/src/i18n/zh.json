@@ -68,6 +68,42 @@
     "title": "页面不存在",
     "desc": "你访问的页面不存在,请检查 URL"
   },
+  "settings": {
+    "title": "系统设置",
+    "groups": {
+      "basic": "基础",
+      "billing": "计费",
+      "auth": "认证",
+      "smtp": "邮件",
+      "ratelimit": "限流",
+      "payment": "支付"
+    },
+    "actions": {
+      "save": "保存"
+    },
+    "toast": {
+      "saved": "{key} 已保存",
+      "invalid_json": "JSON 格式不正确"
+    },
+    "items": {
+      "site.name": { "label": "站点名称", "description": "显示在页面和邮件中的站点名称" },
+      "site.logo": { "label": "Logo URL", "description": "站点 Logo 地址" },
+      "site.footer": { "label": "页脚文字", "description": "页面底部显示的文字" },
+      "register.enabled": { "label": "开放注册", "description": "是否允许新用户自行注册" },
+      "register.invite_only": { "label": "仅邀请注册", "description": "开启后注册必须填写邀请码" },
+      "billing.enabled": { "label": "启用计费", "description": "是否启用额度计费" },
+      "billing.quota_unit": { "label": "额度单位", "description": "额度显示和结算单位" },
+      "billing.default_quota": { "label": "新用户初始额度", "description": "新用户注册后的默认额度" },
+      "billing.recharge_enabled": { "label": "允许充值申请", "description": "是否允许用户提交手动充值申请" },
+      "auth.github_oauth": { "label": "GitHub OAuth", "description": "GitHub 登录配置(JSON)" },
+      "auth.google_oauth": { "label": "Google OAuth", "description": "Google 登录配置(JSON)" },
+      "session.ttl_days": { "label": "Session 有效期", "description": "登录会话有效天数" },
+      "smtp.host": { "label": "SMTP 服务器", "description": "邮件服务器地址" },
+      "smtp.port": { "label": "SMTP 端口", "description": "邮件服务器端口" },
+      "smtp.username": { "label": "发件账号", "description": "SMTP 用户名或发件地址" },
+      "smtp.password": { "label": "SMTP 密码", "description": "SMTP 密码或授权码" }
+    }
+  },
   "accounts": {
     "title": "渠道账号",
     "kpi": {

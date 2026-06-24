@@ -67,6 +67,51 @@ const publicModels = () => ({
   })),
 })
 
+const channelMappings: Record<number, any[]> = {
+  1: [
+    { id: 101, channel_id: 1, client_model: 'gpt-4o', upstream_model: 'gpt-4o', input_ratio: 5, output_ratio: 15, cached_ratio: 2.5, reasoning_ratio: null },
+    { id: 102, channel_id: 1, client_model: 'gpt-4o-mini', upstream_model: 'gpt-4o-mini', input_ratio: 0.15, output_ratio: 0.6, cached_ratio: 0.075, reasoning_ratio: null },
+    { id: 103, channel_id: 1, client_model: 'dall-e-3', upstream_model: 'dall-e-3', input_ratio: 40, output_ratio: 0, cached_ratio: null, reasoning_ratio: null },
+  ],
+  2: [
+    { id: 201, channel_id: 2, client_model: 'claude-3-5-sonnet', upstream_model: 'claude-3-5-sonnet-20241022', input_ratio: 3, output_ratio: 15, cached_ratio: 0.3, reasoning_ratio: null },
+    { id: 202, channel_id: 2, client_model: 'claude-3-opus', upstream_model: 'claude-3-opus-20240229', input_ratio: 15, output_ratio: 75, cached_ratio: 1.5, reasoning_ratio: null },
+  ],
+  3: [
+    { id: 301, channel_id: 3, client_model: 'deepseek-chat', upstream_model: 'deepseek-chat', input_ratio: 0.14, output_ratio: 0.28, cached_ratio: null, reasoning_ratio: null },
+    { id: 302, channel_id: 3, client_model: 'deepseek-reasoner', upstream_model: 'deepseek-reasoner', input_ratio: 0.55, output_ratio: 2.19, cached_ratio: 0.14, reasoning_ratio: 2.19 },
+  ],
+}
+
+const channelMappingsByUrl = (url: string) => {
+  const id = Number((url.match(/\/channels\/(\d+)\/(?:model_mappings|mappings)/) || [])[1])
+  return { items: clone(channelMappings[id] ?? []) }
+}
+
+const accountEventsByUrl = (url: string, params?: unknown) => {
+  const id = Number((url.match(/\/accounts\/(\d+)\/events/) || [])[1])
+  const base = [
+    { id: id * 100 + 1, account_id: id, event_type: 'imported', payload: { source: 'demo' }, created_at: '2026-06-01T08:00:00Z' },
+    { id: id * 100 + 2, account_id: id, event_type: 'test_ok', payload: { latency_ms: 318 }, created_at: '2026-06-02T09:30:00Z' },
+    { id: id * 100 + 3, account_id: id, event_type: 'refreshed', payload: { token_expires_at: '2026-06-09T00:00:00Z' }, created_at: '2026-06-02T12:00:00Z' },
+  ]
+  return paginate(base, params as PageParams)
+}
+
+const accountCredentialsByUrl = (url: string) => {
+  const id = Number((url.match(/\/accounts\/(\d+)\/credentials\/peek/) || [])[1])
+  const found = (accounts as any[]).find((a) => a.id === id) ?? (accounts as any[])[0]
+  return {
+    credentials: {
+      type: found.cred_type,
+      api_key: found.cred_type === 'apikey' ? 'sk-demo-full-key-not-real' : undefined,
+      access_token: found.cred_type !== 'apikey' ? 'demo-access-token-not-real' : undefined,
+      refresh_token: found.cred_type !== 'apikey' ? 'demo-refresh-token-not-real' : undefined,
+      note: 'Demo credentials only. No real secret is stored here.',
+    },
+  }
+}
+
 const userLogItem = (e: any) => ({
   id: String(e.id),
   model: e.client_model,
@@ -92,8 +137,8 @@ export const routes: MockRoute[] = [
   { pattern: /^\/api\/admin\/stats\/by_user$/,             handler: () => clone(statsByUser) },
 
   { pattern: /^\/api\/admin\/channels\/batch_test$/,        handler: () => ({ results: (channels as any[]).slice(0, 3).map((c: any) => ({ ok: true, latency_ms: 120 + Math.floor(c.id * 17), channel_id: c.id })) }) },
-  { pattern: /^\/api\/admin\/channels\/\d+\/model_mappings$/, handler: (m) => m === 'GET' ? { items: [] } : { items: [] } },
-  { pattern: /^\/api\/admin\/channels\/\d+\/mappings$/,    handler: () => ({ items: [] }) },
+  { pattern: /^\/api\/admin\/channels\/\d+\/model_mappings$/, handler: (m, u, p) => m === 'GET' ? channelMappingsByUrl(u) : { items: (p as any)?.mappings ?? [] } },
+  { pattern: /^\/api\/admin\/channels\/\d+\/mappings$/,    handler: (_m, u) => channelMappingsByUrl(u) },
   { pattern: /^\/api\/admin\/channels\/\d+\/test$/,        handler: () => ({ ok: true, latency_ms: 142 }) },
   { pattern: /^\/api\/admin\/channels\/\d+\/health$/,      handler: () => ({ state: 'closed', consec_fail: 0, opened_at: null }) },
   { pattern: /^\/api\/admin\/channels\/\d+\/?$/,           handler: (m, u) => m === 'GET' ? channelById(u) : ok() },
@@ -161,7 +206,8 @@ export const routes: MockRoute[] = [
 
   // Accounts / 号池 (admin)
   { pattern: /^\/api\/admin\/accounts\/import$/,           handler: () => ({ imported: 0, preview: [], errors: [], account_ids: [] }) },
-  { pattern: /^\/api\/admin\/accounts\/\d+\/events$/,      handler: (_m, _u, p) => paginate([], p as PageParams) },
+  { pattern: /^\/api\/admin\/accounts\/\d+\/events$/,      handler: (_m, u, p) => accountEventsByUrl(u, p) },
+  { pattern: /^\/api\/admin\/accounts\/\d+\/credentials\/peek$/, handler: (_m, u) => accountCredentialsByUrl(u) },
   { pattern: /^\/api\/admin\/accounts\/\d+\/[a-z_]+$/,     handler: writeOk },
   { pattern: /^\/api\/admin\/accounts\/stats\/overview$/,  handler: () => ({ total: 7, active: 5, cooldown: 1, disabled: 1, error: 0 }) },
   { pattern: /^\/api\/admin\/accounts\/\d+$/,              handler: (m, u) => {

@@ -68,6 +68,42 @@
     "title": "Page Not Found",
     "desc": "The page you're looking for doesn't exist. Please check the URL."
   },
+  "settings": {
+    "title": "Settings",
+    "groups": {
+      "basic": "Basic",
+      "billing": "Billing",
+      "auth": "Auth",
+      "smtp": "Email",
+      "ratelimit": "Rate Limit",
+      "payment": "Payment"
+    },
+    "actions": {
+      "save": "Save"
+    },
+    "toast": {
+      "saved": "{key} saved",
+      "invalid_json": "Invalid JSON"
+    },
+    "items": {
+      "site.name": { "label": "Site Name", "description": "Site name shown in pages and emails" },
+      "site.logo": { "label": "Logo URL", "description": "Site logo URL" },
+      "site.footer": { "label": "Footer Text", "description": "Text shown in the page footer" },
+      "register.enabled": { "label": "Open Registration", "description": "Allow new users to register themselves" },
+      "register.invite_only": { "label": "Invite Only", "description": "Require an invite code during registration" },
+      "billing.enabled": { "label": "Enable Billing", "description": "Enable quota billing" },
+      "billing.quota_unit": { "label": "Quota Unit", "description": "Display and settlement unit for quota" },
+      "billing.default_quota": { "label": "Initial User Quota", "description": "Default quota granted to new users" },
+      "billing.recharge_enabled": { "label": "Allow Recharge Requests", "description": "Allow users to submit manual recharge requests" },
+      "auth.github_oauth": { "label": "GitHub OAuth", "description": "GitHub sign-in configuration (JSON)" },
+      "auth.google_oauth": { "label": "Google OAuth", "description": "Google sign-in configuration (JSON)" },
+      "session.ttl_days": { "label": "Session TTL", "description": "Login session lifetime in days" },
+      "smtp.host": { "label": "SMTP Host", "description": "Mail server host" },
+      "smtp.port": { "label": "SMTP Port", "description": "Mail server port" },
+      "smtp.username": { "label": "Sender Account", "description": "SMTP username or sender address" },
+      "smtp.password": { "label": "SMTP Password", "description": "SMTP password or app password" }
+    }
+  },
   "accounts": {
     "title": "Channel Accounts",
     "kpi": {
