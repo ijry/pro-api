@@ -11,7 +11,6 @@ export interface Account {
   id: number
   name: string
   channel_id: number
-  share_tag?: string
   provider: 'anthropic' | 'openai'
   tier: string
   cred_type: 'oauth' | 'apikey' | 'token_pasted'
@@ -39,7 +38,6 @@ export interface AccountDetail extends Account {
 
 export interface ListParams {
   channel_id?: number
-  share_tag?: string
   status?: number
 }
 
@@ -55,7 +53,6 @@ export interface CreatePayload {
   tier?: string
   format?: string
   text: string
-  share_tag?: string
   priority?: number
   weight?: number
   dry_run?: boolean
@@ -63,7 +60,6 @@ export interface CreatePayload {
 
 export interface ImportPayload {
   channel_id: number
-  share_tag?: string
   text?: string
   format?: string
   dry_run?: boolean

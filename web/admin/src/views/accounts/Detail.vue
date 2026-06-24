@@ -72,7 +72,6 @@ function refreshValidType(v?: 0 | 1 | 2): 'success' | 'error' | 'default' {
               <NDescriptionsItem :label="t('accounts.columns.id')">{{ data.id }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.name')">{{ data.name }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.channel')">#{{ data.channel_id }}</NDescriptionsItem>
-              <NDescriptionsItem :label="t('accounts.columns.share_tag')">{{ data.share_tag || '--' }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.provider')">{{ data.provider }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.tier')">{{ data.tier }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.cred_type')">{{ t(`accounts.cred_type.${data.cred_type}`) }}</NDescriptionsItem>

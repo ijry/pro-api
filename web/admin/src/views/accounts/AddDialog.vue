@@ -31,7 +31,6 @@ onMounted(loadChannels)
 
 const common = ref({
   channel_id: null as number | null,
-  share_tag: '',
   name: '',
 })
 
@@ -58,7 +57,7 @@ let oauthMessageHandler: ((event: MessageEvent) => void) | null = null
 watch(() => props.show, (v) => {
   if (v) {
     tab.value = 'token_json'
-    common.value = { channel_id: null, share_tag: '', name: '' }
+    common.value = { channel_id: null, name: '' }
     tokenForm.value = { text: '', format: 'auto' }
     apikeyForm.value = { text: '' }
     importForm.value = { text: '', format: 'auto' }
@@ -103,7 +102,6 @@ async function doPreview() {
   try {
     const r = await accountApi.import({
       channel_id: common.value.channel_id,
-      share_tag: common.value.share_tag || undefined,
       text: importForm.value.text,
       format: importForm.value.format || undefined,
       dry_run: true,
@@ -125,7 +123,6 @@ async function doSubmit() {
       await accountApi.create({
         channel_id: common.value.channel_id,
         name: common.value.name || undefined,
-        share_tag: common.value.share_tag || undefined,
         text: tokenForm.value.text,
         format: tokenForm.value.format,
       })
@@ -134,7 +131,6 @@ async function doSubmit() {
       await accountApi.create({
         channel_id: common.value.channel_id,
         name: common.value.name || undefined,
-        share_tag: common.value.share_tag || undefined,
         text: apikeyForm.value.text,
         format: 'apikey',
       })
@@ -142,7 +138,6 @@ async function doSubmit() {
     } else if (tab.value === 'import') {
       const r = await accountApi.import({
         channel_id: common.value.channel_id,
-        share_tag: common.value.share_tag || undefined,
         text: importForm.value.text,
         format: importForm.value.format || undefined,
       })
@@ -216,9 +211,6 @@ const previewColumns: DataTableColumns<Account> = [
           <NFormItem :label="t('accounts.add_dialog.channel_label')" required>
             <NSelect v-model:value="common.channel_id" :options="channelOptions" :placeholder="t('accounts.add_dialog.channel_placeholder')" clearable />
           </NFormItem>
-          <NFormItem :label="t('accounts.add_dialog.share_tag_label')">
-            <NInput v-model:value="common.share_tag" :placeholder="t('accounts.add_dialog.share_tag_placeholder')" />
-          </NFormItem>
           <NFormItem :label="t('accounts.add_dialog.name_label')">
             <NInput v-model:value="common.name" :placeholder="t('accounts.add_dialog.name_placeholder')" />
           </NFormItem>
@@ -236,9 +228,6 @@ const previewColumns: DataTableColumns<Account> = [
           <NFormItem :label="t('accounts.add_dialog.channel_label')" required>
             <NSelect v-model:value="common.channel_id" :options="channelOptions" :placeholder="t('accounts.add_dialog.channel_placeholder')" clearable />
           </NFormItem>
-          <NFormItem :label="t('accounts.add_dialog.share_tag_label')">
-            <NInput v-model:value="common.share_tag" :placeholder="t('accounts.add_dialog.share_tag_placeholder')" />
-          </NFormItem>
           <NFormItem :label="t('accounts.add_dialog.name_label')">
             <NInput v-model:value="common.name" :placeholder="t('accounts.add_dialog.name_placeholder')" />
           </NFormItem>
@@ -252,9 +241,6 @@ const previewColumns: DataTableColumns<Account> = [
         <NForm label-placement="top" size="small">
           <NFormItem :label="t('accounts.add_dialog.channel_label')" required>
             <NSelect v-model:value="common.channel_id" :options="channelOptions" :placeholder="t('accounts.add_dialog.channel_placeholder')" clearable />
-          </NFormItem>
-          <NFormItem :label="t('accounts.add_dialog.share_tag_label')">
-            <NInput v-model:value="common.share_tag" :placeholder="t('accounts.add_dialog.share_tag_placeholder')" />
           </NFormItem>
           <NFormItem :label="t('accounts.add_dialog.format_label')">
             <NSelect v-model:value="importForm.format" :options="formatOptions" />

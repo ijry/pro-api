@@ -126,23 +126,6 @@ func (r *repo) ListByChannel(ctx context.Context, channelID int64) ([]*Account, 
 	return out, nil
 }
 
-func (r *repo) ListByShareTag(ctx context.Context, tag string) ([]*Account, error) {
-	var out []*Account
-	err := r.db.WithContext(ctx).
-		Where("share_tag = ? AND deleted_at IS NULL", tag).
-		Find(&out).Error
-	if err != nil {
-		return nil, err
-	}
-	for _, a := range out {
-		// hydrate 失败不影响其余账号入列,但需记录(否则凭证解密失败会静默)。
-		if err := r.hydrate(a); err != nil && r.log != nil {
-			r.log.Warn("account: hydrate failed", zap.Int64("account_id", a.ID), zap.Error(err))
-		}
-	}
-	return out, nil
-}
-
 func (r *repo) ListForRefresher(ctx context.Context, before time.Time, limit int) ([]*Account, error) {
 	var out []*Account
 	err := r.db.WithContext(ctx).

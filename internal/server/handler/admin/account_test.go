@@ -73,9 +73,6 @@ func (f *fakeRepo) Update(_ context.Context, a *account.Account) error {
 	if a.Weight != 0 {
 		cur.Weight = a.Weight
 	}
-	if a.ShareTag != "" {
-		cur.ShareTag = a.ShareTag
-	}
 	cur.Status = a.Status
 	cur.CooldownUntil = a.CooldownUntil
 	cur.ConsecFailures = a.ConsecFailures
@@ -126,18 +123,6 @@ func (f *fakeRepo) ListByChannel(_ context.Context, channelID int64) ([]*account
 	out := []*account.Account{}
 	for _, a := range f.items {
 		if a.ChannelID == channelID {
-			out = append(out, a)
-		}
-	}
-	return out, nil
-}
-
-func (f *fakeRepo) ListByShareTag(_ context.Context, tag string) ([]*account.Account, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	out := []*account.Account{}
-	for _, a := range f.items {
-		if a.ShareTag == tag {
 			out = append(out, a)
 		}
 	}

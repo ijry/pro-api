@@ -92,18 +92,6 @@ func (f *fakeRepo) ListByChannel(_ context.Context, channelID int64) ([]*account
 	return out, nil
 }
 
-func (f *fakeRepo) ListByShareTag(_ context.Context, tag string) ([]*account.Account, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	out := []*account.Account{}
-	for _, a := range f.items {
-		if a.ShareTag == tag {
-			out = append(out, a)
-		}
-	}
-	return out, nil
-}
-
 func (f *fakeRepo) ListForRefresher(context.Context, time.Time, int) ([]*account.Account, error) {
 	return nil, nil
 }

@@ -23,7 +23,6 @@ const stats = ref<StatsResp | null>(null)
 
 const filter = ref({
   channel_id: null as number | null,
-  share_tag: '',
   status: null as number | null,
   keyword: '',
   provider: null as string | null,
@@ -35,6 +34,9 @@ async function loadChannels() {
   try {
     const r = await channelApi.list({ size: 200 })
     channelOptions.value = r.items.map((c: Channel) => ({ label: c.name, value: c.id }))
+    if (!filter.value.channel_id && channelOptions.value.length > 0) {
+      filter.value.channel_id = channelOptions.value[0].value as number
+    }
   } catch (_) { /* handled */ }
 }
 
@@ -58,11 +60,15 @@ const statusOptions = computed<SelectOption[]>(() => [
 ])
 
 async function load() {
+  if (!filter.value.channel_id) {
+    data.value = []
+    total.value = 0
+    return
+  }
   loading.value = true
   try {
     const res = await accountApi.list({
       channel_id: filter.value.channel_id ?? undefined,
-      share_tag: filter.value.share_tag || undefined,
       status: filter.value.status ?? undefined,
     })
     let items = res.items
@@ -81,10 +87,10 @@ async function loadStats() {
   try { stats.value = await accountApi.stats() } catch (_) { /* handled */ }
 }
 
-onMounted(() => { loadChannels(); load(); loadStats() })
+onMounted(async () => { await loadChannels(); await load(); loadStats() })
 
 function reset() {
-  filter.value = { channel_id: null, share_tag: '', status: null, keyword: '', provider: null, tier: null }
+  filter.value = { channel_id: channelOptions.value[0]?.value as number ?? null, status: null, keyword: '', provider: null, tier: null }
   load()
 }
 
@@ -150,7 +156,6 @@ const columns = computed<DataTableColumns<Account>>(() => [
       return (typeof opt?.label === 'string' ? opt.label : '') || `#${row.channel_id}`
     },
   },
-  { title: t('accounts.columns.share_tag'), key: 'share_tag', width: 110, render: (row) => row.share_tag || '--' },
   { title: t('accounts.columns.provider'), key: 'provider', width: 100 },
   { title: t('accounts.columns.tier'), key: 'tier', width: 90 },
   {
@@ -227,7 +232,6 @@ const kpi = computed(() => {
       <NSelect v-model:value="filter.provider" :placeholder="t('accounts.filter.provider')" :options="providerOptions" clearable style="width:130px" @update:value="load" />
       <NSelect v-model:value="filter.tier" :placeholder="t('accounts.filter.tier')" :options="tierOptions" clearable style="width:120px" @update:value="load" />
       <NSelect v-model:value="filter.status" :placeholder="t('accounts.filter.status')" :options="statusOptions" clearable style="width:120px" @update:value="load" />
-      <NInput v-model:value="filter.share_tag" :placeholder="t('accounts.filter.keyword') + ' share_tag'" clearable style="width:160px" @update:value="load" />
       <NInput v-model:value="filter.keyword" :placeholder="t('accounts.filter.keyword')" clearable style="width:180px" @update:value="load" />
       <NButton size="small" @click="reset">{{ t('accounts.filter.reset') }}</NButton>
     </template>

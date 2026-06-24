@@ -125,7 +125,6 @@ func (h *AccountHandler) auditOne(c *gin.Context, action string, targetID int64,
 type listItem struct {
 	ID                   int64      `json:"id"`
 	ChannelID            int64      `json:"channel_id"`
-	ShareTag             string     `json:"share_tag"`
 	Name                 string     `json:"name"`
 	Provider             string     `json:"provider"`
 	Tier                 string     `json:"tier"`
@@ -165,7 +164,6 @@ func accountToListItem(a *account.Account) listItem {
 	return listItem{
 		ID:                   a.ID,
 		ChannelID:            a.ChannelID,
-		ShareTag:             a.ShareTag,
 		Name:                 a.Name,
 		Provider:             a.Provider,
 		Tier:                 a.Tier,
@@ -206,35 +204,24 @@ func makeQuota(rem, tot *int64, reset *time.Time) quotaItem {
 	return q
 }
 
-// List GET /accounts?channel_id=N&share_tag=T&status=S
+// List GET /accounts?channel_id=N&status=S
 func (h *AccountHandler) List(c *gin.Context) {
 	chStr := c.Query("channel_id")
-	tag := c.Query("share_tag")
 	statusStr := c.Query("status")
 
 	var list []*account.Account
-	switch {
-	case tag != "":
-		l, err := h.Facade.Repo.ListByShareTag(c.Request.Context(), tag)
-		if err != nil {
-			writeAcctErr(c, err)
-			return
-		}
-		list = l
-	case chStr != "":
-		chID, err := strconv.ParseInt(chStr, 10, 64)
-		if err != nil || chID <= 0 {
-			middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "channel_id 必须为正整数"))
-			return
-		}
-		l, err := h.Facade.Repo.ListByChannel(c.Request.Context(), chID)
-		if err != nil {
-			writeAcctErr(c, err)
-			return
-		}
-		list = l
-	default:
-		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "需要 channel_id 或 share_tag 之一"))
+	if chStr == "" {
+		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "channel_id 必填"))
+		return
+	}
+	chID, err := strconv.ParseInt(chStr, 10, 64)
+	if err != nil || chID <= 0 {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "channel_id 必须为正整数"))
+		return
+	}
+	list, err = h.Facade.Repo.ListByChannel(c.Request.Context(), chID)
+	if err != nil {
+		writeAcctErr(c, err)
 		return
 	}
 
@@ -288,7 +275,6 @@ type acctCreateReq struct {
 	Format    string `json:"format"`
 	Text      string `json:"text"`
 	DryRun    bool   `json:"dry_run"`
-	ShareTag  string `json:"share_tag"`
 	Priority  int16  `json:"priority"`
 	Weight    int    `json:"weight"`
 }
@@ -335,9 +321,6 @@ func (h *AccountHandler) Create(c *gin.Context) {
 	a.ChannelID = req.ChannelID
 	if req.Name != "" {
 		a.Name = req.Name
-	}
-	if req.ShareTag != "" {
-		a.ShareTag = req.ShareTag
 	}
 	if req.Provider != "" {
 		a.Provider = req.Provider
@@ -470,7 +453,6 @@ func (h *AccountHandler) Import(c *gin.Context) {
 	ct := c.ContentType()
 	if ct == "multipart/form-data" {
 		req.ChannelID, _ = strconv.ParseInt(c.PostForm("channel_id"), 10, 64)
-		req.ShareTag = c.PostForm("share_tag")
 		req.Format = c.PostForm("format")
 		req.DryRun = c.PostForm("dry_run") == "true"
 		fh, err := c.FormFile("file")
@@ -522,9 +504,6 @@ func (h *AccountHandler) Import(c *gin.Context) {
 
 	for i, a := range list {
 		a.ChannelID = req.ChannelID
-		if req.ShareTag != "" {
-			a.ShareTag = req.ShareTag
-		}
 		if req.DryRun {
 			previews = append(previews, accountToListItem(a))
 			continue
@@ -568,7 +547,6 @@ type acctPatchReq struct {
 	Name     *string `json:"name"`
 	Priority *int16  `json:"priority"`
 	Weight   *int    `json:"weight"`
-	ShareTag *string `json:"share_tag"`
 	Status   *int8   `json:"status"`
 }
 
@@ -598,9 +576,6 @@ func (h *AccountHandler) Patch(c *gin.Context) {
 	}
 	if p.Weight != nil {
 		cur.Weight = *p.Weight
-	}
-	if p.ShareTag != nil {
-		cur.ShareTag = *p.ShareTag
 	}
 	if p.Status != nil {
 		cur.Status = account.Status(*p.Status)

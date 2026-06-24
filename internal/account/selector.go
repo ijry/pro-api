@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -120,37 +119,7 @@ func (s *selectorImpl) roundRobin(cands []*Account, channelID int64) *Account {
 }
 
 func (s *selectorImpl) poolFor(ctx context.Context, ch *channel.Channel) ([]*Account, error) {
-	own, err := s.repo.ListByChannel(ctx, ch.ID)
-	if err != nil {
-		return nil, err
-	}
-	tags := []string{}
-	if len(ch.Tags) > 0 {
-		_ = json.Unmarshal(ch.Tags, &tags)
-	}
-	seen := map[int64]struct{}{}
-	out := []*Account{}
-	for _, a := range own {
-		seen[a.ID] = struct{}{}
-		out = append(out, a)
-	}
-	for _, t := range tags {
-		if !strings.HasPrefix(t, "share:") {
-			continue
-		}
-		shared, err := s.repo.ListByShareTag(ctx, strings.TrimPrefix(t, "share:"))
-		if err != nil {
-			continue
-		}
-		for _, a := range shared {
-			if _, ok := seen[a.ID]; ok {
-				continue
-			}
-			seen[a.ID] = struct{}{}
-			out = append(out, a)
-		}
-	}
-	return out, nil
+	return s.repo.ListByChannel(ctx, ch.ID)
 }
 
 func remPct(a *Account) float64 {

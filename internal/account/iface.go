@@ -42,7 +42,6 @@ type Repo interface {
 	ResetFailures(ctx context.Context, id int64) error
 	Get(ctx context.Context, id int64) (*Account, error)
 	ListByChannel(ctx context.Context, channelID int64) ([]*Account, error)
-	ListByShareTag(ctx context.Context, tag string) ([]*Account, error)
 	ListForRefresher(ctx context.Context, before time.Time, limit int) ([]*Account, error)
 	ListForReaper(ctx context.Context, now time.Time, limit int) ([]*Account, error)
 	Delete(ctx context.Context, id int64) error

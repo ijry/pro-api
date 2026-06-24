@@ -74,7 +74,6 @@ func newTestDB(t *testing.T) *gorm.DB {
 		`CREATE TABLE IF NOT EXISTS accounts (
 			id                       BIGINT       NOT NULL PRIMARY KEY,
 			channel_id               BIGINT       NOT NULL,
-			share_tag                VARCHAR(64)  NULL,
 			name                     VARCHAR(128) NOT NULL DEFAULT '',
 			provider                 VARCHAR(32)  NOT NULL,
 			tier                     VARCHAR(32)  NOT NULL DEFAULT 'unknown',
@@ -107,7 +106,6 @@ func newTestDB(t *testing.T) *gorm.DB {
 			updated_at               DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
 			deleted_at               DATETIME(3)  NULL,
 			INDEX idx_accounts_channel_status (channel_id, status),
-			INDEX idx_accounts_share_status (share_tag, status),
 			INDEX idx_accounts_status_cooldown (status, cooldown_until),
 			INDEX idx_accounts_provider_tier (provider, tier),
 			INDEX idx_accounts_token_exp (access_token_expires_at, status),
