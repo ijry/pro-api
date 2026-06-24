@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  GO_VERSION: "1.25"
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.12.0"
+  REGISTRY_IMAGE: ghcr.io/ijry/pro-api
+
+jobs:
+  build-binaries:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: |
+            web/pnpm-lock.yaml
+            docs-site/pnpm-lock.yaml
+
+      - name: Install web deps
+        run: pnpm -C web install --frozen-lockfile
+
+      - name: Install docs-site deps
+        run: pnpm -C docs-site install --frozen-lockfile
+
+      - name: Build embedded frontend assets
+        run: |
+          pnpm -C web/admin build
+          pnpm -C web/user build
+          pnpm -C docs-site build
+
+      - name: Build embedded binary
+        shell: bash
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+          PROAPI_MASTER_KEY: "0123456789abcdef0123456789abcdef"
+          VERSION: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+          BUILD_TIME: ${{ github.event.repository.updated_at }}
+        run: |
+          mkdir -p dist/bin
+          binary="dist/bin/proapi"
+          if [ "${GOOS}" = "windows" ]; then
+            binary="dist/bin/proapi.exe"
+          fi
+
+          short_commit="${COMMIT:0:7}"
+          go build -tags embed \
+            -ldflags="-s -w -X github.com/ijry/pro-api/internal/version.Version=${VERSION} -X github.com/ijry/pro-api/internal/version.Commit=${short_commit} -X github.com/ijry/pro-api/internal/version.BuildTime=${BUILD_TIME}" \
+            -o "${binary}" ./cmd/proapi
+
+          bash scripts/package-release.sh "${GOOS}" "${GOARCH}" "${VERSION}" "${binary}" dist/release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/release/*
+
+  docker:
+    name: Publish Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.repository.updated_at }}
+
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - build-binaries
+      - docker
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist/artifacts
+
+      - name: Flatten artifacts
+        shell: bash
+        run: |
+          mkdir -p dist/release
+          find dist/artifacts -type f -exec cp {} dist/release/ \;
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/release/*

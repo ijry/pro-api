@@ -5,7 +5,7 @@ outline: deep
 
 # 配置
 
-> proapi 的配置分为两层:
+> pro-api 的配置分为两层:
 >
 > - **启动配置**:`config.yaml` + 环境变量,只在进程启动时读一次。
 > - **运行时配置**:数据库表 `system_settings`,后台可改、Redis Pub/Sub 集群内 60 秒内热生效。

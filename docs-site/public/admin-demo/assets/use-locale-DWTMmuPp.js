@@ -1,0 +1,1 @@
+import{aX as i,a2 as t,a3 as r,ax as u,ai as c}from"./index-BMyk45kF.js";function f(n){const{mergedLocaleRef:a,mergedDateLocaleRef:o}=i(r,null)||{},d=t(()=>{var e,l;return(l=(e=a==null?void 0:a.value)===null||e===void 0?void 0:e[n])!==null&&l!==void 0?l:u[n]});return{dateLocaleRef:t(()=>{var e;return(e=o==null?void 0:o.value)!==null&&e!==void 0?e:c}),localeRef:d}}export{f as u};

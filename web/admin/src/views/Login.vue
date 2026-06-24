@@ -90,6 +90,6 @@ function handleEnter(e: KeyboardEvent) {
       </NButton>
     </NCard>
 
-    <p class="mt-4 text-sm opacity-40">proapi admin &copy; {{ new Date().getFullYear() }}</p>
+    <p class="mt-4 text-sm opacity-40">pro-api admin &copy; {{ new Date().getFullYear() }}</p>
   </div>
 </template>

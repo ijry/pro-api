@@ -5,7 +5,7 @@ outline: deep
 
 # 账号对接总览
 
-> proapi 的账号体系既支持自带的"邮箱密码 / 邮箱验证码"注册,也支持对接第三方身份系统。M1 提供 GitHub OAuth;M2 加 Google / 微信 / 飞书 / 钉钉 / Discord;M3 加企业 SSO(OIDC / SAML / LDAP / CAS)。
+> pro-api 的账号体系既支持自带的"邮箱密码 / 邮箱验证码"注册,也支持对接第三方身份系统。M1 提供 GitHub OAuth;M2 加 Google / 微信 / 飞书 / 钉钉 / Discord;M3 加企业 SSO(OIDC / SAML / LDAP / CAS)。
 
 ## M1 支持的对接
 
@@ -46,7 +46,7 @@ OAuth 2.0 标准的 4 步授权码模式:
      - 未命中 → 创建新 user + 绑定 + 登录
 ```
 
-`state` 字段用于防 CSRF,proapi 会校验回调里的 `state` 与 cookie 里存的一致。
+`state` 字段用于防 CSRF,pro-api 会校验回调里的 `state` 与 cookie 里存的一致。
 
 ## 已有账号绑定第三方
 
@@ -93,6 +93,6 @@ OAuth 2.0 标准的 4 步授权码模式:
 ## 关键要点
 
 - M1 **只 GitHub**;别的 provider 留接口契约,实施在 M2
-- **解绑前必须确保用户还有别的登录方式**(否则会被永久锁出)—— proapi 在解绑前会校验
+- **解绑前必须确保用户还有别的登录方式**(否则会被永久锁出)—— pro-api 在解绑前会校验
 - provider profile **只取必要字段**(uid, email, avatar, login),不存敏感数据
-- 同一 GitHub 账号**不能绑多个 proapi 账号**(`oauth_bindings.UNIQUE(provider, provider_uid)`)
+- 同一 GitHub 账号**不能绑多个 pro-api 账号**(`oauth_bindings.UNIQUE(provider, provider_uid)`)

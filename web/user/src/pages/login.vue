@@ -54,7 +54,7 @@ async function oauthLogin() {
   <div class="min-h-screen flex items-center justify-center bg-bg px-4">
     <div class="w-full max-w-md">
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-fg">ProAPI</h1>
+        <h1 class="text-3xl font-bold text-fg">pro-api</h1>
         <p class="text-fg-muted mt-2">登录到您的账号</p>
       </div>
 

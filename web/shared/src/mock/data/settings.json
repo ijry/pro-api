@@ -3,9 +3,9 @@
     {
       "name": "basic",
       "items": [
-        { "key": "site.name",         "value": "proapi Demo",            "description": "站点名称",           "is_sensitive": false },
+        { "key": "site.name",         "value": "pro-api Demo",           "description": "站点名称",           "is_sensitive": false },
         { "key": "site.logo",         "value": "/logo.svg",              "description": "Logo URL",           "is_sensitive": false },
-        { "key": "site.footer",       "value": "Powered by proapi",      "description": "页脚文字",           "is_sensitive": false },
+        { "key": "site.footer",       "value": "Powered by pro-api",     "description": "页脚文字",           "is_sensitive": false },
         { "key": "register.enabled",  "value": true,                     "description": "是否开放注册",       "is_sensitive": false },
         { "key": "register.invite_only", "value": false,                 "description": "仅邀请注册",         "is_sensitive": false }
       ]

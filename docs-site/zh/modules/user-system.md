@@ -5,7 +5,7 @@ outline: deep
 
 # 用户体系
 
-> proapi 的账号体系覆盖"普通用户 / 租户管理员 / 超级管理员"三种角色,支持邮箱密码、邮箱验证码、GitHub OAuth 注册,通过用户分组关联消费倍率。
+> pro-api 的账号体系覆盖"普通用户 / 租户管理员 / 超级管理员"三种角色,支持邮箱密码、邮箱验证码、GitHub OAuth 注册,通过用户分组关联消费倍率。
 
 ## 角色定义
 
@@ -17,7 +17,7 @@ outline: deep
 
 ## 注册方式
 
-proapi 支持 3 种注册方式,可在 `system_settings.auth.*` 控制开关。
+pro-api 支持 3 种注册方式,可在 `system_settings.auth.*` 控制开关。
 
 ### 邮箱密码注册
 
@@ -38,7 +38,7 @@ auth.email_verification_required ?
 
 ### 邮箱验证码
 
-无密码登录:用户填邮箱 → proapi 发 6 位验证码 → 用户输入 → 命中则自动登录或注册。
+无密码登录:用户填邮箱 → pro-api 发 6 位验证码 → 用户输入 → 命中则自动登录或注册。
 
 适用于"不想记密码"的轻量场景。
 
@@ -77,7 +77,7 @@ OAuth 2.0 标准流程。详细配置见 [GitHub OAuth 配置](../integration/oa
 - **强制下线**:管理员可一键撤销某用户所有 session
 
 :::tip 为什么不用 JWT
-JWT 一旦签发,服务端无法主动作废(除非维护黑名单)。proapi 用 opaque session,改密码 / 禁用账号可立即下线所有设备 —— 更适合企业场景。
+JWT 一旦签发,服务端无法主动作废(除非维护黑名单)。pro-api 用 opaque session,改密码 / 禁用账号可立即下线所有设备 —— 更适合企业场景。
 :::
 
 ## API 调用与用户的关系

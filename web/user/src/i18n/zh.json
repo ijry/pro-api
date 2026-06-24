@@ -77,7 +77,7 @@
     },
     "empty": {
       "title": "还没有令牌",
-      "subtitle": "创建一个 API 令牌即可开始调用 proapi",
+      "subtitle": "创建一个 API 令牌即可开始调用 pro-api",
       "cta": "创建令牌"
     },
     "form": {

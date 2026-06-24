@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: proapi
+  name: pro-api
   text: All-in-One LLM API Gateway
   tagline: Tri-protocol routing · 9 upstreams in M1 · Enterprise-ready · Billing built-in
   image:
     src: /logo.svg
-    alt: proapi
+    alt: pro-api
   actions:
     - theme: brand
       text: Get Started (Chinese only for now)

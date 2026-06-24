@@ -5,7 +5,7 @@ outline: deep
 
 # 安装
 
-> proapi 提供三种安装方式:**Docker(推荐)**、**预编译二进制**、**源码构建**。本页介绍各自的步骤、适用场景与故障排查。
+> pro-api 提供三种安装方式：**Docker(推荐)**、**预编译二进制**、**源码构建**。本页介绍各自的步骤、适用场景与故障排查。
 
 ## 选哪种?
 
@@ -18,7 +18,7 @@ outline: deep
 ### 拉取镜像
 
 ```bash
-docker pull ghcr.io/proapi/proapi:latest
+docker pull ghcr.io/ijry/pro-api:latest
 ```
 
 **标签策略**:
@@ -33,7 +33,7 @@ docker pull ghcr.io/proapi/proapi:latest
 
 ### 准备配置文件
 
-参考仓库根下 `config.example.yaml`,拷一份到 `./config.yaml`。
+参考仓库根下 `configs/proapi.example.yaml`，拷一份到 `./config.yaml`。
 最关键的几个字段:
 
 - `database.driver` / `database.dsn` —— 指向你的 MySQL/PG
@@ -44,12 +44,12 @@ docker pull ghcr.io/proapi/proapi:latest
 
 ```bash
 docker run -d \
-  --name proapi \
+  --name pro-api \
   -p 8080:8080 \
   -v $(pwd)/config.yaml:/app/config.yaml:ro \
   -e PROAPI_MASTER_KEY=$(openssl rand -base64 32) \
   --restart unless-stopped \
-  ghcr.io/proapi/proapi:latest
+  ghcr.io/ijry/pro-api:latest
 ```
 
 :::tip 容器入口
@@ -94,11 +94,11 @@ chmod +x proapi
 
 - MySQL ≥ 8.0 或 PostgreSQL ≥ 14
 - Redis ≥ 6
-- 一个空数据库,授权 proapi 账号可建表
+- 一个空数据库，授权 pro-api 账号可建表
 
 ### 配置
 
-把 `config.yaml` 放到 `./config.yaml` 或 `/etc/proapi/config.yaml`,proapi 启动时自动读取。
+把 `config.yaml` 放到 `./config.yaml` 或 `/etc/proapi/config.yaml`，pro-api 启动时自动读取。
 
 ### 跑迁移
 
@@ -156,12 +156,11 @@ git clone https://github.com/ijry/pro-api.git
 cd pro-api
 make install-tools       # 拉 golangci-lint / golang-migrate 等
 make build               # 输出 ./bin/proapi
-make web-build           # 构建 admin + user
 ```
 
 ### 部署
 
-把 `./bin/proapi` 与 `web/admin/dist`、`web/user/dist` 一并部署到服务器,启动方式同方式二。
+`make build` 会产出带嵌入式前端和文档资源的 `./bin/proapi`。部署时只需要这个单二进制，启动方式同方式二。
 
 ## 验证安装
 

@@ -5,7 +5,7 @@ outline: deep
 
 # 适配器层
 
-> 适配器(Adapter)是连接 proapi 与上游模型厂商的"翻译官":把内部统一的 IR(Intermediate Representation)请求,翻译成厂商专属的 HTTP 调用,再把响应翻回 IR。
+> 适配器(Adapter)是连接 pro-api 与上游模型厂商的"翻译官":把内部统一的 IR(Intermediate Representation)请求,翻译成厂商专属的 HTTP 调用,再把响应翻回 IR。
 
 ## 为什么要有适配器层
 
@@ -113,7 +113,7 @@ type StreamReader interface {
 relay 层逐 chunk 拿到 IR `ChatChunk`,通过 OpenAI SSE encoder 转成 `data: {"choices":[{"delta":...}]}\n\n`,flush 给客户端。
 
 :::tip TTFT 指标
-proapi 记录每个流式请求的 **TTFT**(Time To First Token):从 adapter.ChatStream 返回到第一个 chunk 出现的时间。
+pro-api 记录每个流式请求的 **TTFT**(Time To First Token):从 adapter.ChatStream 返回到第一个 chunk 出现的时间。
 后台日志页可按 TTFT 排序排查慢请求。
 :::
 
@@ -121,7 +121,7 @@ proapi 记录每个流式请求的 **TTFT**(Time To First Token):从 adapter.Cha
 
 适配器把上游各种错误统一映射成 `pkg/apierr` 的标准 code:
 
-| 上游情况 | 归类 | proapi code |
+| 上游情况 | 归类 | pro-api code |
 |---|---|---|
 | HTTP 5xx | 上游服务器错 | `CodeUpstreamError` (60001) |
 | 网络超时 / connect refused | 上游超时 | `CodeUpstreamTimeout` (60003) |
@@ -135,7 +135,7 @@ proapi 记录每个流式请求的 **TTFT**(Time To First Token):从 adapter.Cha
 
 ## 扩展性
 
-新增一家 provider 是 proapi 二次开发**最常见的需求**。详细步骤见 [新增上游适配器](../development/adapter-guide.md)。
+新增一家 provider 是 pro-api 二次开发**最常见的需求**。详细步骤见 [新增上游适配器](../development/adapter-guide.md)。
 
 简要清单:
 

@@ -110,7 +110,7 @@ PR 模板里有 "文档已同步" checkbox,reviewer 会检查。
 
 ## 行为准则
 
-proapi 项目采纳 [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/),完整文本见仓库根 [CODE_OF_CONDUCT.md](https://github.com/ijry/pro-api/blob/main/CODE_OF_CONDUCT.md)。
+pro-api 项目采纳 [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/),完整文本见仓库根 [CODE_OF_CONDUCT.md](https://github.com/ijry/pro-api/blob/main/CODE_OF_CONDUCT.md)。
 
 简而言之:**对人友好,对事专业**。
 

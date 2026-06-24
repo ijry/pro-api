@@ -5,7 +5,7 @@ outline: deep
 
 # 如何新增一个支付方式
 
-> M1 阶段,proapi 仅提供 **手动充值** 与 **兑换码** 两种支付方式。Stripe / 支付宝 / 微信支付 / Paddle / PayPal 等在线支付预计在 **M2** 实现。
+> M1 阶段,pro-api 仅提供 **手动充值** 与 **兑换码** 两种支付方式。Stripe / 支付宝 / 微信支付 / Paddle / PayPal 等在线支付预计在 **M2** 实现。
 >
 > 本页是 **stub**,待 M2 完整。当前先讲已规划的接口契约,供二次开发者提前准备。
 
@@ -76,7 +76,7 @@ type WebhookResult struct {
 
 待 M2 上线后,本页将更新为:
 
-1. **从 Stripe 起步给出完整步骤**:申请账户 → 创建 webhook → 在 proapi 后台填写 Public Key / Secret Key
+1. **从 Stripe 起步给出完整步骤**:申请账户 → 创建 webhook → 在 pro-api 后台填写 Public Key / Secret Key
 2. **接口实现示例**:CreateOrder / HandleWebhook / QueryOrder 完整 Go 代码
 3. **测试方案**:Stripe CLI 本地测 webhook
 4. **类比其他 provider**:支付宝 / 微信支付 / Paddle / PayPal

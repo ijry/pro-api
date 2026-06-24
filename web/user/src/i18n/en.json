@@ -59,7 +59,7 @@
   },
   "tokens": {
     "title": "API Tokens",
-    "subtitle": "Manage credentials used to call proapi",
+    "subtitle": "Manage credentials used to call pro-api",
     "create": "New Token",
     "base_url": "Base URL",
     "created_at": "Created",
@@ -77,7 +77,7 @@
     },
     "empty": {
       "title": "No tokens yet",
-      "subtitle": "Create an API token to start calling proapi",
+      "subtitle": "Create an API token to start calling pro-api",
       "cta": "Create Token"
     },
     "form": {

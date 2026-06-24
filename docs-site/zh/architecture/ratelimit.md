@@ -5,7 +5,7 @@ outline: deep
 
 # 限流策略
 
-> proapi 用 Redis 滑动窗口算法实现 **4 个维度** 的限流,所有维度并行检查,任一维度超限即拒绝。
+> pro-api 用 Redis 滑动窗口算法实现 **4 个维度** 的限流,所有维度并行检查,任一维度超限即拒绝。
 
 ## 4 个维度
 
@@ -99,7 +99,7 @@ system_settings.ratelimit.enabled = false
 - **IPv6**:取完整地址(IPv6 地址空间大,不需要聚合)
 
 :::warning 反代必须透传 X-Real-IP
-proapi 用 `X-Real-IP` / `X-Forwarded-For` 取真实 IP。如果反代没透传,**所有请求会被算到同一个反代 IP**,触发误限流。详见 [反向代理](../deployment/reverse-proxy.md)。
+pro-api 用 `X-Real-IP` / `X-Forwarded-For` 取真实 IP。如果反代没透传,**所有请求会被算到同一个反代 IP**,触发误限流。详见 [反向代理](../deployment/reverse-proxy.md)。
 :::
 
 ## 关键运维

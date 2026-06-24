@@ -5,7 +5,7 @@ outline: deep
 
 # Docker Compose 部署
 
-> 把 proapi + DB + Redis + Nginx 一把 compose 起,适合**单机或小集群**快速部署。
+> 把 pro-api + DB + Redis + Nginx 一把 compose 起，适合**单机或小集群**快速部署。
 
 ## 完整 compose 例(MySQL 版)
 
@@ -14,7 +14,7 @@ version: "3.9"
 
 services:
   proapi:
-    image: ghcr.io/proapi/proapi:vX.Y.Z
+    image: ghcr.io/ijry/pro-api:vX.Y.Z
     container_name: proapi
     restart: unless-stopped
     depends_on:
@@ -107,7 +107,7 @@ docker compose logs -f proapi
 第一次启动会:
 
 1. mysql / redis 起来 + healthcheck 过
-2. proapi 容器入口跑 `migrate-then-serve`,**自动执行所有迁移**(创建表 + seed 默认数据)
+2. pro-api 容器入口跑 `migrate-then-serve`,**自动执行所有迁移**(创建表 + seed 默认数据)
 3. 监听 `:8080`,nginx 反代 `:443`
 
 访问 `https://your.host/admin` 注册第一个超管账户。
@@ -154,7 +154,7 @@ curl http://localhost/healthz
 
 单机 compose 不适合超过 1k QPS。扩展方式:
 
-1. **proapi 横向扩展**:K8s Deployment 多副本,共享 DB / Redis,前面挂 Service / Ingress 做 LB
+1. **pro-api 横向扩展**:K8s Deployment 多副本,共享 DB / Redis,前面挂 Service / Ingress 做 LB
 2. **DB / Redis 用托管服务**:RDS / Aurora / ElastiCache
 3. **node_id 唯一**:每副本 `PROAPI_NODE_ID` 不同(K8s 可用 statefulset 或 init container 生成)
 
@@ -187,11 +187,11 @@ DSN 改成:
 PROAPI_DATABASE_DSN: "postgres://proapi:pass@postgres:5432/proapi?sslmode=disable"
 ```
 
-且 proapi 的 `config.yaml` 里 `database.driver: postgres`。
+且 pro-api 的 `config.yaml` 里 `database.driver: postgres`。
 
 ## 关键要点
 
-- `depends_on + condition: service_healthy` 确保 DB / Redis ready 才启动 proapi,避免启动 race
+- `depends_on + condition: service_healthy` 确保 DB / Redis ready 才启动 pro-api,避免启动 race
 - master_key 通过 `.env` 注入,**不要直接写 compose**
 - redis 加 `maxmemory + LRU` 防 OOM(默认无上限,在大流量场景可能吃完宿主机内存)
-- 第一次启动 proapi 会**自动跑迁移**(镜像入口 `migrate-then-serve`)
+- 第一次启动 pro-api 会**自动跑迁移**(镜像入口 `migrate-then-serve`)

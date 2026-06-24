@@ -5,7 +5,7 @@ outline: deep
 
 # API 概览
 
-> proapi 提供三类 API:
+> pro-api 提供三类 API:
 >
 > - **代理 API**:给客户端用的 OpenAI 兼容代理(`/v1/*`)
 > - **管理 API**:给后台 / 运维脚本用的运维接口(`/api/admin/*`)
@@ -43,7 +43,7 @@ outline: deep
 | `Authorization` | Y | `Bearer pa-xxx` |
 | `Content-Type` | Y | `application/json` |
 | `Accept` | N | `text/event-stream`(流式)或 `application/json` |
-| `X-Request-ID` | N | 客户端可指定;不指定 proapi 自动生成(36 字符 UUID) |
+| `X-Request-ID` | N | 客户端可指定;不指定 pro-api 自动生成(36 字符 UUID) |
 
 ### 响应头
 
@@ -93,7 +93,7 @@ outline: deep
 | 409 | 状态冲突(如重复审批) |
 | 410 | 资源已失效(如 reservation 已过期) |
 | 429 | 限流(任一维度) |
-| 500 | proapi 内部错 —— 工单时附 X-Request-ID |
+| 500 | pro-api 内部错 —— 工单时附 X-Request-ID |
 | 503 | 上游不可用 / 渠道全部熔断 |
 
 ## 速率限制
@@ -104,8 +104,8 @@ outline: deep
 
 ## 版本化
 
-- **代理 API**:保持 OpenAI 协议兼容,跟随 OpenAI 协议演进,**不另起 proapi 版本**
-- **管理 / 用户 API**:按 proapi 版本管理,breaking change 见 [CHANGELOG](/zh/changelog)
+- **代理 API**:保持 OpenAI 协议兼容,跟随 OpenAI 协议演进,**不另起 pro-api 版本**
+- **管理 / 用户 API**:按 pro-api 版本管理,breaking change 见 [CHANGELOG](/zh/changelog)
 
 ## SDK 推荐
 

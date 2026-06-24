@@ -5,7 +5,7 @@ outline: deep
 
 # 升级指南
 
-> proapi 遵循 [语义化版本 SemVer 2.0](https://semver.org/lang/zh-CN/)。本页讲清楚升级前需要准备什么、按什么顺序操作、出错怎么回滚。
+> pro-api 遵循 [语义化版本 SemVer 2.0](https://semver.org/lang/zh-CN/)。本页讲清楚升级前需要准备什么、按什么顺序操作、出错怎么回滚。
 
 ## 版本号规则
 
@@ -34,7 +34,7 @@ outline: deep
 
 ```bash
 # 拉新镜像
-docker pull ghcr.io/proapi/proapi:vX.Y.Z
+docker pull ghcr.io/ijry/pro-api:vX.Y.Z
 
 # 停旧
 docker stop proapi
@@ -47,7 +47,7 @@ docker run -d \
   -v $(pwd)/config.yaml:/app/config.yaml:ro \
   -e PROAPI_MASTER_KEY=$(cat .master_key) \
   --restart unless-stopped \
-  ghcr.io/proapi/proapi:vX.Y.Z
+  ghcr.io/ijry/pro-api:vX.Y.Z
 ```
 
 Docker 镜像入口已封装 `migrate-then-serve`,会在启动时自动跑迁移。
@@ -82,13 +82,12 @@ curl http://127.0.0.1:8080/healthz
 git fetch --tags
 git checkout vX.Y.Z
 make build
-make web-build
 # 同二进制升级的步骤 2-6
 ```
 
 ## 数据库迁移
 
-- proapi 用 [golang-migrate](https://github.com/golang-migrate/migrate) 管理迁移。
+- pro-api 用 [golang-migrate](https://github.com/golang-migrate/migrate) 管理迁移。
 - 迁移文件在 `migrations/` 下,按 `NNNNNN_description.{up,down}.sql` 命名。
 - 增量执行,**可重入**(`schema_migrations` 表跟踪当前版本)。
 - 失败时,migrate 会标记 `dirty=true`,**必须人工排查** —— 不能直接重跑。
@@ -135,7 +134,7 @@ make web-build
 ```bash
 # Docker
 docker stop proapi
-docker run -d ... ghcr.io/proapi/proapi:vOLD.Y.Z
+docker run -d ... ghcr.io/ijry/pro-api:vOLD.Y.Z
 
 # 二进制
 systemctl stop proapi
@@ -150,7 +149,7 @@ systemctl start proapi
 
 ## 当前阶段说明
 
-M1 阶段 proapi 仍在 0.x,版本节奏:
+M1 阶段 pro-api 仍在 0.x,版本节奏:
 
 - 每个 milestone 完成发一个 minor(如 0.1.0 / 0.2.0)
 - Bug fix 发 patch(0.1.1 / 0.1.2)

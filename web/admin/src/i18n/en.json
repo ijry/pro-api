@@ -11,7 +11,7 @@
   },
   "login": {
     "title": "Admin Sign In",
-    "subtitle": "proapi Admin",
+    "subtitle": "pro-api Admin",
     "email": "Email",
     "identity": "Email or Username",
     "identity_placeholder": "Enter email or username",

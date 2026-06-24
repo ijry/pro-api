@@ -63,7 +63,7 @@ M0 阶段骨架版本,仅作为开发 milestone,**不建议生产使用**。详�
 
 ## 版本号规则
 
-proapi 遵循 [SemVer 2.0](https://semver.org/lang/zh-CN/):
+pro-api 遵循 [SemVer 2.0](https://semver.org/lang/zh-CN/):
 
 - `MAJOR.MINOR.PATCH`
 - M1 期间所有版本 < 1.0,**API 可能有 breaking change**,务必看 CHANGELOG

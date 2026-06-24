@@ -5,11 +5,11 @@ outline: deep
 
 # 反向代理(Nginx / Caddy / Traefik)
 
-> 生产环境**一定要**在 proapi 前面加反代,处理 TLS、流式 buffering、IP 透传、URI 分流。本页给出三种主流方案的完整配置示例。
+> 生产环境**一定要**在 pro-api 前面加反代,处理 TLS、流式 buffering、IP 透传、URI 分流。本页给出三种主流方案的完整配置示例。
 
 ## 为什么要反代
 
-1. **TLS 终止** —— proapi 默认裸 HTTP,生产必须 HTTPS
+1. **TLS 终止** —— pro-api 默认裸 HTTP,生产必须 HTTPS
 2. **流式响应需要 disable buffering** —— 否则用户感受不到流(等所有 chunk 攒齐才收到)
 3. **后台 UI / 用户 UI / API 不同路径分流** —— `/admin` `/user` `/v1` `/api` 等
 4. **加 IP 限流 / WAF / CDN / fail2ban** —— 边缘防护
@@ -127,7 +127,7 @@ api.example.com {
 ```yaml
 services:
   proapi:
-    image: ghcr.io/proapi/proapi:vX.Y.Z
+    image: ghcr.io/ijry/pro-api:vX.Y.Z
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.proapi.rule=Host(`api.example.com`)"
@@ -169,5 +169,5 @@ services:
 
 - **SSE 反代最容易踩坑的是 buffering**,必须显式关
 - **`proxy_read_timeout` 默认 60s**,流式响应会被截断,**调到 600+ s**
-- `X-Real-IP` / `X-Forwarded-For` 必须透传,**否则 proapi 的 IP 限流会全部限到反代 IP**
+- `X-Real-IP` / `X-Forwarded-For` 必须透传,**否则 pro-api 的 IP 限流会全部限到反代 IP**
 - `/metrics` 不要直接公网开放(可能泄露内部指标)

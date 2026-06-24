@@ -11,7 +11,7 @@
   },
   "login": {
     "title": "登录管理后台",
-    "subtitle": "proapi 管理员",
+    "subtitle": "pro-api 管理员",
     "email": "邮箱",
     "identity": "邮箱 / 账号",
     "identity_placeholder": "请输入邮箱或账号",

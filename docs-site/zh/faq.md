@@ -5,11 +5,11 @@ outline: deep
 
 # 常见问题(FAQ)
 
-## 1. proapi 与 one-api / new-api 有什么区别
+## 1. pro-api 与 one-api / new-api 有什么区别
 
 简短对比(M1 完整版):
 
-| 维度 | proapi | one-api / new-api |
+| 维度 | pro-api | one-api / new-api |
 |---|---|---|
 | 协议互转 | M1 出向 9 家 + M2 三入口互转 | 多家 + OpenAI 入口 |
 | 计费 | 预扣 Lua 原子 + append-only ledger | 后扣 |
@@ -24,13 +24,13 @@ M1 阶段差距在补;M2/M3 后会拉开。
 
 **M1 仅 OpenAI 入口**。Anthropic / Gemini 入口在 M2 加。**出向**(后端调用)9 家都支持。
 
-也就是说:你的客户端目前用 OpenAI SDK 调 proapi,proapi 可以路由到 Anthropic / Gemini 等上游;但客户端不能用 Anthropic SDK 直接调 proapi。
+也就是说:你的客户端目前用 OpenAI SDK 调 pro-api,pro-api 可以路由到 Anthropic / Gemini 等上游;但客户端不能用 Anthropic SDK 直接调 pro-api。
 
 ## 3. 多个用户共享一个 GitHub 账号能行吗
 
-**不能**。`oauth_bindings` 表上 `UNIQUE (provider, provider_uid)`,一个 GitHub 账户严格对应一个 proapi 账户。
+**不能**。`oauth_bindings` 表上 `UNIQUE (provider, provider_uid)`,一个 GitHub 账户严格对应一个 pro-api 账户。
 
-若需要换绑:先在原 proapi 账号 → 账号设置 → 解绑 GitHub,然后在新账号上绑定。
+若需要换绑:先在原 pro-api 账号 → 账号设置 → 解绑 GitHub,然后在新账号上绑定。
 
 ## 4. 调用突然 402 Insufficient Quota
 
@@ -95,7 +95,7 @@ seed 阶段会写入 3 个:
 
 可以。`pnpm --filter docs-site build` 后,`docs-site/.vitepress/dist/` 是纯静态文件,丢任意 web server(Nginx / Caddy / GitHub Pages / S3 静态网站)即可。
 
-也可以与 proapi 同实例服务 —— 默认 `proapi` 进程会把 `docs-site/dist` 挂到 `/docs` 路径(M2 完整支持)。
+也可以与 pro-api 同实例服务 —— 默认 `proapi` 进程会把 `docs-site/dist` 挂到 `/docs` 路径(M2 完整支持)。
 
 ## 11. 流式响应被 Nginx 截断
 
@@ -111,7 +111,7 @@ proxy_buffering off;
 
 ## 12. 怎么对接监控
 
-proapi 在 `:8080/metrics` 暴露 Prometheus 指标。生产建议:
+pro-api 在 `:8080/metrics` 暴露 Prometheus 指标。生产建议:
 
 - Prometheus 抓 `/metrics`(配 `allow` 限制源 IP)
 - Grafana 展示官方 dashboard(M2 发布)

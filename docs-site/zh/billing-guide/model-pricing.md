@@ -5,12 +5,12 @@ outline: deep
 
 # 模型价格表
 
-> 本页展示 proapi **默认配置** 的模型倍率。
+> 本页展示 pro-api **默认配置** 的模型倍率。
 >
 > :::warning 仅供参考
 > 具体部署方可能调过倍率,**以你登录的实例的 "系统设置 → 模型字典" 为准**。
 >
-> 倍率数字可能随上游公开价调整而过时,proapi 在 minor 版本会更新默认值,详见 [CHANGELOG](/zh/changelog)。
+> 倍率数字可能随上游公开价调整而过时,pro-api 在 minor 版本会更新默认值,详见 [CHANGELOG](/zh/changelog)。
 > :::
 
 ## 倍率到价格的转换
@@ -58,7 +58,7 @@ outline: deep
 | gemini-2.0-flash | 0.05 | 0.2 |
 | text-embedding-004 | 0.0 | — |
 
-> Gemini 2.0 Flash 默认免费档,proapi 仍按上游公开价的"按使用"倍率配置(防上游限免到期)。
+> Gemini 2.0 Flash 默认免费档,pro-api 仍按上游公开价的"按使用"倍率配置(防上游限免到期)。
 
 ## DeepSeek 系列
 
@@ -88,7 +88,7 @@ outline: deep
 | glm-4-air | 0.025 | 0.025 |
 | glm-4-long | 0.05 | 0.05 |
 
-`glm-4-flash` 默认免费档(2024 起),proapi 默认 ratio 设 0,但建议部署方按市场策略加价。
+`glm-4-flash` 默认免费档(2024 起),pro-api 默认 ratio 设 0,但建议部署方按市场策略加价。
 
 ## 通义千问
 
@@ -108,7 +108,7 @@ outline: deep
 ## 倍率口径
 
 - 上述倍率参考各家 **公开价的 USD 等价**,对照 OpenAI `gpt-4o` 的简单比例制定
-- proapi 部署方可基于市场策略调整(加成 / 让利 / 套餐)
+- pro-api 部署方可基于市场策略调整(加成 / 让利 / 套餐)
 - ratio 后台可改:**系统设置 → 模型字典 → 编辑**
 
 ## 模型名映射
@@ -118,13 +118,13 @@ outline: deep
 - Anthropic 上游:`claude-3-5-sonnet-20241022`
 - 用户友好名:`claude-3.5-sonnet`
 
-proapi 通过渠道的 **模型映射**(`client_model → upstream_model`)统一对外名,详见 [渠道管理](../modules/channel-management.md)。
+pro-api 通过渠道的 **模型映射**(`client_model → upstream_model`)统一对外名,详见 [渠道管理](../modules/channel-management.md)。
 
 ## 更新频率
 
-- **上游公开价改动** → proapi 主仓库可能在 minor 版本里更新默认 ratio
+- **上游公开价改动** → pro-api 主仓库可能在 minor 版本里更新默认 ratio
 - **大版本前** 看 [CHANGELOG](/zh/changelog) 的 `Changed: model pricing` 段
-- **部署方自定义** → 改完不会被后续 proapi 版本覆盖(只影响 seed 阶段)
+- **部署方自定义** → 改完不会被后续 pro-api 版本覆盖(只影响 seed 阶段)
 
 ## 关键要点
 

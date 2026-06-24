@@ -5,11 +5,11 @@ outline: deep
 
 # API 令牌使用指南
 
-> 令牌(Token)是客户端调用 proapi 代理 API 时的身份凭证。每个用户可创建多个令牌,每个令牌可独立设额度、IP 白名单、模型白名单、RPM/TPM、过期时间。
+> 令牌(Token)是客户端调用 pro-api 代理 API 时的身份凭证。每个用户可创建多个令牌,每个令牌可独立设额度、IP 白名单、模型白名单、RPM/TPM、过期时间。
 
 ## 令牌字符串
 
-- **前缀**:`pa-`(proapi 缩写)
+- **前缀**:`pa-`(pro-api 缩写)
 - **总长**:51 字符(`pa-` + 48 字符 base64url 随机)
 - **示例**:`pa-AbcDefGhIjKlMnOpQrStUvWxYz0123456789abcdefghIjKlMn`
 
@@ -115,7 +115,7 @@ console.log(resp.choices[0].message.content);
 调用源 IP 不命中 → `403 Forbidden`,错误 type=`ip_not_allowed`。
 
 :::tip 反代场景
-proapi 用 `X-Real-IP` / `X-Forwarded-For` 取真实 IP,要求反代正确透传。详见 [反向代理](../deployment/reverse-proxy.md)。
+pro-api 用 `X-Real-IP` / `X-Forwarded-For` 取真实 IP,要求反代正确透传。详见 [反向代理](../deployment/reverse-proxy.md)。
 :::
 
 ## RPM / TPM 自定义限额

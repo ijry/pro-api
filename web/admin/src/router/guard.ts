@@ -1,5 +1,6 @@
 import type { Router } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { i18n } from '@/i18n'
 
 const MOCK = import.meta.env.VITE_DEMO_MOCK === 'true'
 
@@ -37,9 +38,11 @@ export function installGuards(router: Router) {
   })
 
   router.afterEach((to) => {
-    const title = (to.meta?.title as string | undefined) ?? 'proapi admin'
+    const titleKey = to.meta?.title as string | undefined
     if (typeof document !== 'undefined') {
-      document.title = `${title} · proapi admin`
+      document.title = titleKey
+        ? `${i18n.global.t(titleKey)} · pro-api admin`
+        : 'pro-api admin'
     }
   })
 }

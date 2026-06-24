@@ -5,13 +5,13 @@ outline: deep
 
 # OpenAI 兼容协议接入
 
-> proapi 的代理 API 100% 兼容 OpenAI v1 协议。任何能调 OpenAI 的客户端,改 `base_url` 与 `api_key` 就能用。
+> pro-api 的代理 API 100% 兼容 OpenAI v1 协议。任何能调 OpenAI 的客户端,改 `base_url` 与 `api_key` 就能用。
 
 ## 准备工作
 
-1. 在 proapi **用户前台 → 令牌** 创建一个 `pa-xxx` 令牌(见 [API 令牌](../modules/token-system.md))
-2. proapi **admin 后台 → 渠道管理** 至少配一个跑通的渠道(见 [渠道管理](../modules/channel-management.md))
-3. 知道 proapi 的 base_url(本地是 `http://127.0.0.1:8080/v1`,生产是你的部署域名 + `/v1`)
+1. 在 pro-api **用户前台 → 令牌** 创建一个 `pa-xxx` 令牌(见 [API 令牌](../modules/token-system.md))
+2. pro-api **admin 后台 → 渠道管理** 至少配一个跑通的渠道(见 [渠道管理](../modules/channel-management.md))
+3. 知道 pro-api 的 base_url(本地是 `http://127.0.0.1:8080/v1`,生产是你的部署域名 + `/v1`)
 
 ## chat/completions
 
@@ -113,7 +113,7 @@ for chunk in stream:
 
 | 字段 | 支持 | 备注 |
 |---|---|---|
-| `model` | ✅ | proapi 通过渠道的模型映射对到上游 |
+| `model` | ✅ | pro-api 通过渠道的模型映射对到上游 |
 | `messages` | ✅ | 支持 system / user / assistant / tool 角色 |
 | `max_tokens` | ✅ | 影响计费预扣上限 |
 | `temperature` / `top_p` | ✅ | |
@@ -216,7 +216,7 @@ curl https://api.example.com/v1/models \
 
 ## 错误对照
 
-| OpenAI `error.type` | proapi `code` | 含义 |
+| OpenAI `error.type` | pro-api `code` | 含义 |
 |---|---|---|
 | `invalid_request_error` / `invalid_api_key` | 20002 | 令牌无效 |
 | `insufficient_quota` | 40004 | 余额不足 |
@@ -228,10 +228,10 @@ OpenAI 官方 SDK 的 `RateLimitError` / `AuthenticationError` 等异常类型�
 
 ## 与原版 OpenAI 的差异
 
-- **模型名**:proapi 允许任意命名,通过渠道的模型映射对到上游;`/v1/models` 返回的就是用户能用的名字。
-- **usage 字段**:proapi 始终返回(即使是流式响应,通过 `stream_options.include_usage=true`)。
-- **速率限制**:proapi 用自己的 4 维度限流,与 OpenAI 的全局账户级限流不同(见 [限流策略](../architecture/ratelimit.md))。
-- **缓存命中**:OpenAI 的 prompt caching 由上游识别,proapi 通过 `usage.prompt_tokens_details.cached_tokens` 透传(并按 `cached_ratio` 计费)。
+- **模型名**:pro-api 允许任意命名,通过渠道的模型映射对到上游;`/v1/models` 返回的就是用户能用的名字。
+- **usage 字段**:pro-api 始终返回(即使是流式响应,通过 `stream_options.include_usage=true`)。
+- **速率限制**:pro-api 用自己的 4 维度限流,与 OpenAI 的全局账户级限流不同(见 [限流策略](../architecture/ratelimit.md))。
+- **缓存命中**:OpenAI 的 prompt caching 由上游识别,pro-api 通过 `usage.prompt_tokens_details.cached_tokens` 透传(并按 `cached_ratio` 计费)。
 
 ## 调试技巧
 
@@ -243,5 +243,5 @@ OpenAI 官方 SDK 的 `RateLimitError` / `AuthenticationError` 等异常类型�
 
 - `base_url` 末尾 **要 `/v1`**(SDK 内部不再加)
 - curl 流式响应要 `-N` 或 `--no-buffer`
-- Vision / tool_use 在 M1 是"透传给上游" —— 上游不支持就报错,proapi 不做能力补齐
+- Vision / tool_use 在 M1 是"透传给上游" —— 上游不支持就报错,pro-api 不做能力补齐
 - `stream_options.include_usage=true` 推荐总是带上,流式响应能拿到准确 usage

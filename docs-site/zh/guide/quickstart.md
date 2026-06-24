@@ -7,18 +7,18 @@ outline: deep
 
 > 💡 **想直接看看?** <a :href="$withBase('/admin-demo/')" target="_blank">管理后台演示</a> · <a :href="$withBase('/user-demo/')" target="_blank">用户中心演示</a>(纯前端 mock,无需部署后端)
 
-> 本页面向第一次接触 proapi 的用户:从 0 到调通第一个请求,目标耗时 5 分钟。
+> 本页面向第一次接触 pro-api 的用户:从 0 到调通第一个请求,目标耗时 5 分钟。
 >
 > M0 阶段为骨架,完整体验自 M1 起可用;部分上游能力(Anthropic / Gemini 入口)在 M2 才完整。
 
 ## 环境要求
 
-proapi 提供两种推荐路径,二选一即可:
+pro-api 提供两种推荐路径,二选一即可:
 
 - **推荐路径(零运维)**:Docker / Docker Compose。需要 `docker` 与 `docker compose` 可用。
 - **源码 / 二进制路径**:适合想要二开或不便装 Docker 的环境。需要 Go 1.22+、Node.js 20+、pnpm 9。
 
-无论哪条路径,proapi 自身**不内嵌** MySQL / PostgreSQL / Redis,你需要单独起这些依赖。
+无论哪条路径,pro-api 自身**不内嵌** MySQL / PostgreSQL / Redis,你需要单独起这些依赖。
 
 ## 起依赖
 
@@ -29,7 +29,7 @@ make docker-up
 ```
 
 :::tip MySQL 还是 PostgreSQL?
-proapi 同时支持 MySQL ≥ 8 与 PostgreSQL ≥ 14。若你没有强偏好,**路线图推荐 PostgreSQL** —— 它对 JSON 字段与 partial index 更友好。
+pro-api 同时支持 MySQL ≥ 8 与 PostgreSQL ≥ 14。若你没有强偏好,**路线图推荐 PostgreSQL** —— 它对 JSON 字段与 partial index 更友好。
 :::
 
 ## 起后端
@@ -47,7 +47,7 @@ make dev-backend
 
 ## 起前端
 
-proapi 前端拆为三个独立 Vite 工程,可分别启动:
+pro-api 前端拆为三个独立 Vite 工程,可分别启动:
 
 ```bash
 make dev-admin      # 后台 → http://127.0.0.1:5173
@@ -65,7 +65,7 @@ make dev
 
 ## 首次登录与初始化
 
-服务首次启动时,proapi 会自动 seed 三个默认用户分组:
+服务首次启动时,pro-api 会自动 seed 三个默认用户分组:
 
 - `default`(group_ratio = 1.0)
 - `vip`(group_ratio = 0.8)

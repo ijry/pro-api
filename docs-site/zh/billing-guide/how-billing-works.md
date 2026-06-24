@@ -5,7 +5,7 @@ outline: deep
 
 # 计费如何工作(用户视角)
 
-> 这是给 proapi 终端用户(API 调用方)看的"我的钱怎么算"。
+> 这是给 pro-api 终端用户(API 调用方)看的"我的钱怎么算"。
 >
 > 系统底层的预扣 / 提交 / ledger 机制见 [计费机制](../architecture/billing.md);倍率配置方式见 [定价与倍率](../modules/pricing.md)。
 
@@ -87,7 +87,7 @@ OpenAI 的 prompt caching:同一长 prompt 在 5-10 分钟内重复发送,命中
 
 - 命中部分用 **更低倍率**(默认 `cached_ratio = 0.5 × input_ratio`,即 5 折)
 - 节省的钱直接反映在你的账单上
-- 不需要你做任何特殊配置 —— proapi 透传上游的 caching 信息
+- 不需要你做任何特殊配置 —— pro-api 透传上游的 caching 信息
 
 ## 推理 token(reasoning tokens)
 
@@ -116,10 +116,10 @@ OpenAI 的 prompt caching:同一长 prompt 在 5-10 分钟内重复发送,命中
 
 ## 我看不到的
 
-- **proapi 部署方对你的定价规则**(可能加价或打折,看后台 `pricing_rules`)
-- **上游真实价格**(对 proapi 部署方而言)—— 你只看到你的最终价
+- **pro-api 部署方对你的定价规则**(可能加价或打折,看后台 `pricing_rules`)
+- **上游真实价格**(对 pro-api 部署方而言)—— 你只看到你的最终价
 
-如果你是 proapi 的**部署方**,本节相反:你能看到上游真实价 + 自己的定价策略,但用户只看最终价。
+如果你是 pro-api 的**部署方**,本节相反:你能看到上游真实价 + 自己的定价策略,但用户只看最终价。
 
 ## 关键要点
 

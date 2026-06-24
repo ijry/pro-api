@@ -5,7 +5,7 @@ outline: deep
 
 # 渠道管理
 
-> 渠道(Channel)= 一组上游凭证 + 模型映射 + 优先级权重。proapi 的"接什么上游"与"怎么挑上游"都在这里配。
+> 渠道(Channel)= 一组上游凭证 + 模型映射 + 优先级权重。pro-api 的"接什么上游"与"怎么挑上游"都在这里配。
 
 ## 渠道的字段
 
@@ -47,7 +47,7 @@ outline: deep
 | doubao | api_key | 火山引擎 ak/sk |
 
 :::danger 凭证加密
-所有 `credentials` 字段由应用层用 `master_key` 做 AES-256-GCM 加密后入库。**只有内存中持有 master_key 的 proapi 进程能解密。**
+所有 `credentials` 字段由应用层用 `master_key` 做 AES-256-GCM 加密后入库。**只有内存中持有 master_key 的 pro-api 进程能解密。**
 :::
 
 ### 配模型映射
@@ -159,7 +159,7 @@ DeepSeek 先用(它便宜),失败 fallback OpenAI。
 
 ## 关键要点
 
-- 模型映射的 `client_model` 是用户在请求里写的;`upstream_model` 是 proapi 发到上游的。
+- 模型映射的 `client_model` 是用户在请求里写的;`upstream_model` 是 pro-api 发到上游的。
 - 同一 provider 多渠道很常见(用多 key 提高 quota)。
 - 凭证一旦换 master_key **全部得重填**(见 [配置](../guide/configuration.md#master-key))。
 - 新增 provider 不在 9 家里?需要[新增上游适配器](../development/adapter-guide.md)。

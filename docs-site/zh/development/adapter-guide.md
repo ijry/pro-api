@@ -283,7 +283,7 @@ VALUES
     ('codestral-latest',      'mistral', 3, 0.1, 0.3);
 ```
 
-ratio 数值按"上游公开价 USD / proapi base 价"对照,默认 `base_quota_per_dollar = 500000` 时 `ratio × 2 = $/M tokens`。
+ratio 数值按"上游公开价 USD / pro-api base 价"对照,默认 `base_quota_per_dollar = 500000` 时 `ratio × 2 = $/M tokens`。
 
 ## 步骤九:文档与 CHANGELOG
 
@@ -299,7 +299,7 @@ ratio 数值按"上游公开价 USD / proapi base 价"对照,默认 `base_quota_
 
 - **Vision 支持**:在 `Chat` 中识别 `content[].type == "image_url"`,转 mistral 的图像输入(若上游支持)
 - **Tool use**:在 `Chat` 中识别 `tools` / `tool_choice`,转 mistral 的 function calling 协议
-- **Reasoning**:若上游返回 `reasoning_tokens`,填到 `Usage.ReasoningTokens`,proapi 自动按 `reasoning_ratio` 计费
+- **Reasoning**:若上游返回 `reasoning_tokens`,填到 `Usage.ReasoningTokens`,pro-api 自动按 `reasoning_ratio` 计费
 - **Prompt caching**:若上游有 caching 命中信息,填到 `Usage.CachedTokens`
 
 ## 调试技巧

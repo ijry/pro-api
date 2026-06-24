@@ -1,1 +1,0 @@
-import{an as s,bO as i,bS as o,aJ as r}from"./index-ClKeNBH9.js";const e={list:()=>r("/api/admin/groups"),create:a=>o("/api/admin/groups",a),patch:(a,p)=>i(`/api/admin/groups/${a}`,p),remove:a=>s(`/api/admin/groups/${a}`)};export{e as g};

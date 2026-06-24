@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: proapi
+  name: pro-api
   text: 一站式大模型 API 中转网关
   tagline: 三协议互转 · 18+ 上游 · 企业级 SSO · 完整计费 · 开箱即用
   image:
     src: /logo.svg
-    alt: proapi
+    alt: pro-api
   actions:
     - theme: brand
       text: 5 分钟跑起来

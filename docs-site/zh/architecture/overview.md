@@ -5,11 +5,11 @@ outline: deep
 
 # 架构总览
 
-> proapi 是一个"协议网关":接收 OpenAI 格式的 API 请求,挑选最合适的上游渠道,做协议转换、计费、限流、日志,然后把上游结果(可能是流式)透传给客户端。
+> pro-api 是一个"协议网关":接收 OpenAI 格式的 API 请求,挑选最合适的上游渠道,做协议转换、计费、限流、日志,然后把上游结果(可能是流式)透传给客户端。
 >
 > 本页给你一个 10 分钟看完的整体视图;具体子系统看各架构子页。
 
-## 一张图看 proapi
+## 一张图看 pro-api
 
 ```
                                   ┌─────────────────────────────┐
@@ -52,7 +52,7 @@ outline: deep
 - **日志层**(`internal/log`):请求日志 / 错误日志 / 用量统计聚合(async writer)。
 - **认证层**(`internal/auth` + `token`):session + token,中间件层完成鉴权。
 - **前端**(`web/admin` 后台 / `web/user` 用户前台):Vue 3 + Vite + shadcn-vue 风格 UI。
-- **文档站**(`docs-site`):VitePress 静态站,可与 proapi 同实例服务,也可独立部署。
+- **文档站**(`docs-site`):VitePress 静态站,可与 pro-api 同实例服务,也可独立部署。
 
 ## 数据流(代理一次请求)
 
@@ -69,7 +69,7 @@ outline: deep
 9. **提交**:拿到 usage 后 `billing.Commit` Lua 原子写实际消耗、退还差额。
 10. **落账**:`log.AsyncWrite` 入队,后台 writer 批量写 `request_logs` + `ledger_entries`。
 
-整体客户端可观察到的延迟 ≈ TTFT (上游) + 几毫秒 proapi 开销。
+整体客户端可观察到的延迟 ≈ TTFT (上游) + 几毫秒 pro-api 开销。
 
 ## 数据流(后台改配置)
 
@@ -118,13 +118,13 @@ admin UI ──▶ PATCH /api/admin/settings/:key
 - **多实例水平扩展**:多个 `proapi` 共享 DB / Redis,前面挂反代做负载均衡。
   - 唯一约束:每个实例 `node_id` 不能撞。
   - Redis 单点可承 5w+ TPS,M1 范围内通常够用。
-- **托管依赖**:DB 与 Redis 用云托管(RDS / ElastiCache),proapi 容器化跑 K8s。
+- **托管依赖**:DB 与 Redis 用云托管(RDS / ElastiCache),pro-api 容器化跑 K8s。
 
 详细方案见 [Docker Compose 部署](../deployment/docker-compose.md)。
 
 ## 与同类项目的差异点
 
-| 维度 | proapi | one-api / new-api |
+| 维度 | pro-api | one-api / new-api |
 |---|---|---|
 | 协议互转 | M1 出向 9 家 + M2 三入口互转 | 多家 + OpenAI 入口 |
 | 计费 | 预扣 + Lua 原子 + append-only ledger | 后扣 |

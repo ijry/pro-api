@@ -1,0 +1,1 @@
+import{l as i}from"./index-CfDmFFLK.js";const s={list:(e={})=>{const t=new URLSearchParams;return e.page&&t.set("page",String(e.page)),e.page_size&&t.set("page_size",String(e.page_size)),e.from&&t.set("from",e.from),e.to&&t.set("to",e.to),e.model&&t.set("model",e.model),e.status&&t.set("status",String(e.status)),i(`/api/user/logs/requests?${t}`)}};export{s as l};

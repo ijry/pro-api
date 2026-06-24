@@ -5,7 +5,7 @@ outline: deep
 
 # 定价与倍率
 
-> proapi 通过 `tokens × ratio × group_ratio` 公式把上游 token 用量转换成内部 quota 消耗。本页讲清楚倍率是怎么算的、在哪改。
+> pro-api 通过 `tokens × ratio × group_ratio` 公式把上游 token 用量转换成内部 quota 消耗。本页讲清楚倍率是怎么算的、在哪改。
 
 ## 公式
 

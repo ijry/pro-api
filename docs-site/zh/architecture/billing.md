@@ -5,7 +5,7 @@ outline: deep
 
 # 计费机制
 
-> proapi 的计费基于 **预扣 + 提交**(Reserve + Commit)模式。所有钱包变动通过 Redis Lua 脚本原子完成,辅以 DB 账本(`ledger_entries`)做最终一致对账与审计。
+> pro-api 的计费基于 **预扣 + 提交**(Reserve + Commit)模式。所有钱包变动通过 Redis Lua 脚本原子完成,辅以 DB 账本(`ledger_entries`)做最终一致对账与审计。
 
 ## 关键概念
 

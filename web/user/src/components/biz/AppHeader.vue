@@ -65,7 +65,7 @@ function toggleAvatar() {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center gap-4">
       <!-- Logo -->
       <router-link to="/" class="flex items-center gap-2 shrink-0">
-        <span class="text-primary font-bold text-xl tracking-tight">proapi</span>
+        <span class="text-primary font-bold text-xl tracking-tight">pro-api</span>
       </router-link>
 
       <!-- Nav links (desktop) -->

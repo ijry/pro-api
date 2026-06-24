@@ -9,7 +9,7 @@ outline: deep
 
 ## 镜像
 
-- **官方**:`ghcr.io/proapi/proapi:vX.Y.Z`
+- **官方**:`ghcr.io/ijry/pro-api:vX.Y.Z`
 - **国内镜像源**:占位(M1 GA 时确定)
 
 ### 标签策略
@@ -26,7 +26,7 @@ outline: deep
 
 ## 准备依赖
 
-proapi 不内嵌 DB / Redis,需要单独起。如果只是测试,可以用 docker-compose:
+pro-api 不内嵌 DB / Redis,需要单独起。如果只是测试,可以用 docker-compose:
 
 ```yaml
 # deps.yaml
@@ -50,7 +50,7 @@ docker compose -f deps.yaml up -d
 
 ## 配置文件
 
-参考仓库根 `config.example.yaml`,拷贝为 `./config.yaml`:
+参考仓库根 `configs/proapi.example.yaml`，拷贝为 `./config.yaml`:
 
 ```yaml
 node_id: 0
@@ -82,7 +82,7 @@ docker run -d \
   -e PROAPI_MASTER_KEY=$(cat .master_key) \
   -e TZ=Asia/Shanghai \
   --restart unless-stopped \
-  ghcr.io/proapi/proapi:vX.Y.Z
+  ghcr.io/ijry/pro-api:vX.Y.Z
 ```
 
 参数说明:
@@ -95,22 +95,22 @@ docker run -d \
 ## 数据持久化
 
 - **DB / Redis**:用宿主机 volume 或托管服务
-- **proapi 容器本身**:**完全无状态**,随时可删 / 重建
+- **pro-api 容器本身**:**完全无状态**,随时可删 / 重建
 - **日志**:默认写 stdout,用 `docker logs` 或挂日志收集器
 
 ## 资源建议
 
-| 量级 | proapi CPU | proapi 内存 | DB 磁盘 |
+| 量级 | pro-api CPU | pro-api 内存 | DB 磁盘 |
 |---|---|---|---|
 | 小(< 10 QPS) | 0.5 core | 256 MB | 5 GB |
 | 中(10-100 QPS) | 1 core | 512 MB | 50 GB |
 | 大(> 100 QPS) | 2+ core × 多实例 | 1 GB / 实例 | 500 GB+ |
 
-proapi 是 IO-bound,CPU 通常不是瓶颈;内存随 RPS 微涨(大头在 HTTP body + 连接池)。
+pro-api 是 IO-bound,CPU 通常不是瓶颈;内存随 RPS 微涨(大头在 HTTP body + 连接池)。
 
 ## 日志收集
 
-proapi 默认 JSON 结构化日志到 stdout。常见方式:
+pro-api 默认 JSON 结构化日志到 stdout。常见方式:
 
 - `docker logs proapi -f`(开发查看)
 - Docker `--log-driver=fluentd` / `json-file` + 收集到 Loki / ELK
@@ -123,9 +123,9 @@ proapi 默认 JSON 结构化日志到 stdout。常见方式:
 详见 [升级指南](../guide/upgrade.md)。Docker 场景:
 
 ```bash
-docker pull ghcr.io/proapi/proapi:vX.Y.Z
+docker pull ghcr.io/ijry/pro-api:vX.Y.Z
 docker stop proapi && docker rm proapi
-docker run -d ... ghcr.io/proapi/proapi:vX.Y.Z  # 同启动命令
+docker run -d ... ghcr.io/ijry/pro-api:vX.Y.Z  # 同启动命令
 ```
 
 ## 多架构
@@ -138,7 +138,7 @@ docker run -d ... ghcr.io/proapi/proapi:vX.Y.Z  # 同启动命令
 docker 默认会选择匹配宿主机架构的 manifest。若强制:
 
 ```bash
-docker run --platform linux/arm64 ghcr.io/proapi/proapi:vX.Y.Z
+docker run --platform linux/arm64 ghcr.io/ijry/pro-api:vX.Y.Z
 ```
 
 ## 故障排查
@@ -157,4 +157,4 @@ docker run --platform linux/arm64 ghcr.io/proapi/proapi:vX.Y.Z
 - 镜像 entrypoint 默认是 `migrate-then-serve`;高可用场景里**只在 leader 节点跑 migrate**,其他节点用 `--no-migrate` 或环境变量 `MIGRATE=false`
 - volume 挂载 `config.yaml` 用 `:ro` 防容器内改
 - 容器内时区默认 UTC,需要本地化日志时用 `-e TZ=Asia/Shanghai`
-- proapi **不内嵌** DB / Redis,要单独起
+- pro-api **不内嵌** DB / Redis,要单独起

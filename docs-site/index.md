@@ -1,7 +1,7 @@
 ---
 layout: home
 hero:
-  name: proapi
+  name: pro-api
   text: 一站式大模型 API 中转网关
   actions:
     - theme: brand

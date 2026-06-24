@@ -105,7 +105,7 @@ const breadcrumbs = computed(() => {
       @update:collapsed="app.toggleSidebar"
     >
       <div class="h-14 flex items-center justify-center px-4 border-b border-border">
-        <NText v-if="!app.sidebarCollapsed" strong class="text-lg">proapi</NText>
+        <NText v-if="!app.sidebarCollapsed" strong class="text-lg">pro-api</NText>
         <NText v-else strong>P</NText>
       </div>
       <NMenu

@@ -5,7 +5,7 @@ outline: deep
 
 # 二次开发总览
 
-> proapi 设计上把"协议适配""支付""OAuth""推送"等关键扩展点都接口化。二次开发者可以在不动主仓库的前提下新增厂商或定制业务。
+> pro-api 设计上把"协议适配""支付""OAuth""推送"等关键扩展点都接口化。二次开发者可以在不动主仓库的前提下新增厂商或定制业务。
 
 ## 仓库布局
 
@@ -88,7 +88,7 @@ CI 流程见 `.github/workflows/`。提交 PR 必须全部 pass(详见 [贡献�
 - **使用 dlv**:`dlv debug ./cmd/proapi -- serve`
 - **改 log level**:启动时 `PROAPI_LOG_LEVEL=debug`,会输出每次上游 HTTP 的字段映射
 - **看 request_logs / error_logs**:admin 后台 → 日志,按 `X-Request-ID` 搜
-- **端到端串 trace**:客户端发请求时主动带 `X-Request-ID: my-trace-001`,proapi 会全链路用这个 ID
+- **端到端串 trace**:客户端发请求时主动带 `X-Request-ID: my-trace-001`,pro-api 会全链路用这个 ID
 
 ## 贡献
 
@@ -102,6 +102,6 @@ CI 流程见 `.github/workflows/`。提交 PR 必须全部 pass(详见 [贡献�
 ## 关键要点
 
 - 接口化的扩展点必须用 Go interface,**不要在 internal 包之间直接 import 具体 struct**
-- 新增适配器是 proapi 二开**最常见的需求**,所以 [adapter-guide](./adapter-guide.md) 写得最详细
+- 新增适配器是 pro-api 二开**最常见的需求**,所以 [adapter-guide](./adapter-guide.md) 写得最详细
 - 新增支付方式 M1 没实例,stub 先放
 - 任何扩展都要写测试 + 同步更新对应文档站页(`docs-site/zh/*`)

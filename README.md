@@ -1,4 +1,4 @@
-# proapi
+# pro-api
 
 All-in-one LLM API Gateway · 3-protocol interop · 18+ providers · Enterprise SSO · Full billing
 
@@ -30,6 +30,11 @@ All-in-one LLM API Gateway · 3-protocol interop · 18+ providers · Enterprise 
 See the roadmap at [`docs/superpowers/2026-05-21-proapi-总体路线图.md`](./docs/superpowers/2026-05-21-proapi-总体路线图.md).
 
 ## 5-minute Quickstart
+
+For tagged releases, this repo publishes:
+
+- Docker images at `ghcr.io/ijry/pro-api`
+- Prebuilt binaries in [GitHub Releases](https://github.com/ijry/pro-api/releases)
 
 ### Prerequisites
 

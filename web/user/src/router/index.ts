@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { i18n } from '@/i18n'
 
@@ -122,7 +122,12 @@ const routes: RouteRecordRaw[] = [
 const MOCK = import.meta.env.VITE_DEMO_MOCK === 'true'
 const baseUrl = MOCK ? import.meta.env.BASE_URL : '/'
 
-export const router = createRouter({ history: createWebHistory(baseUrl), routes })
+export const router = createRouter({
+  history: MOCK
+    ? createWebHashHistory(baseUrl)
+    : createWebHistory(baseUrl),
+  routes,
+})
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
@@ -152,5 +157,5 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   const titleKey = to.meta.title as string | undefined
-  document.title = titleKey ? `${i18n.global.t(titleKey)} · proapi` : 'proapi'
+  document.title = titleKey ? `${i18n.global.t(titleKey)} · pro-api` : 'pro-api'
 })
