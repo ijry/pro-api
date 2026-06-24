@@ -34,10 +34,10 @@ const routes: RouteRecordRaw[] = [
     meta: { auth: false, layout: 'auth' },
   },
   {
-    path: '/tokens',
-    name: 'tokens',
+    path: '/apikeys',
+    name: 'apikeys',
     component: () => import('@/pages/tokens/index.vue'),
-    meta: { auth: true, title: 'nav.tokens', layout: 'app' },
+    meta: { auth: true, title: 'nav.apikeys', layout: 'app' },
   },
   {
     path: '/recharge',

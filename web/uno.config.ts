@@ -1,4 +1,5 @@
 import { defineConfig, presetUno, presetAttributify, presetIcons, transformerVariantGroup } from 'unocss'
+import path from 'node:path'
 
 /**
  * proapi 共享 UnoCSS 配置 — admin 与 user 各自 vite.config 引入并按需扩展。
@@ -10,7 +11,7 @@ export default defineConfig({
     presetAttributify(),
     presetIcons({
       scale: 1.1,
-      collections: { lucide: () => import('@iconify-json/lucide/icons.json').then(m => m.default) },
+      collectionsNodeResolvePath: path.resolve(__dirname),
     }),
   ],
   transformers: [transformerVariantGroup()],

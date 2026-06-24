@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Home",
-    "tokens": "API Tokens",
+    "apikeys": "API Keys",
     "recharge": "Recharge",
     "redeem": "Redeem",
     "logs": "Logs",

@@ -2,9 +2,10 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import UnoCSS from 'unocss/vite'
 import path from 'node:path'
+import unoConfig from '../uno.config'
 
 export default defineConfig({
-  plugins: [vue(), UnoCSS()],
+  plugins: [vue(), UnoCSS(unoConfig)],
   resolve: { alias: { '@': path.resolve(__dirname, 'src') } },
   server: {
     proxy: {

@@ -20,7 +20,7 @@ const langMenuOpen = ref(false)
 
 const navLinks = [
   { to: '/', label: 'nav.home', icon: 'i-lucide-layout-dashboard', exact: true },
-  { to: '/tokens', label: 'nav.tokens', icon: 'i-lucide-key-round' },
+  { to: '/apikeys', label: 'nav.apikeys', icon: 'i-lucide-key-round' },
   { to: '/recharge', label: 'nav.recharge', icon: 'i-lucide-wallet' },
   { to: '/redeem', label: 'nav.redeem', icon: 'i-lucide-ticket' },
   { to: '/logs', label: 'nav.logs', icon: 'i-lucide-list' },

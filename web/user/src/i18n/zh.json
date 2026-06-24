@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "首页",
-    "tokens": "API 令牌",
+    "apikeys": "API Key",
     "recharge": "充值",
     "redeem": "兑换",
     "logs": "调用日志",

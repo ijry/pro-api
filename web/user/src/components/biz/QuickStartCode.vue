@@ -86,7 +86,7 @@ const currentCode = computed(() => code[active.value])
     </div>
 
     <div class="flex gap-2 mt-3">
-      <router-link to="/tokens"
+      <router-link to="/apikeys"
         class="inline-flex items-center gap-1 px-3 h-7 rounded-md border border-border text-xs text-fg hover:bg-bg transition-colors">
         <span class="i-lucide-key-round w-3.5 h-3.5" />{{ t('home.quickstart.my_tokens') }}
       </router-link>

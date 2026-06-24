@@ -48,7 +48,7 @@ function formatLatency(ms: number) {
       :title="t('home.logs.empty.title')"
       :subtitle="t('home.logs.empty.subtitle')"
       :cta="t('home.logs.empty.cta')"
-      cta-to="/tokens"
+      cta-to="/apikeys"
     />
     <div v-else class="space-y-1">
       <div

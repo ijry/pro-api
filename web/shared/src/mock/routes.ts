@@ -50,7 +50,7 @@ const channelById = (url: string) => {
 }
 
 const userTokenById = (url: string) => {
-  const m = url.match(/\/(?:tokens|apikeys)\/([^/?]+)/)
+  const m = url.match(/\/apikeys\/([^/?]+)/)
   const id = m ? m[1] : ''
   const found = (userTokens as any[]).find((t) => t.id === id)
   return found ? clone(found) : clone((userTokens as any[])[0])

@@ -1,1 +1,0 @@
-import{j as s,f as o,o as a,s as n}from"./index-B-b6Dmbl.js";const t=s({__name:"Skeleton",props:{class:{}},setup(r){return(e,l)=>(n(),o("div",{class:a(["animate-pulse rounded-md bg-border/40",e.$props.class])},null,2))}});export{t as _};
