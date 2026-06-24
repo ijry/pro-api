@@ -49,6 +49,9 @@ func TokenAuth(s Store) gin.HandlerFunc {
 		}
 		c.Set(CtxKeyToken, view)
 		c.Set(CtxKeyUserID, view.UserID)
+		ctx := context.WithValue(c.Request.Context(), CtxKeyToken, view)
+		ctx = context.WithValue(ctx, CtxKeyUserID, view.UserID)
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
 }

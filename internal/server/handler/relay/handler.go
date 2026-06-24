@@ -71,18 +71,23 @@ func (h *Handler) RegisterGeminiRoutes(g *gin.RouterGroup) {
 // Priority: (1) channel selected by Selector (using model + groupID hint),
 // (2) "relay:channel" context key set by an upstream middleware,
 // (3) fallback to Bearer token direct mode.
-func (h *Handler) resolveChannel(c *gin.Context, model string) *channel.Channel {
+func (h *Handler) resolveChannel(c *gin.Context, model string) (*channel.Channel, *apierr.Error) {
+	if view, ok := token.FromContext(c.Request.Context()); ok {
+		if err := token.AssertModelAllowed(view, model); err != nil {
+			return nil, mapErr(err)
+		}
+	}
 	if h.deps.Channel != nil {
 		groupID := token.GroupIDFromContext(c.Request.Context())
 		ch, err := h.deps.Channel.Select(c.Request.Context(), model, channel.SelectHint{
 			GroupID: groupID,
 		})
 		if err == nil && ch != nil {
-			return ch
+			return ch, nil
 		}
-		// On selector error, fall through to context/bearer fallback
+		return nil, mapErr(err)
 	}
-	return channelFromContext(c)
+	return channelFromContext(c), nil
 }
 
 // channelFromContext 从 gin context 中提取选定的 *channel.Channel。
@@ -140,7 +145,11 @@ func (h *Handler) ChatCompletions(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	ch := h.resolveChannel(c, req.Model)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 
 	if req.Stream {
 		h.streamChat(c, req, ch)
@@ -341,7 +350,11 @@ func (h *Handler) Completions(c *gin.Context) {
 		return
 	}
 	chatReq := completionReq.ToChat()
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, chatReq.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 
 	resp, _, err := h.deps.Relay.Chat(c.Request.Context(), chatReq, ch)
 	if err != nil {
@@ -358,7 +371,11 @@ func (h *Handler) Embeddings(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 
 	resp, _, err := h.deps.Relay.Embed(c.Request.Context(), req, ch)
 	if err != nil {
@@ -382,7 +399,11 @@ func (h *Handler) AnthropicMessages(c *gin.Context) {
 		return
 	}
 
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 
 	if req.Stream {
 		reader, _, relayErr := h.deps.Relay.ChatStream(c.Request.Context(), req, ch)
@@ -447,7 +468,11 @@ func (h *Handler) GeminiGenerateContent(c *gin.Context) {
 		return
 	}
 
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 
 	irResp, _, relayErr := h.deps.Relay.Chat(c.Request.Context(), req, ch)
 	if relayErr != nil {
@@ -474,7 +499,11 @@ func (h *Handler) GeminiStreamGenerateContent(c *gin.Context) {
 	}
 	req.Stream = true
 
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 
 	reader, _, relayErr := h.deps.Relay.ChatStream(c.Request.Context(), req, ch)
 	if relayErr != nil {
@@ -525,7 +554,11 @@ func (h *Handler) Images(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 	resp, _, err := h.deps.Relay.GenerateImage(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
@@ -558,7 +591,11 @@ func (h *Handler) Speech(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, err.Error()))
 		return
 	}
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 	resp, _, err := h.deps.Relay.TextToSpeech(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))
@@ -598,7 +635,11 @@ func (h *Handler) Transcriptions(c *gin.Context) {
 		req.Model = "whisper-1"
 	}
 
-	ch := channelFromContext(c)
+	ch, resolveErr := h.resolveChannel(c, req.Model)
+	if resolveErr != nil {
+		middleware.SetErr(c, resolveErr)
+		return
+	}
 	resp, _, err := h.deps.Relay.Transcribe(c.Request.Context(), &req, ch)
 	if err != nil {
 		middleware.SetErr(c, mapErr(err))

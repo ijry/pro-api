@@ -45,6 +45,7 @@ func GroupRatioMiddleware(lookup GroupRatioLookup) gin.HandlerFunc {
 		}
 		if gid > 0 {
 			c.Set(ctxKeyGroupID, gid)
+			c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxKeyGroupID, gid))
 			if lookup != nil {
 				if ratio, err := lookup(c.Request.Context(), gid); err == nil {
 					c.Set(CtxKeyGroupRatio, ratio)

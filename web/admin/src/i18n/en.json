@@ -35,7 +35,7 @@
     "channel_new": "New Channel",
     "channel_detail": "Channel Detail",
     "channel_mappings": "Model Mappings",
-    "accounts": "Account Pool",
+    "accounts": "Channel Accounts",
     "account_detail": "Account Detail",
     "models": "Model Catalog",
     "pricing": "Pricing & Ratio",
@@ -69,7 +69,7 @@
     "desc": "The page you're looking for doesn't exist. Please check the URL."
   },
   "accounts": {
-    "title": "Account Pool",
+    "title": "Channel Accounts",
     "kpi": {
       "total": "Total",
       "active": "Active",
@@ -127,7 +127,7 @@
       "view": "Detail"
     },
     "add_dialog": {
-      "title": "Add Codex Account",
+      "title": "Add Channel Account",
       "tabs": {
         "oauth": "OAuth Authorize",
         "token_json": "Token / JSON",

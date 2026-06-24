@@ -87,3 +87,31 @@ func TestGroupRatioMiddleware_TokenGroupID_WrittenToContext(t *testing.T) {
 		t.Errorf("want group_id=7 (from token), got %d", gotGroupID)
 	}
 }
+
+func TestGroupRatioMiddleware_TokenGroupID_WrittenToRequestContext(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+
+	var gotGroupID int64
+	r.GET("/test",
+		func(c *gin.Context) {
+			c.Set("proapi:token", &MockTokenView{GroupID: 7})
+			c.Next()
+		},
+		GroupRatioMiddleware(nil),
+		func(c *gin.Context) {
+			if v := c.Request.Context().Value("proapi:group_id"); v != nil {
+				gotGroupID, _ = v.(int64)
+			}
+			c.Status(200)
+		},
+	)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	r.ServeHTTP(w, req)
+
+	if gotGroupID != 7 {
+		t.Errorf("want request context group_id=7, got %d", gotGroupID)
+	}
+}

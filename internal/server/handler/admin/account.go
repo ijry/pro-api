@@ -1,6 +1,6 @@
 package admin
 
-// AccountHandler 号池管理 admin REST API。
+// AccountHandler 渠道账号 admin REST API。
 //
 // 路由组(由 cmd/proapi/main.go 装配):
 //   - 所有 endpoint 都在 SessionAuth + RoleGate(2)(admin)之后;

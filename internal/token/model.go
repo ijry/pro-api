@@ -63,6 +63,15 @@ type View struct {
 	UpdatedAt     time.Time
 }
 
+// GetGroupID exposes the token calling group to cross-package middleware
+// without importing the token package there.
+func (v *View) GetGroupID() int64 {
+	if v == nil {
+		return 0
+	}
+	return v.GroupID
+}
+
 // ToView 把 GORM 行解码为业务 View。JSON 字段解析失败按空数组处理(损坏数据不阻塞鉴权)。
 func (t *Token) ToView() *View {
 	v := &View{

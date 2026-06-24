@@ -31,6 +31,7 @@ func cacheKey(hash string) string { return cacheKeyPrefix + hash }
 type cacheValue struct {
 	ID            int64      `json:"id"`
 	UserID        int64      `json:"user_id"`
+	GroupID       int64      `json:"group_id"`
 	Name          string     `json:"name"`
 	KeyPrefix     string     `json:"key_prefix"`
 	QuotaLimit    *int64     `json:"quota_limit,omitempty"`
@@ -49,6 +50,7 @@ func toCacheValue(v *View) cacheValue {
 	return cacheValue{
 		ID:            v.ID,
 		UserID:        v.UserID,
+		GroupID:       v.GroupID,
 		Name:          v.Name,
 		KeyPrefix:     v.KeyPrefix,
 		QuotaLimit:    v.QuotaLimit,
@@ -68,6 +70,7 @@ func (cv cacheValue) toView() *View {
 	return &View{
 		ID:            cv.ID,
 		UserID:        cv.UserID,
+		GroupID:       cv.GroupID,
 		Name:          cv.Name,
 		KeyPrefix:     cv.KeyPrefix,
 		QuotaLimit:    cv.QuotaLimit,

@@ -28,17 +28,17 @@ func (f *fakeStore) Create(context.Context, CreateInput) (string, *View, error) 
 func (f *fakeStore) List(context.Context, ListFilter) ([]*View, int64, error) {
 	panic("not used")
 }
-func (f *fakeStore) Get(context.Context, int64) (*View, error)             { panic("not used") }
+func (f *fakeStore) Get(context.Context, int64) (*View, error) { panic("not used") }
 func (f *fakeStore) Update(context.Context, int64, UpdatePatch) (*View, error) {
 	panic("not used")
 }
-func (f *fakeStore) Revoke(context.Context, int64) error                  { panic("not used") }
+func (f *fakeStore) Revoke(context.Context, int64) error { panic("not used") }
 func (f *fakeStore) Regenerate(context.Context, int64) (string, *View, error) {
 	panic("not used")
 }
-func (f *fakeStore) IncrementUsage(int64, int64)                            {}
-func (f *fakeStore) TouchLastUsed(int64, time.Time)                         {}
-func (f *fakeStore) Close() error                                           { return nil }
+func (f *fakeStore) IncrementUsage(int64, int64)    {}
+func (f *fakeStore) TouchLastUsed(int64, time.Time) {}
+func (f *fakeStore) Close() error                   { return nil }
 
 func setupAuthGin(t *testing.T, store Store) *gin.Engine {
 	t.Helper()
@@ -93,7 +93,7 @@ func TestTokenAuth_BadPrefix_ReturnsInvalidToken(t *testing.T) {
 }
 
 func TestTokenAuth_ValidKey_InjectsContext(t *testing.T) {
-	store := &fakeStore{view: &View{ID: 7, UserID: 42}}
+	store := &fakeStore{view: &View{ID: 7, UserID: 42, GroupID: 9}}
 	r := setupAuthGin(t, store)
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Bearer pa-anyplaceholder")
@@ -106,6 +106,41 @@ func TestTokenAuth_ValidKey_InjectsContext(t *testing.T) {
 	_ = json.Unmarshal(rec.Body.Bytes(), &body)
 	if body["user_id"].(float64) != 42 {
 		t.Fatalf("want user_id=42, got %v", body["user_id"])
+	}
+}
+
+func TestTokenAuth_InjectsRequestContext(t *testing.T) {
+	store := &fakeStore{view: &View{ID: 7, UserID: 42, GroupID: 9}}
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(middleware.ErrorResponse("openai"))
+	r.Use(TokenAuth(store))
+	r.GET("/x", func(c *gin.Context) {
+		ctx := c.Request.Context()
+		view, ok := FromContext(ctx)
+		c.JSON(http.StatusOK, gin.H{
+			"ok":       ok,
+			"view_id":  view.ID,
+			"user_id":  UserIDFromContext(ctx),
+			"group_id": GroupIDFromContext(ctx),
+		})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.Header.Set("Authorization", "Bearer pa-anyplaceholder")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &body)
+	if body["ok"] != true || body["view_id"].(float64) != 7 || body["user_id"].(float64) != 42 {
+		t.Fatalf("token/user not injected into request context: %+v", body)
+	}
+	if body["group_id"].(float64) != 0 {
+		t.Fatalf("group should be injected by GroupRatioMiddleware, got %+v", body)
 	}
 }
 
@@ -147,7 +182,6 @@ func TestTokenAuth_XForwardedFor_UsedAsRealIP(t *testing.T) {
 		t.Fatalf("want 200 (XFF 10.x in CIDR), got %d body=%s", rec.Code, rec.Body.String())
 	}
 }
-
 
 func TestExtractBearer_CaseInsensitiveScheme(t *testing.T) {
 	for _, h := range []string{"Bearer pa-x", "bearer pa-x", "BEARER pa-x"} {

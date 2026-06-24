@@ -251,15 +251,24 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 			return gs.RatioFor(ctx, id)
 		}
 	}
+	tokenStore, _ := a.TokenStore.(token.Store)
 	v1 := eng.Group("/v1", middleware.ErrorResponse("openai"))
+	if tokenStore != nil {
+		v1.Use(token.TokenAuth(tokenStore))
+	} else {
+		log.Warn("token store not wired; /v1 routes are not token protected")
+	}
 	v1.Use(middleware.GroupRatioMiddleware(groupRatioLookup))
 	if limiter, ok := a.Limiter.(ratelimit.Limiter); ok {
 		if planner := ratelimit.PlannerFrom(a); planner != nil {
 			v1.Use(ratelimit.Middleware(limiter, planner, a.Setting, log))
 		}
 	}
+	chFacade := channel.FacadeFrom(a)
+	if chFacade != nil {
+		tokenhdr.NewModelsHandler(chFacade).Register(v1)
+	}
 	if relaySvc, ok := a.Relay.(*relay.Service); ok {
-		chFacade := channel.FacadeFrom(a)
 		var chSelector channel.Selector
 		if chFacade != nil {
 			chSelector = chFacade.Selector
@@ -276,6 +285,10 @@ func wireRoutes(ctx context.Context, eng *gin.Engine, a *app.Application, log *z
 		relayH.RegisterAnthropicRoutes(v1)
 		// M2a: Gemini 入口 /v1beta/models/:model/...
 		v1beta := eng.Group("/v1beta", middleware.ErrorResponse("json"))
+		if tokenStore != nil {
+			v1beta.Use(token.TokenAuth(tokenStore))
+		}
+		v1beta.Use(middleware.GroupRatioMiddleware(groupRatioLookup))
 		relayH.RegisterGeminiRoutes(v1beta)
 	}
 

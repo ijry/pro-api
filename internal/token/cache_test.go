@@ -33,6 +33,7 @@ func TestCache_SetGet_Roundtrip(t *testing.T) {
 	view := &View{
 		ID:            123,
 		UserID:        7,
+		GroupID:       5,
 		Name:          "demo",
 		KeyPrefix:     "pa-AbCdEf01****WXYZ",
 		AllowedModels: []string{"gpt-4*"},
@@ -45,7 +46,7 @@ func TestCache_SetGet_Roundtrip(t *testing.T) {
 	if st != cacheHit || got == nil {
 		t.Fatalf("want hit, got %v / %v", got, st)
 	}
-	if got.ID != 123 || got.RPMLimit != 30 || got.AllowedModels[0] != "gpt-4*" {
+	if got.ID != 123 || got.UserID != 7 || got.GroupID != 5 || got.RPMLimit != 30 || got.AllowedModels[0] != "gpt-4*" {
 		t.Fatalf("decode mismatch: %+v", got)
 	}
 }

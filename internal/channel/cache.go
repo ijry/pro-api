@@ -17,9 +17,9 @@ const (
 
 // channelCache 是内存本地缓存。
 type channelCache struct {
-	repo  *repo
-	rdb   *redis.Client
-	log   *zap.Logger
+	repo *repo
+	rdb  *redis.Client
+	log  *zap.Logger
 
 	mu               sync.RWMutex
 	byID             map[int64]*Channel
@@ -193,6 +193,33 @@ func (c *channelCache) ChannelsByModel(model string) []*Channel {
 		out[i] = &cp
 	}
 	return out
+}
+
+// ActiveModels 返回当前可调用模型。groupID > 0 时只返回全局渠道(group_id=0)
+// 或同组渠道支持的模型。
+func (c *channelCache) ActiveModels(groupID int64) []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	seen := make(map[string]struct{}, len(c.channelsByModel))
+	for model, list := range c.channelsByModel {
+		for _, ch := range list {
+			if ch.Status != 0 {
+				continue
+			}
+			if groupID > 0 && ch.GroupID != 0 && ch.GroupID != groupID {
+				continue
+			}
+			seen[model] = struct{}{}
+			break
+		}
+	}
+	models := make([]string, 0, len(seen))
+	for model := range seen {
+		models = append(models, model)
+	}
+	sort.Strings(models)
+	return models
 }
 
 // GetByID 从缓存取一条(已解密)。

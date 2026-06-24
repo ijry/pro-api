@@ -14,11 +14,17 @@ import (
 
 // stubModelLister 实现 ModelLister 用于测试。
 type stubModelLister struct {
-	active []string
-	meta   map[string]tokensvc.ModelMeta
+	active        []string
+	activeByGroup map[int64][]string
+	meta          map[string]tokensvc.ModelMeta
 }
 
-func (s *stubModelLister) ActiveModels(_ context.Context) []string { return s.active }
+func (s *stubModelLister) ActiveModels(ctx context.Context) []string {
+	if s.activeByGroup != nil {
+		return s.activeByGroup[tokensvc.GroupIDFromContext(ctx)]
+	}
+	return s.active
+}
 func (s *stubModelLister) ModelInfo(m string) (tokensvc.ModelMeta, bool) {
 	if s.meta == nil {
 		return tokensvc.ModelMeta{}, false
@@ -36,12 +42,48 @@ func newModelsEngine(t *testing.T, lister tokensvc.ModelLister, view *tokensvc.V
 	r.Use(func(c *gin.Context) {
 		if view != nil {
 			c.Set(tokensvc.CtxKeyToken, view)
+			ctx := context.WithValue(c.Request.Context(), tokensvc.CtxKeyToken, view)
+			if view.GroupID > 0 {
+				c.Set(tokensvc.CtxKeyGroupID, view.GroupID)
+				ctx = context.WithValue(ctx, tokensvc.CtxKeyGroupID, view.GroupID)
+			}
+			c.Request = c.Request.WithContext(ctx)
 		}
 		c.Next()
 	})
 	h := NewModelsHandler(lister)
 	h.Register(r.Group("/v1"))
 	return r
+}
+
+func TestModelsHandler_GroupModelsThenAllowedModelsIntersection(t *testing.T) {
+	lister := &stubModelLister{
+		activeByGroup: map[int64][]string{
+			5: {"global-model", "group5-model", "hidden-by-token"},
+			9: {"global-model", "group9-model"},
+		},
+	}
+	view := &tokensvc.View{ID: 1, GroupID: 5, AllowedModels: []string{"global-model", "group5-model"}}
+	r := newModelsEngine(t, lister, view)
+	req := httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	var body ModelsResponse
+	_ = json.Unmarshal(rec.Body.Bytes(), &body)
+	got := make([]string, 0, len(body.Data))
+	for _, item := range body.Data {
+		got = append(got, item.ID)
+	}
+	want := []string{"global-model", "group5-model"}
+	if len(got) != len(want) {
+		t.Fatalf("want %v, got %v", want, got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("want %v, got %v", want, got)
+		}
+	}
 }
 
 func TestModelsHandler_NoFilter_ReturnsAll(t *testing.T) {

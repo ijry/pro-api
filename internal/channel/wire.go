@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ijry/pro-api/internal/app"
+	"github.com/ijry/pro-api/internal/token"
 	"github.com/ijry/pro-api/internal/util/clock"
 	"go.uber.org/zap"
 )
@@ -69,4 +70,18 @@ func FacadeFrom(a *app.Application) *Facade {
 		return f
 	}
 	return nil
+}
+
+// ActiveModels implements token.ModelLister for /v1/models.
+func (f *Facade) ActiveModels(ctx context.Context) []string {
+	if f == nil || f.Cache == nil {
+		return nil
+	}
+	return f.Cache.ActiveModels(token.GroupIDFromContext(ctx))
+}
+
+// ModelInfo implements token.ModelLister. Channel mappings do not currently
+// persist created/owned_by metadata, so the handler applies protocol defaults.
+func (f *Facade) ModelInfo(_ string) (token.ModelMeta, bool) {
+	return token.ModelMeta{}, false
 }
