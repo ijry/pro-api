@@ -70,7 +70,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
 
     <!-- Overview cards -->
     <NGrid :cols="4" :x-gap="16" :y-gap="16" responsive="screen" :item-responsive="true" class="mb-4">
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small" hoverable @click="router.push('/logs/requests')">
           <NSkeleton v-if="loading.overview" text :repeat="2" />
           <NStatistic v-else label="今日请求" :value="overview?.requests_today ?? 0">
@@ -82,7 +82,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
           </NStatistic>
         </NCard>
       </NGridItem>
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small" hoverable @click="router.push('/stats')">
           <NSkeleton v-if="loading.overview" text :repeat="2" />
           <NStatistic v-else label="今日收入(quota)" :value="(overview?.revenue_today ?? 0).toLocaleString()">
@@ -94,7 +94,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
           </NStatistic>
         </NCard>
       </NGridItem>
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small" hoverable @click="router.push('/users')">
           <NSkeleton v-if="loading.overview" text :repeat="2" />
           <NStatistic v-else label="活跃用户" :value="overview?.active_users ?? 0">
@@ -106,7 +106,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
           </NStatistic>
         </NCard>
       </NGridItem>
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small" hoverable @click="router.push('/logs/errors')">
           <NSkeleton v-if="loading.overview" text :repeat="2" />
           <NStatistic v-else label="错误率" :value="`${((overview?.error_rate ?? 0) * 100).toFixed(2)}%`">
@@ -122,7 +122,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
 
     <!-- Top stats tables -->
     <NGrid :cols="2" :x-gap="16" :y-gap="16" responsive="screen" :item-responsive="true" class="mb-4">
-      <NGridItem span="2 900:1">
+      <NGridItem span="2 l:1">
         <NCard title="Top 模型 (by quota)" size="small">
           <NSkeleton v-if="loading.charts" text :repeat="5" />
           <NEmpty v-else-if="!byModel.length" description="暂无数据" />
@@ -138,7 +138,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
           </table>
         </NCard>
       </NGridItem>
-      <NGridItem span="2 900:1">
+      <NGridItem span="2 l:1">
         <NCard title="Top 渠道 (by requests)" size="small">
           <NSkeleton v-if="loading.charts" text :repeat="5" />
           <NEmpty v-else-if="!byChannel.length" description="暂无数据" />
@@ -158,7 +158,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
 
     <!-- Notices + top users -->
     <NGrid :cols="2" :x-gap="16" :y-gap="16" responsive="screen" :item-responsive="true">
-      <NGridItem span="2 900:1">
+      <NGridItem span="2 l:1">
         <NCard title="Top 用户 (by quota)" size="small">
           <NSkeleton v-if="loading.charts" text :repeat="5" />
           <NEmpty v-else-if="!byUser.length" description="暂无数据" />
@@ -174,7 +174,7 @@ const trendSign = (v: number) => v >= 0 ? '+' : ''
           </table>
         </NCard>
       </NGridItem>
-      <NGridItem span="2 900:1">
+      <NGridItem span="2 l:1">
         <NCard title="最新公告" size="small">
           <NSkeleton v-if="loading.notices" text :repeat="5" />
           <NEmpty v-else-if="!notices.length" description="暂无公告" />

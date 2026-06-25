@@ -72,25 +72,25 @@ onMounted(loadAll)
 
     <!-- Summary stats -->
     <NGrid :cols="4" :x-gap="16" :y-gap="16" responsive="screen" :item-responsive="true" class="mb-4">
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small">
           <NSkeleton v-if="loading.timeseries" text :repeat="2" />
           <NStatistic v-else label="总请求数" :value="totalRequests.toLocaleString()" />
         </NCard>
       </NGridItem>
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small">
           <NSkeleton v-if="loading.timeseries" text :repeat="2" />
           <NStatistic v-else label="总错误数" :value="totalErrors.toLocaleString()" />
         </NCard>
       </NGridItem>
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small">
           <NSkeleton v-if="loading.timeseries" text :repeat="2" />
           <NStatistic v-else label="总消耗额度" :value="totalQuota.toLocaleString()" />
         </NCard>
       </NGridItem>
-      <NGridItem span="4 600:2 900:1">
+      <NGridItem span="4 m:2 l:1">
         <NCard size="small">
           <NSkeleton v-if="loading.timeseries" text :repeat="2" />
           <NStatistic v-else label="错误率" :value="errorRate" />
@@ -123,7 +123,7 @@ onMounted(loadAll)
 
     <!-- By model & channel -->
     <NGrid :cols="2" :x-gap="16" :y-gap="16" responsive="screen" :item-responsive="true">
-      <NGridItem span="2 900:1">
+      <NGridItem span="2 l:1">
         <NCard title="Top 10 模型" size="small">
           <NSkeleton v-if="loading.byModel" text :repeat="5" />
           <NEmpty v-else-if="!byModel.length" description="暂无数据" />
@@ -141,7 +141,7 @@ onMounted(loadAll)
           </table>
         </NCard>
       </NGridItem>
-      <NGridItem span="2 900:1">
+      <NGridItem span="2 l:1">
         <NCard title="Top 10 渠道" size="small">
           <NSkeleton v-if="loading.byChannel" text :repeat="5" />
           <NEmpty v-else-if="!byChannel.length" description="暂无数据" />
