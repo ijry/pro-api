@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ijry/pro-api/internal/ctxkeys"
 )
 
 // MockTokenView is a minimal mock of token.View for testing.
@@ -100,7 +101,7 @@ func TestGroupRatioMiddleware_TokenGroupID_WrittenToRequestContext(t *testing.T)
 		},
 		GroupRatioMiddleware(nil),
 		func(c *gin.Context) {
-			if v := c.Request.Context().Value("proapi:group_id"); v != nil {
+			if v := c.Request.Context().Value(ctxkeys.GroupID); v != nil {
 				gotGroupID, _ = v.(int64)
 			}
 			c.Status(200)

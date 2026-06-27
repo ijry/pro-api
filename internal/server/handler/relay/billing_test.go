@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/billing"
 	"github.com/ijry/pro-api/internal/channel"
+	"github.com/ijry/pro-api/internal/ctxkeys"
 	"github.com/ijry/pro-api/internal/pricing"
 	"github.com/ijry/pro-api/internal/token"
 	"github.com/ijry/pro-api/pkg/apierr"
@@ -63,7 +64,7 @@ func TestDeps_NilBillerSkipsBilling(t *testing.T) {
 
 func TestResolveChannel_RejectsTokenDisallowedModel(t *testing.T) {
 	h := New(Deps{})
-	ctx := context.WithValue(context.Background(), token.CtxKeyToken, &token.View{
+	ctx := context.WithValue(context.Background(), ctxkeys.Token, &token.View{
 		ID:            1,
 		AllowedModels: []string{"gpt-4o"},
 	})

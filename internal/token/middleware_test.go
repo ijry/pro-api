@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ijry/pro-api/internal/ctxkeys"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	"github.com/ijry/pro-api/pkg/apierr"
 )
@@ -199,9 +200,8 @@ func TestExtractBearer_RejectsNonPAPrefix(t *testing.T) {
 }
 
 func TestFromContext_PlainContext_Works(t *testing.T) {
-	// FromContext 内部用 string key(与 Gin Set 一致),测试也用同名常量。
-	//nolint:staticcheck // SA1029: 与 Gin 兼容,key 必须是 string
-	ctx2 := context.WithValue(context.Background(), CtxKeyToken, &View{ID: 5})
+	// FromContext 内部对原生 context 用 ctxkeys typed key,测试也用同一 key。
+	ctx2 := context.WithValue(context.Background(), ctxkeys.Token, &View{ID: 5})
 	got, ok := FromContext(ctx2)
 	if !ok || got.ID != 5 {
 		t.Fatalf("plain ctx FromContext failed: ok=%v got=%+v", ok, got)

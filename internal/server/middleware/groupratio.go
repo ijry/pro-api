@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ijry/pro-api/internal/ctxkeys"
 )
 
 const (
@@ -12,10 +13,10 @@ const (
 	// CtxKeyBillingGroupRatio is read by the relay handler for pricing.EstimateInput.
 	CtxKeyBillingGroupRatio = "proapi:billing_group_ratio"
 
-	// These constants are defined here to avoid circular imports.
-	// They duplicate definitions in token/middleware.go.
-	ctxKeyToken   = "proapi:token"
-	ctxKeyGroupID = "proapi:group_id"
+	// String keys for gin's c.Set/c.Get. Derived from ctxkeys to keep a single
+	// source of truth; raw context.Context calls use the typed ctxkeys.* keys.
+	ctxKeyToken   = string(ctxkeys.Token)
+	ctxKeyGroupID = string(ctxkeys.GroupID)
 )
 
 // TokenView is a minimal copy of token.View for type checking.
@@ -45,7 +46,7 @@ func GroupRatioMiddleware(lookup GroupRatioLookup) gin.HandlerFunc {
 		}
 		if gid > 0 {
 			c.Set(ctxKeyGroupID, gid)
-			c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxKeyGroupID, gid))
+			c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ctxkeys.GroupID, gid))
 			if lookup != nil {
 				if ratio, err := lookup(c.Request.Context(), gid); err == nil {
 					c.Set(CtxKeyGroupRatio, ratio)

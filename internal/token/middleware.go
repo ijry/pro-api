@@ -6,20 +6,22 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ijry/pro-api/internal/ctxkeys"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	"github.com/ijry/pro-api/pkg/apierr"
 )
 
-// Gin context key 命名。这些 key 用字符串而非自定义类型,便于跨包查询
-// (Gin 自身只支持 string key)。
+// Gin context key 命名。Gin 自身的 c.Set/c.Get 只支持 string key,所以这些常量
+// 是字符串;它们由 ctxkeys 的 typed key 派生,保持单一事实来源。
+// 写入 / 读取原生 context.Context 时改用 ctxkeys.* typed key(避免 staticcheck SA1029)。
 const (
 	// CtxKeyToken 存放 *View。
-	CtxKeyToken = "proapi:token"
+	CtxKeyToken = string(ctxkeys.Token)
 	// CtxKeyUserID 存放当前 token 关联的 user_id(int64)。
-	CtxKeyUserID = "proapi:user_id"
+	CtxKeyUserID = string(ctxkeys.UserID)
 	// CtxKeyGroupID 存放 token 显式指定的 group_id(int64);token.group_id == 0 时不设此键。
 	// 由 GroupRatioMiddleware 从 token.GroupID 写入,不做用户级兜底。
-	CtxKeyGroupID = "proapi:group_id"
+	CtxKeyGroupID = string(ctxkeys.GroupID)
 )
 
 // TokenAuth 接受 "Authorization: Bearer pa-xxx",解析并注入 ctx。
@@ -49,8 +51,8 @@ func TokenAuth(s Store) gin.HandlerFunc {
 		}
 		c.Set(CtxKeyToken, view)
 		c.Set(CtxKeyUserID, view.UserID)
-		ctx := context.WithValue(c.Request.Context(), CtxKeyToken, view)
-		ctx = context.WithValue(ctx, CtxKeyUserID, view.UserID)
+		ctx := context.WithValue(c.Request.Context(), ctxkeys.Token, view)
+		ctx = context.WithValue(ctx, ctxkeys.UserID, view.UserID)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
@@ -111,7 +113,7 @@ func FromContext(c context.Context) (*View, bool) {
 		t, ok := v.(*View)
 		return t, ok
 	}
-	v := c.Value(CtxKeyToken)
+	v := c.Value(ctxkeys.Token)
 	t, ok := v.(*View)
 	return t, ok
 }
@@ -126,7 +128,7 @@ func UserIDFromContext(c context.Context) int64 {
 		}
 		return 0
 	}
-	if v := c.Value(CtxKeyUserID); v != nil {
+	if v := c.Value(ctxkeys.UserID); v != nil {
 		if id, ok := v.(int64); ok {
 			return id
 		}
@@ -144,7 +146,7 @@ func GroupIDFromContext(c context.Context) int64 {
 		}
 		return 0
 	}
-	if v := c.Value(CtxKeyGroupID); v != nil {
+	if v := c.Value(ctxkeys.GroupID); v != nil {
 		if id, ok := v.(int64); ok {
 			return id
 		}

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ijry/pro-api/internal/ctxkeys"
 	"github.com/ijry/pro-api/internal/server/middleware"
 	tokensvc "github.com/ijry/pro-api/internal/token"
 )
@@ -42,10 +43,10 @@ func newModelsEngine(t *testing.T, lister tokensvc.ModelLister, view *tokensvc.V
 	r.Use(func(c *gin.Context) {
 		if view != nil {
 			c.Set(tokensvc.CtxKeyToken, view)
-			ctx := context.WithValue(c.Request.Context(), tokensvc.CtxKeyToken, view)
+			ctx := context.WithValue(c.Request.Context(), ctxkeys.Token, view)
 			if view.GroupID > 0 {
 				c.Set(tokensvc.CtxKeyGroupID, view.GroupID)
-				ctx = context.WithValue(ctx, tokensvc.CtxKeyGroupID, view.GroupID)
+				ctx = context.WithValue(ctx, ctxkeys.GroupID, view.GroupID)
 			}
 			c.Request = c.Request.WithContext(ctx)
 		}
