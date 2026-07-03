@@ -99,10 +99,10 @@ jobs:
             web/pnpm-lock.yaml
             docs-site/pnpm-lock.yaml
       - run: pnpm -C web install --frozen-lockfile
-      - run: pnpm -C web/admin build
-      - run: pnpm -C web/user build
+      - run: PROAPI_ADMIN_BASE=/admin/ pnpm -C web/admin build
+      - run: PROAPI_USER_BASE=/user/ pnpm -C web/user build
       - run: pnpm -C docs-site install --frozen-lockfile
-      - run: pnpm -C docs-site build
+      - run: DOCS_BASE=/docs/ pnpm -C docs-site build
       - run: bash scripts/prepare-embed-assets.sh
       - run: go build -tags embed -ldflags="-s -w" -o bin/proapi ./cmd/proapi
         env:

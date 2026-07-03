@@ -92,10 +92,13 @@ func resolveFile(site Site, name string) (string, bool) {
 		return name, true
 	}
 	if site.Mode == ModeDocs {
+		if html := name + ".html"; fileExists(site.FS, html) {
+			return html, true
+		}
 		if index := path.Join(name, "index.html"); fileExists(site.FS, index) {
 			return index, true
 		}
-		// VitePress emits static HTML; unknown docs paths fall back to the docs shell.
+		// VitePress cleanUrls emit page.html; unknown docs paths fall back to the docs shell.
 		return site.Index, true
 	}
 	// Admin and user are SPAs; unknown in-app routes must return index.html.

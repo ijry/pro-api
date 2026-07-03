@@ -5,6 +5,7 @@ import path from 'node:path'
 import unoConfig from '../uno.config'
 
 export default defineConfig({
+  base: process.env.PROAPI_ADMIN_BASE || '/',
   plugins: [vue(), UnoCSS(unoConfig)],
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },

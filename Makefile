@@ -62,9 +62,9 @@ dev:
 		"make dev-backend" "make dev-admin" "make dev-user" "make dev-docs"
 
 build-frontend:
-	pnpm -C web/admin build
-	pnpm -C web/user build
-	pnpm -C docs-site build
+	PROAPI_ADMIN_BASE=/admin/ pnpm -C web/admin build
+	PROAPI_USER_BASE=/user/ pnpm -C web/user build
+	DOCS_BASE=/docs/ pnpm -C docs-site build
 
 build-backend:
 	bash scripts/prepare-embed-assets.sh

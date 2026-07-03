@@ -59,6 +59,7 @@ func TestRegisterSites_DocsPrefersRealFiles(t *testing.T) {
 		FS: fstest.MapFS{
 			"index.html":       &fstest.MapFile{Data: []byte("<html>docs-home</html>")},
 			"guide/index.html": &fstest.MapFile{Data: []byte("<html>guide</html>")},
+			"guide/intro.html": &fstest.MapFile{Data: []byte("<html>intro</html>")},
 			"assets/style.css": &fstest.MapFile{Data: []byte("body{}")},
 		},
 		Index: "index.html",
@@ -73,6 +74,13 @@ func TestRegisterSites_DocsPrefersRealFiles(t *testing.T) {
 	r.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "guide") {
 		t.Fatalf("guide response code=%d body=%q", rec.Code, rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/docs/guide/intro", nil)
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "intro") {
+		t.Fatalf("clean url response code=%d body=%q", rec.Code, rec.Body.String())
 	}
 
 	rec = httptest.NewRecorder()

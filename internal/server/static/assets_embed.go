@@ -5,6 +5,7 @@ package static
 import (
 	"embed"
 	"io/fs"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,9 +35,15 @@ func RegisterEmbedded(r *gin.Engine) error {
 	if err != nil {
 		return err
 	}
-	return RegisterSites(r, []Site{
+	if err := RegisterSites(r, []Site{
 		{Prefix: "/admin", FS: adminFS, Index: "index.html", Mode: ModeSPA},
 		{Prefix: "/user", FS: userFS, Index: "index.html", Mode: ModeSPA},
 		{Prefix: "/docs", FS: docsFS, Index: "index.html", Mode: ModeDocs},
+	}); err != nil {
+		return err
+	}
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/docs/")
 	})
+	return nil
 }

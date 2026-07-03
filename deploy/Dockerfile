@@ -14,7 +14,7 @@ RUN pnpm install --frozen-lockfile
 COPY web/shared/ shared/
 COPY web/admin/ admin/
 COPY web/user/ user/
-RUN pnpm -C admin build && pnpm -C user build
+RUN PROAPI_ADMIN_BASE=/admin/ pnpm -C admin build && PROAPI_USER_BASE=/user/ pnpm -C user build
 
 ############################################################
 # Stage 2: 文档站构建
@@ -25,13 +25,13 @@ WORKDIR /src
 COPY docs-site/package.json docs-site/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY docs-site/ ./
-RUN pnpm build
+RUN DOCS_BASE=/docs/ pnpm build
 
 ############################################################
 # Stage 3: Go 构建
 ############################################################
 FROM golang:1.25-alpine AS backend
-RUN apk add --no-cache git
+RUN apk add --no-cache bash git
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -39,6 +39,7 @@ COPY . .
 COPY --from=frontend /src/admin/dist /src/web/admin/dist
 COPY --from=frontend /src/user/dist  /src/web/user/dist
 COPY --from=docs     /src/.vitepress/dist /src/docs-site/.vitepress/dist
+RUN bash scripts/prepare-embed-assets.sh
 ARG VERSION=dev
 ARG COMMIT=unknown
 ARG BUILD_TIME=unknown
