@@ -22,6 +22,9 @@ fi
 cp "${binary_path}" "${stage_dir}/${binary_name}"
 cp LICENSE "${stage_dir}/LICENSE"
 cp README.md "${stage_dir}/README.md"
+mkdir -p "${stage_dir}/configs"
+cp configs/proapi.example.yaml "${stage_dir}/configs/proapi.example.yaml"
+cp -R migrations "${stage_dir}/migrations"
 
 archive_path=""
 if [ "${goos}" = "windows" ]; then
