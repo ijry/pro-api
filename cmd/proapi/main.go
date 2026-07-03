@@ -43,6 +43,7 @@ import (
 	tokenhdr "github.com/ijry/pro-api/internal/server/handler/token"
 	userhdr "github.com/ijry/pro-api/internal/server/handler/user"
 	"github.com/ijry/pro-api/internal/server/middleware"
+	frontendstatic "github.com/ijry/pro-api/internal/server/static"
 	"github.com/ijry/pro-api/internal/token"
 	"github.com/ijry/pro-api/internal/version"
 	"github.com/ijry/pro-api/internal/wallet"
@@ -180,6 +181,9 @@ func run() error {
 	engine := server.NewEngine(log)
 	if err := wireRoutes(ctx, engine, application, log); err != nil {
 		return fmt.Errorf("routes: %w", err)
+	}
+	if err := frontendstatic.RegisterEmbedded(engine); err != nil {
+		return fmt.Errorf("static assets: %w", err)
 	}
 
 	// ── HTTP 服务器 ───────────────────────────────────────────────
