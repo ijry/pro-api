@@ -65,6 +65,9 @@ jobs:
           pnpm -C web/user build
           pnpm -C docs-site build
 
+      - name: Prepare embedded frontend assets
+        run: bash scripts/prepare-embed-assets.sh
+
       - name: Build embedded binary
         shell: bash
         env:

@@ -67,6 +67,7 @@ build-frontend:
 	pnpm -C docs-site build
 
 build-backend:
+	bash scripts/prepare-embed-assets.sh
 	CGO_ENABLED=0 go build -tags embed -ldflags="-s -w" -o bin/proapi ./cmd/proapi
 
 build: build-frontend build-backend
