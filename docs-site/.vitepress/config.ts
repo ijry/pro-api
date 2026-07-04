@@ -171,6 +171,25 @@ export default defineConfig({
   base: process.env.DOCS_BASE || '/',
   cleanUrls: true,
   lastUpdated: true,
+  head: [
+    // 根路径按浏览器语言跳转:中文 → /zh/,其它 → /en/。
+    // 同步执行(渲染前),仅命中根路径,避免落地页闪烁、不影响其它页面。
+    [
+      'script',
+      {},
+      `(function () {
+  var base = ${JSON.stringify(process.env.DOCS_BASE || '/')};
+  var path = location.pathname;
+  // 归一化:确保以 / 结尾再比较,兼容 /pro-api 与 /pro-api/。
+  var root = base.charAt(base.length - 1) === '/' ? base : base + '/';
+  if (path === root || path === root.slice(0, -1)) {
+    var lang = (navigator.language || 'en').toLowerCase();
+    var target = lang.indexOf('zh') === 0 ? 'zh/' : 'en/';
+    location.replace(root + target);
+  }
+})();`,
+    ],
+  ],
   themeConfig: {
     logo: '/logo.svg',
     socialLinks: [{ icon: 'github', link: 'https://github.com/ijry/pro-api' }],
