@@ -20,11 +20,15 @@ RUN PROAPI_ADMIN_BASE=/admin/ pnpm -C admin build && PROAPI_USER_BASE=/user/ pnp
 # Stage 2: 文档站构建
 ############################################################
 FROM node:20-alpine AS docs
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+RUN apk add --no-cache git && corepack enable && corepack prepare pnpm@9.12.0 --activate
 WORKDIR /src
 COPY docs-site/package.json docs-site/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY docs-site/ ./
+# VitePress `lastUpdated` reads git history; the build context has no .git, so
+# seed a throwaway repo with one commit to give every file a valid timestamp.
+RUN git init -q && git config user.email ci@build && git config user.name ci \
+    && git add -A && git commit -qm build
 RUN DOCS_BASE=/docs/ pnpm build
 
 ############################################################
