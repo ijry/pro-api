@@ -25,6 +25,7 @@ const filter = ref({
   channel_id: null as number | null,
   status: null as number | null,
   keyword: '',
+  tag: '',
   provider: null as string | null,
   tier: null as string | null,
 })
@@ -70,6 +71,7 @@ async function load() {
     const res = await accountApi.list({
       channel_id: filter.value.channel_id ?? undefined,
       status: filter.value.status ?? undefined,
+      tag: filter.value.tag || undefined,
     })
     let items = res.items
     if (filter.value.provider) items = items.filter(a => a.provider === filter.value.provider)
@@ -90,7 +92,7 @@ async function loadStats() {
 onMounted(async () => { await loadChannels(); await load(); loadStats() })
 
 function reset() {
-  filter.value = { channel_id: channelOptions.value[0]?.value as number ?? null, status: null, keyword: '', provider: null, tier: null }
+  filter.value = { channel_id: channelOptions.value[0]?.value as number ?? null, status: null, keyword: '', tag: '', provider: null, tier: null }
   load()
 }
 
@@ -155,6 +157,10 @@ const columns = computed<DataTableColumns<Account>>(() => [
       const opt = channelOptions.value.find(c => c.value === row.channel_id)
       return (typeof opt?.label === 'string' ? opt.label : '') || `#${row.channel_id}`
     },
+  },
+  {
+    title: t('accounts.columns.tag'), key: 'tag', width: 120,
+    render: (row) => row.tag ? h(NTag, { size: 'small', type: 'info' }, { default: () => row.tag }) : '--',
   },
   { title: t('accounts.columns.provider'), key: 'provider', width: 100 },
   { title: t('accounts.columns.tier'), key: 'tier', width: 90 },
@@ -232,6 +238,7 @@ const kpi = computed(() => {
       <NSelect v-model:value="filter.provider" :placeholder="t('accounts.filter.provider')" :options="providerOptions" clearable style="width:130px" @update:value="load" />
       <NSelect v-model:value="filter.tier" :placeholder="t('accounts.filter.tier')" :options="tierOptions" clearable style="width:120px" @update:value="load" />
       <NSelect v-model:value="filter.status" :placeholder="t('accounts.filter.status')" :options="statusOptions" clearable style="width:120px" @update:value="load" />
+      <NInput v-model:value="filter.tag" :placeholder="t('accounts.filter.tag_kw')" clearable style="width:150px" @update:value="load" />
       <NInput v-model:value="filter.keyword" :placeholder="t('accounts.filter.keyword')" clearable style="width:180px" @update:value="load" />
       <NButton size="small" @click="reset">{{ t('accounts.filter.reset') }}</NButton>
     </template>

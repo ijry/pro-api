@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,10 @@ type AccountHandler struct {
 	Facade  *account.Facade
 	Audit   audit.Logger
 	ActorOf func(c *gin.Context) int64
+	// ChannelProvider 按渠道 id 返回其 provider;取不到返回空串。
+	// 用于批量 apikey 导入时让账号 provider 跟随渠道(中转站场景 key 前缀不可靠)。
+	// 可为 nil(此时不覆盖,退回按前缀推断)。
+	ChannelProvider func(id int64) string
 }
 
 // NewAccountHandler 构造。actorOf == nil 时用 0 占位;audit == nil 时用 noop。
@@ -47,6 +52,33 @@ func NewAccountHandler(f *account.Facade, a audit.Logger, actorOf func(*gin.Cont
 		a = audit.NewNoop()
 	}
 	return &AccountHandler{Facade: f, Audit: a, ActorOf: actorOf}
+}
+
+// resolveChannelProvider 返回渠道 provider;ChannelProvider 未装配或取不到时返回空串。
+func (h *AccountHandler) resolveChannelProvider(channelID int64) string {
+	if h.ChannelProvider == nil {
+		return ""
+	}
+	return h.ChannelProvider(channelID)
+}
+
+// normalizeFormat 把前端传来的 format 归一到 parser 的 Format() 名。
+// 空串 / "auto" / 未识别值 → 返回 ("", false) 表示需自动探测;
+// 已知别名映射到对应 parser format。
+func normalizeFormat(format string) (string, bool) {
+	switch format {
+	case "", "auto":
+		return "", false
+	case "apikey", "raw_apikey":
+		return "raw_apikey", true
+	case "access_token", "raw_access_token":
+		return "raw_access_token", true
+	case "refresh_token", "raw_refresh_token":
+		return "raw_refresh_token", true
+	default:
+		// token_pair / json 等旧值或未知值:交给自动探测,避免 "unknown format"。
+		return "", false
+	}
 }
 
 // Register 在 r 下挂 14 个 endpoint。/credentials/peek 的 RoleGate(3) 由调用方在路由组层面加。
@@ -125,6 +157,7 @@ func (h *AccountHandler) auditOne(c *gin.Context, action string, targetID int64,
 type listItem struct {
 	ID                   int64      `json:"id"`
 	ChannelID            int64      `json:"channel_id"`
+	Tag                  string     `json:"tag"`
 	Name                 string     `json:"name"`
 	Provider             string     `json:"provider"`
 	Tier                 string     `json:"tier"`
@@ -164,6 +197,7 @@ func accountToListItem(a *account.Account) listItem {
 	return listItem{
 		ID:                   a.ID,
 		ChannelID:            a.ChannelID,
+		Tag:                  a.Tag,
 		Name:                 a.Name,
 		Provider:             a.Provider,
 		Tier:                 a.Tier,
@@ -204,10 +238,11 @@ func makeQuota(rem, tot *int64, reset *time.Time) quotaItem {
 	return q
 }
 
-// List GET /accounts?channel_id=N&status=S
+// List GET /accounts?channel_id=N&status=S&tag=T
 func (h *AccountHandler) List(c *gin.Context) {
 	chStr := c.Query("channel_id")
 	statusStr := c.Query("status")
+	tag := c.Query("tag")
 
 	var list []*account.Account
 	if chStr == "" {
@@ -234,6 +269,17 @@ func (h *AccountHandler) List(c *gin.Context) {
 		filtered := list[:0]
 		for _, a := range list {
 			if int(a.Status) == want {
+				filtered = append(filtered, a)
+			}
+		}
+		list = filtered
+	}
+
+	if tag != "" {
+		// 子串匹配:free-text 快速筛选(输入 "k12" 命中 "k12第一批")。
+		filtered := list[:0]
+		for _, a := range list {
+			if strings.Contains(a.Tag, tag) {
 				filtered = append(filtered, a)
 			}
 		}
@@ -270,6 +316,7 @@ func (h *AccountHandler) Get(c *gin.Context) {
 type acctCreateReq struct {
 	ChannelID int64  `json:"channel_id"`
 	Name      string `json:"name"`
+	Tag       string `json:"tag"`
 	Provider  string `json:"provider"`
 	Tier      string `json:"tier"`
 	Format    string `json:"format"`
@@ -299,10 +346,10 @@ func (h *AccountHandler) Create(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "text 必填"))
 		return
 	}
-	format := req.Format
-	if format == "" {
-		f, ok := h.Facade.Importer.Detect([]byte(req.Text))
-		if !ok {
+	format, ok := normalizeFormat(req.Format)
+	if !ok {
+		f, detok := h.Facade.Importer.Detect([]byte(req.Text))
+		if !detok {
 			middleware.SetErr(c, apierr.New(apierr.CodeAccountImportFormat, "cannot detect format"))
 			return
 		}
@@ -317,13 +364,21 @@ func (h *AccountHandler) Create(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeAccountImportFields, "empty parse result"))
 		return
 	}
+	// apikey 导入(中转站场景)让 provider 跟随渠道:key 前缀不可靠。
+	chProvider := ""
+	if format == "raw_apikey" {
+		chProvider = h.resolveChannelProvider(req.ChannelID)
+	}
 	a := list[0]
 	a.ChannelID = req.ChannelID
+	a.Tag = req.Tag
 	if req.Name != "" {
 		a.Name = req.Name
 	}
 	if req.Provider != "" {
 		a.Provider = req.Provider
+	} else if chProvider != "" {
+		a.Provider = chProvider
 	}
 	if req.Tier != "" {
 		a.Tier = req.Tier
@@ -483,10 +538,10 @@ func (h *AccountHandler) Import(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeMissingParam, "text 或 file 必填"))
 		return
 	}
-	format := req.Format
-	if format == "" {
-		f, ok := h.Facade.Importer.Detect([]byte(text))
-		if !ok {
+	format, ok := normalizeFormat(req.Format)
+	if !ok {
+		f, detok := h.Facade.Importer.Detect([]byte(text))
+		if !detok {
 			middleware.SetErr(c, apierr.New(apierr.CodeAccountImportFormat, "cannot detect format"))
 			return
 		}
@@ -498,12 +553,22 @@ func (h *AccountHandler) Import(c *gin.Context) {
 		return
 	}
 
+	// apikey 导入(中转站场景)让 provider 跟随渠道:key 前缀不可靠。
+	chProvider := ""
+	if format == "raw_apikey" {
+		chProvider = h.resolveChannelProvider(req.ChannelID)
+	}
+
 	previews := make([]listItem, 0, len(list))
 	imported := make([]int64, 0, len(list))
 	errs := []gin.H{}
 
 	for i, a := range list {
 		a.ChannelID = req.ChannelID
+		a.Tag = req.Tag
+		if chProvider != "" {
+			a.Provider = chProvider
+		}
 		if req.DryRun {
 			previews = append(previews, accountToListItem(a))
 			continue
@@ -545,6 +610,7 @@ func (h *AccountHandler) Import(c *gin.Context) {
 // acctPatchReq 是 PATCH body。pointer 字段用于区分 "未设" 与 "显式置零"。
 type acctPatchReq struct {
 	Name     *string `json:"name"`
+	Tag      *string `json:"tag"`
 	Priority *int16  `json:"priority"`
 	Weight   *int    `json:"weight"`
 	Status   *int8   `json:"status"`
@@ -570,6 +636,9 @@ func (h *AccountHandler) Patch(c *gin.Context) {
 
 	if p.Name != nil {
 		cur.Name = *p.Name
+	}
+	if p.Tag != nil {
+		cur.Tag = *p.Tag
 	}
 	if p.Priority != nil {
 		cur.Priority = *p.Priority

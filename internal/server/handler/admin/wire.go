@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ijry/pro-api/internal/account"
 	"github.com/ijry/pro-api/internal/app"
+	"github.com/ijry/pro-api/internal/channel"
 	"github.com/ijry/pro-api/internal/notice"
 )
 
@@ -52,5 +53,15 @@ func WireAdminAccount(a *app.Application, actorOf func(*gin.Context) int64) (*Ac
 	if facade == nil {
 		return nil, errors.New("admin: account facade not wired")
 	}
-	return NewAccountHandler(facade, a.Audit, actorOf), nil
+	h := NewAccountHandler(facade, a.Audit, actorOf)
+	// 批量 apikey 导入时让账号 provider 跟随渠道;channel facade 未装配时降级为 nil。
+	if chf := channel.FacadeFrom(a); chf != nil && chf.Cache != nil {
+		h.ChannelProvider = func(id int64) string {
+			if ch, ok := chf.Cache.GetByID(id); ok {
+				return ch.Provider
+			}
+			return ""
+		}
+	}
+	return h, nil
 }

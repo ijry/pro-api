@@ -3,7 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NCard, NDescriptions, NDescriptionsItem, NSpace, NButton, NTag, NPageHeader, NSpin, NGrid, NGi,
+  NCard, NDescriptions, NDescriptionsItem, NSpace, NButton, NTag, NInput, NPageHeader, NSpin, NGrid, NGi,
+  useMessage,
 } from 'naive-ui'
 import { accountApi, type AccountDetail } from '@/api/account'
 import QuotaRing from './components/QuotaRing.vue'
@@ -14,6 +15,7 @@ import { useAccountActions } from './composables/useAccountActions'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const message = useMessage()
 
 const id = computed(() => Number(route.params.id))
 const data = ref<AccountDetail | null>(null)
@@ -24,6 +26,25 @@ async function load() {
   try { data.value = await accountApi.get(id.value) } catch (_) { /* handled */ } finally { loading.value = false }
 }
 onMounted(load)
+
+// tag 行内编辑
+const editingTag = ref(false)
+const tagDraft = ref('')
+const savingTag = ref(false)
+function startEditTag() {
+  tagDraft.value = data.value?.tag ?? ''
+  editingTag.value = true
+}
+async function saveTag() {
+  if (!data.value) return
+  savingTag.value = true
+  try {
+    const updated = await accountApi.patch(data.value.id, { tag: tagDraft.value })
+    data.value = updated
+    editingTag.value = false
+    message.success(t('accounts.detail.tag_saved'))
+  } catch (_) { /* handled */ } finally { savingTag.value = false }
+}
 
 const actions = useAccountActions(load)
 
@@ -71,6 +92,18 @@ function refreshValidType(v?: 0 | 1 | 2): 'success' | 'error' | 'default' {
             <NDescriptions :column="2" size="small" bordered>
               <NDescriptionsItem :label="t('accounts.columns.id')">{{ data.id }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.name')">{{ data.name }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('accounts.columns.tag')">
+                <NSpace v-if="!editingTag" size="small" align="center">
+                  <NTag v-if="data.tag" size="small" type="info">{{ data.tag }}</NTag>
+                  <span v-else>--</span>
+                  <NButton text size="tiny" @click="startEditTag">{{ t('accounts.actions.edit') }}</NButton>
+                </NSpace>
+                <NSpace v-else size="small" align="center">
+                  <NInput v-model:value="tagDraft" size="tiny" style="width:140px" :placeholder="t('accounts.add_dialog.tag_placeholder')" />
+                  <NButton text size="tiny" type="primary" :loading="savingTag" @click="saveTag">{{ t('accounts.add_dialog.submit') }}</NButton>
+                  <NButton text size="tiny" @click="editingTag = false">{{ t('accounts.add_dialog.cancel') }}</NButton>
+                </NSpace>
+              </NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.channel')">#{{ data.channel_id }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.provider')">{{ data.provider }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.tier')">{{ data.tier }}</NDescriptionsItem>

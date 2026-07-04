@@ -120,6 +120,7 @@
       "tier": "Tier",
       "status": "Status",
       "keyword": "Keyword",
+      "tag_kw": "Tag",
       "all": "All",
       "search": "Search",
       "reset": "Reset"
@@ -127,6 +128,7 @@
     "columns": {
       "id": "ID",
       "name": "Name",
+      "tag": "Tag",
       "channel": "Channel",
       "provider": "Provider",
       "tier": "Tier",
@@ -187,6 +189,9 @@
       "apikey_placeholder": "sk-…",
       "format_label": "Format",
       "format_auto": "Auto detect",
+      "format_apikey": "Bulk API Keys (one per line)",
+      "tag_label": "Tag (optional)",
+      "tag_placeholder": "e.g. k12-batch-1",
       "import_text_label": "Bulk Content",
       "import_text_placeholder": "One token / api key / JSON per line",
       "preview": "Parse & Preview",
@@ -214,6 +219,7 @@
       "peek_confirm_placeholder": "Enter account name",
       "peek_warning": "Viewing credentials is recorded in audit log",
       "peek_credentials": "Credentials",
+      "tag_saved": "Tag saved",
       "back": "Back to list"
     },
     "confirm": {

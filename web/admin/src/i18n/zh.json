@@ -120,6 +120,7 @@
       "tier": "套餐",
       "status": "状态",
       "keyword": "关键词",
+      "tag_kw": "标签",
       "all": "全部",
       "search": "搜索",
       "reset": "重置"
@@ -127,6 +128,7 @@
     "columns": {
       "id": "ID",
       "name": "名称",
+      "tag": "标签",
       "channel": "渠道",
       "provider": "厂商",
       "tier": "套餐",
@@ -187,6 +189,9 @@
       "apikey_placeholder": "sk-…",
       "format_label": "格式",
       "format_auto": "自动识别",
+      "format_apikey": "批量 API Key(每行一个)",
+      "tag_label": "标签(可选)",
+      "tag_placeholder": "如:k12第一批",
       "import_text_label": "批量内容",
       "import_text_placeholder": "每行一个 token / api key / JSON",
       "preview": "解析并预览",
@@ -214,6 +219,7 @@
       "peek_confirm_placeholder": "输入账号名",
       "peek_warning": "查看凭证将被记入审计日志",
       "peek_credentials": "凭证内容",
+      "tag_saved": "标签已保存",
       "back": "返回列表"
     },
     "confirm": {

@@ -614,6 +614,95 @@ func TestAccountHandler_Stats_Overview(t *testing.T) {
 	}
 }
 
+// multiFakeImporter 返回 n 个 apikey 账号,provider 交替 openai/anthropic,
+// 用于验证 raw_apikey 批量导入时 provider 被渠道覆盖 + tag 落到每条。
+type multiFakeImporter struct {
+	format string
+	n      int
+}
+
+func (m *multiFakeImporter) Detect(payload []byte) (string, bool) {
+	if len(bytes.TrimSpace(payload)) == 0 {
+		return "", false
+	}
+	return m.format, true
+}
+
+func (m *multiFakeImporter) Parse(_ []byte, format string) ([]*account.Account, error) {
+	if format != m.format {
+		return nil, nil
+	}
+	out := make([]*account.Account, 0, m.n)
+	for i := 0; i < m.n; i++ {
+		p := "anthropic"
+		if i%2 == 0 {
+			p = "openai"
+		}
+		out = append(out, &account.Account{
+			Provider: p, CredType: "apikey", Status: account.StatusActive, Weight: 100,
+			Cred: account.AccountCred{APIKey: "sk-" + jsonInt(int64(i))},
+		})
+	}
+	return out, nil
+}
+
+// Import: tag 落到每条账号;raw_apikey 格式下 provider 被渠道 provider 覆盖。
+func TestAccountHandler_Import_TagAndProviderFollowsChannel(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := newFakeRepo()
+	facade := &account.Facade{Repo: repo, Importer: &multiFakeImporter{format: "raw_apikey", n: 2}}
+	aud := &memAudit{}
+	h := NewAccountHandler(facade, aud, func(c *gin.Context) int64 { return 7 })
+	h.ChannelProvider = func(id int64) string { return "deepseek" }
+	r := gin.New()
+	r.Use(middleware.ErrorResponse("json"))
+	h.Register(r.Group("/api/admin"))
+
+	rec := doAcctReq(t, r, http.MethodPost, "/api/admin/accounts/import",
+		`{"channel_id":1,"format":"apikey","tag":"k12-batch1","text":"sk-1\nsk-2"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	if len(repo.items) != 2 {
+		t.Fatalf("want 2 rows, got %d", len(repo.items))
+	}
+	for _, a := range repo.items {
+		if a.Tag != "k12-batch1" {
+			t.Fatalf("tag not applied: %q", a.Tag)
+		}
+		if a.Provider != "deepseek" {
+			t.Fatalf("provider should follow channel, got %q", a.Provider)
+		}
+	}
+}
+
+// List: tag 查询参数按子串过滤,凭证不泄露。
+func TestAccountHandler_List_TagFilter(t *testing.T) {
+	r, repo, _, _, _ := newAccountTestHarness()
+	_ = repo.Create(context.Background(), &account.Account{ChannelID: 1, Name: "a", Tag: "k12第一批", Provider: "anthropic", Status: account.StatusActive, Weight: 100, Extra: json.RawMessage("{}")})
+	_ = repo.Create(context.Background(), &account.Account{ChannelID: 1, Name: "b", Tag: "vip", Provider: "anthropic", Status: account.StatusActive, Weight: 100, Extra: json.RawMessage("{}")})
+
+	rec := doAcctReq(t, r, http.MethodGet, "/api/admin/accounts?channel_id=1&tag=k12", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Data struct {
+			Items []map[string]any `json:"items"`
+			Total int              `json:"total"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if body.Data.Total != 1 {
+		t.Fatalf("tag filter: want 1, got %d", body.Data.Total)
+	}
+	if tag, _ := body.Data.Items[0]["tag"].(string); tag != "k12第一批" {
+		t.Fatalf("unexpected tag in result: %q", tag)
+	}
+}
+
 // --- small helpers ---
 
 func intToStr(i int64) string {

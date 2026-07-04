@@ -113,24 +113,34 @@ func (RawAPIKey) Match(b []byte) bool {
 		strings.HasPrefix(s, "sk-")
 }
 
+// Parse 按行拆分:每行一个 API key,逐行 trim 并跳过空行,每行产出一个账号。
+// 单行输入即 len==1 的特例。provider 按前缀推断(anthropic / openai);
+// 中转站场景下调用方可用渠道 provider 覆盖(见 handler)。
 func (RawAPIKey) Parse(_ context.Context, b []byte) ([]*Account, error) {
-	s := strings.TrimSpace(string(b))
-	if s == "" {
+	lines := strings.Split(string(b), "\n")
+	accounts := make([]*Account, 0, len(lines))
+	for _, line := range lines {
+		s := strings.TrimSpace(line)
+		if s == "" {
+			continue
+		}
+		provider := "anthropic"
+		if strings.HasPrefix(s, "sk-proj-") || (strings.HasPrefix(s, "sk-") && !strings.HasPrefix(s, "sk-ant-")) {
+			provider = "openai"
+		}
+		accounts = append(accounts, &Account{
+			Provider:     provider,
+			CredType:     "apikey",
+			ImportSource: "paste_apikey",
+			Status:       StatusActive,
+			Weight:       100,
+			Cred: AccountCred{
+				APIKey: s,
+			},
+		})
+	}
+	if len(accounts) == 0 {
 		return nil, apierr.New(apierr.CodeAccountImportFields, "raw_apikey: empty key")
 	}
-	provider := "anthropic"
-	if strings.HasPrefix(s, "sk-proj-") || (strings.HasPrefix(s, "sk-") && !strings.HasPrefix(s, "sk-ant-")) {
-		provider = "openai"
-	}
-	a := &Account{
-		Provider:     provider,
-		CredType:     "apikey",
-		ImportSource: "paste_apikey",
-		Status:       StatusActive,
-		Weight:       100,
-		Cred: AccountCred{
-			APIKey: s,
-		},
-	}
-	return []*Account{a}, nil
+	return accounts, nil
 }

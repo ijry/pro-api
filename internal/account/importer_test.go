@@ -63,6 +63,27 @@ func TestImporter_ParseRawAPIKey(t *testing.T) {
 	require.Equal(t, "sk-ant-api03-XXXXXXXXXX", list[0].Cred.APIKey)
 }
 
+func TestImporter_ParseRawAPIKey_MultiLine(t *testing.T) {
+	imp := account.NewDefaultImporter(nil)
+	// 一个中转站多 key,每行一个;夹带空行与前后空格,应被 trim / 跳过。
+	payload := []byte("sk-ant-api03-AAA\n  sk-ant-api03-BBB  \n\nsk-proj-CCC\n")
+	format, ok := imp.Detect(payload)
+	require.True(t, ok)
+	require.Equal(t, "raw_apikey", format)
+
+	list, err := imp.Parse(payload, "raw_apikey")
+	require.NoError(t, err)
+	require.Len(t, list, 3)
+	require.Equal(t, "sk-ant-api03-AAA", list[0].Cred.APIKey)
+	require.Equal(t, "sk-ant-api03-BBB", list[1].Cred.APIKey)
+	require.Equal(t, "sk-proj-CCC", list[2].Cred.APIKey)
+	require.Equal(t, "anthropic", list[0].Provider)
+	require.Equal(t, "openai", list[2].Provider)
+	for _, a := range list {
+		require.Equal(t, "apikey", a.CredType)
+	}
+}
+
 func TestImporter_RawAccessToken_JWTPrefix(t *testing.T) {
 	imp := account.NewDefaultImporter(nil)
 	payload := []byte("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhYmMifQ.sig")

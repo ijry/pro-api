@@ -36,15 +36,14 @@ const common = ref({
 
 const tokenForm = ref({ text: '', format: 'auto' })
 const apikeyForm = ref({ text: '' })
-const importForm = ref({ text: '', format: 'auto' })
+const importForm = ref({ text: '', format: 'auto', tag: '' })
 const oauthProvider = ref<'anthropic' | 'openai'>('anthropic')
 
 const formatOptions: SelectOption[] = [
   { label: t('accounts.add_dialog.format_auto'), value: 'auto' },
+  { label: t('accounts.add_dialog.format_apikey'), value: 'apikey' },
   { label: 'access_token', value: 'access_token' },
   { label: 'refresh_token', value: 'refresh_token' },
-  { label: 'token_pair', value: 'token_pair' },
-  { label: 'JSON', value: 'json' },
 ]
 
 const previewData = ref<Account[]>([])
@@ -60,7 +59,7 @@ watch(() => props.show, (v) => {
     common.value = { channel_id: null, name: '' }
     tokenForm.value = { text: '', format: 'auto' }
     apikeyForm.value = { text: '' }
-    importForm.value = { text: '', format: 'auto' }
+    importForm.value = { text: '', format: 'auto', tag: '' }
     oauthProvider.value = 'anthropic'
     previewData.value = []
     previewErrors.value = []
@@ -104,6 +103,7 @@ async function doPreview() {
       channel_id: common.value.channel_id,
       text: importForm.value.text,
       format: importForm.value.format || undefined,
+      tag: importForm.value.tag || undefined,
       dry_run: true,
     })
     previewData.value = r.preview ?? []
@@ -140,6 +140,7 @@ async function doSubmit() {
         channel_id: common.value.channel_id,
         text: importForm.value.text,
         format: importForm.value.format || undefined,
+        tag: importForm.value.tag || undefined,
       })
       message.success(t('accounts.add_dialog.imported', { n: r.imported ?? 0 }))
     }
@@ -183,6 +184,7 @@ async function doOAuthStart() {
 const previewColumns: DataTableColumns<Account> = [
   { title: '#', key: 'index', width: 50, render: (_row, idx) => idx + 1 },
   { title: t('accounts.columns.name'), key: 'name', width: 180 },
+  { title: t('accounts.columns.tag'), key: 'tag', width: 120, render: (row) => row.tag || '--' },
   { title: t('accounts.columns.cred_type'), key: 'cred_type', width: 110, render: (row) => row.cred_type },
   { title: t('accounts.columns.provider'), key: 'provider', width: 100 },
   { title: t('accounts.columns.tier'), key: 'tier', width: 100 },
@@ -244,6 +246,9 @@ const previewColumns: DataTableColumns<Account> = [
           </NFormItem>
           <NFormItem :label="t('accounts.add_dialog.format_label')">
             <NSelect v-model:value="importForm.format" :options="formatOptions" />
+          </NFormItem>
+          <NFormItem :label="t('accounts.add_dialog.tag_label')">
+            <NInput v-model:value="importForm.tag" :placeholder="t('accounts.add_dialog.tag_placeholder')" />
           </NFormItem>
           <NFormItem :label="t('accounts.add_dialog.import_text_label')" required>
             <NInput v-model:value="importForm.text" type="textarea" :rows="8" :placeholder="t('accounts.add_dialog.import_text_placeholder')" />

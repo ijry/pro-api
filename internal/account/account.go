@@ -23,6 +23,7 @@ const (
 type Account struct {
 	ID                   int64           `gorm:"primaryKey;column:id"                json:"id"`
 	ChannelID            int64           `gorm:"column:channel_id;index"             json:"channel_id"`
+	Tag                  string          `gorm:"column:tag;size:64"                  json:"tag"`
 	Name                 string          `gorm:"column:name;size:128"                json:"name"`
 	Provider             string          `gorm:"column:provider;size:32"             json:"provider"`
 	Tier                 string          `gorm:"column:tier;size:32"                 json:"tier"`

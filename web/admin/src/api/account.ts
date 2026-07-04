@@ -10,6 +10,7 @@ export interface QuotaWindow {
 export interface Account {
   id: number
   name: string
+  tag: string
   channel_id: number
   provider: 'anthropic' | 'openai'
   tier: string
@@ -39,6 +40,7 @@ export interface AccountDetail extends Account {
 export interface ListParams {
   channel_id?: number
   status?: number
+  tag?: string
 }
 
 export interface ListResp {
@@ -49,6 +51,7 @@ export interface ListResp {
 export interface CreatePayload {
   channel_id: number
   name?: string
+  tag?: string
   provider?: string
   tier?: string
   format?: string
@@ -61,6 +64,7 @@ export interface CreatePayload {
 export interface ImportPayload {
   channel_id: number
   text?: string
+  tag?: string
   format?: string
   dry_run?: boolean
 }
