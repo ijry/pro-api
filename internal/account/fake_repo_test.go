@@ -108,6 +108,43 @@ func (f *fakeRepo) ListForReaper(_ context.Context, now time.Time, _ int) ([]*ac
 	return out, nil
 }
 
+func (f *fakeRepo) ListForProbe(_ context.Context, staleBefore time.Time, _ int) ([]*account.Account, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := []*account.Account{}
+	for _, a := range f.items {
+		if a.Status != account.StatusActive {
+			continue
+		}
+		// 仅 auto 模式(空串视作 auto)参与探测,与真实 SQL 一致。
+		if a.QuotaMode != "" && a.QuotaMode != account.QuotaModeAuto {
+			continue
+		}
+		if a.QuotaSyncedAt == nil || a.QuotaSyncedAt.Before(staleBefore) {
+			out = append(out, a)
+		}
+	}
+	return out, nil
+}
+
+func (f *fakeRepo) DeductManualQuota(_ context.Context, id int64, tokens int64) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	a := f.items[id]
+	if a == nil {
+		return account.ErrNotFound
+	}
+	if a.QuotaMode != account.QuotaModeManual || a.Quota5hRemaining == nil {
+		return nil
+	}
+	rem := *a.Quota5hRemaining - tokens
+	if rem < 0 {
+		rem = 0
+	}
+	a.Quota5hRemaining = &rem
+	return nil
+}
+
 func (f *fakeRepo) Delete(_ context.Context, id int64) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

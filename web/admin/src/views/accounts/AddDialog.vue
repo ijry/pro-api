@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import {
-  NModal, NTabs, NTabPane, NForm, NFormItem, NInput, NSelect,
+  NModal, NTabs, NTabPane, NForm, NFormItem, NInput, NInputNumber, NSelect,
   NButton, NSpace, NAlert, NDataTable, NTag, useMessage,
   type DataTableColumns, type SelectOption,
 } from 'naive-ui'
@@ -39,12 +39,26 @@ const apikeyForm = ref({ text: '' })
 const importForm = ref({ text: '', format: 'auto', tag: '' })
 const oauthProvider = ref<'anthropic' | 'openai'>('anthropic')
 
+// 额度模式:apikey / import(中转站场景)可选 manual 手填额度、none 不探测。
+// token_json / oauth 恒为 auto(官方号,探测回填),不暴露该选项。
+const quotaForm = ref({
+  mode: 'auto' as 'auto' | 'manual' | 'none',
+  total: null as number | null,
+  remaining: null as number | null,
+})
+
 const formatOptions: SelectOption[] = [
   { label: t('accounts.add_dialog.format_auto'), value: 'auto' },
   { label: t('accounts.add_dialog.format_apikey'), value: 'apikey' },
   { label: 'access_token', value: 'access_token' },
   { label: 'refresh_token', value: 'refresh_token' },
 ]
+
+const quotaModeOptions = computed<SelectOption[]>(() => [
+  { label: t('accounts.quota_mode.auto'), value: 'auto' },
+  { label: t('accounts.quota_mode.manual'), value: 'manual' },
+  { label: t('accounts.quota_mode.none'), value: 'none' },
+])
 
 const previewData = ref<Account[]>([])
 const previewErrors = ref<{ index: number; reason: string }[]>([])
@@ -60,6 +74,7 @@ watch(() => props.show, (v) => {
     tokenForm.value = { text: '', format: 'auto' }
     apikeyForm.value = { text: '' }
     importForm.value = { text: '', format: 'auto', tag: '' }
+    quotaForm.value = { mode: 'auto', total: null, remaining: null }
     oauthProvider.value = 'anthropic'
     previewData.value = []
     previewErrors.value = []
@@ -89,6 +104,19 @@ const canSubmit = computed(() => {
 
 const canOAuthStart = computed(() => Boolean(common.value.channel_id && oauthProvider.value))
 
+// quotaPayload 把额度模式/手填额度归一化成后端字段。仅 apikey / import 标签用;
+// mode=auto 时不下发额度值(交给探测回填),manual 才带 total/remaining。
+const quotaPayload = computed(() => {
+  const q = quotaForm.value
+  if (q.mode === 'auto') return { quota_mode: 'auto' as const }
+  if (q.mode === 'none') return { quota_mode: 'none' as const }
+  return {
+    quota_mode: 'manual' as const,
+    quota_total: q.total,
+    quota_remaining: q.remaining,
+  }
+})
+
 async function doPreview() {
   if (!common.value.channel_id) {
     message.warning(t('accounts.add_dialog.channel_placeholder'))
@@ -105,6 +133,7 @@ async function doPreview() {
       format: importForm.value.format || undefined,
       tag: importForm.value.tag || undefined,
       dry_run: true,
+      ...quotaPayload.value,
     })
     previewData.value = r.preview ?? []
     previewErrors.value = r.errors ?? []
@@ -133,6 +162,7 @@ async function doSubmit() {
         name: common.value.name || undefined,
         text: apikeyForm.value.text,
         format: 'apikey',
+        ...quotaPayload.value,
       })
       message.success(t('accounts.add_dialog.imported', { n: 1 }))
     } else if (tab.value === 'import') {
@@ -141,6 +171,7 @@ async function doSubmit() {
         text: importForm.value.text,
         format: importForm.value.format || undefined,
         tag: importForm.value.tag || undefined,
+        ...quotaPayload.value,
       })
       message.success(t('accounts.add_dialog.imported', { n: r.imported ?? 0 }))
     }
@@ -236,6 +267,18 @@ const previewColumns: DataTableColumns<Account> = [
           <NFormItem :label="t('accounts.add_dialog.apikey_label')" required>
             <NInput v-model:value="apikeyForm.text" type="password" show-password-on="click" :placeholder="t('accounts.add_dialog.apikey_placeholder')" />
           </NFormItem>
+          <NFormItem :label="t('accounts.add_dialog.quota_mode_label')">
+            <NSelect v-model:value="quotaForm.mode" :options="quotaModeOptions" />
+          </NFormItem>
+          <NAlert v-if="quotaForm.mode !== 'auto'" type="info" :bordered="false" size="small" class="mb-2">
+            {{ quotaForm.mode === 'manual' ? t('accounts.add_dialog.quota_manual_hint') : t('accounts.add_dialog.quota_none_hint') }}
+          </NAlert>
+          <NFormItem v-if="quotaForm.mode === 'manual'" :label="t('accounts.add_dialog.quota_total_label')">
+            <NInputNumber v-model:value="quotaForm.total" :min="0" :placeholder="t('accounts.add_dialog.quota_total_placeholder')" style="width:100%" />
+          </NFormItem>
+          <NFormItem v-if="quotaForm.mode === 'manual'" :label="t('accounts.add_dialog.quota_remaining_label')">
+            <NInputNumber v-model:value="quotaForm.remaining" :min="0" :placeholder="t('accounts.add_dialog.quota_remaining_placeholder')" style="width:100%" />
+          </NFormItem>
         </NForm>
       </NTabPane>
 
@@ -252,6 +295,18 @@ const previewColumns: DataTableColumns<Account> = [
           </NFormItem>
           <NFormItem :label="t('accounts.add_dialog.import_text_label')" required>
             <NInput v-model:value="importForm.text" type="textarea" :rows="8" :placeholder="t('accounts.add_dialog.import_text_placeholder')" />
+          </NFormItem>
+          <NFormItem :label="t('accounts.add_dialog.quota_mode_label')">
+            <NSelect v-model:value="quotaForm.mode" :options="quotaModeOptions" />
+          </NFormItem>
+          <NAlert v-if="quotaForm.mode !== 'auto'" type="info" :bordered="false" size="small" class="mb-2">
+            {{ quotaForm.mode === 'manual' ? t('accounts.add_dialog.quota_manual_hint') : t('accounts.add_dialog.quota_none_hint') }}
+          </NAlert>
+          <NFormItem v-if="quotaForm.mode === 'manual'" :label="t('accounts.add_dialog.quota_total_label')">
+            <NInputNumber v-model:value="quotaForm.total" :min="0" :placeholder="t('accounts.add_dialog.quota_total_placeholder')" style="width:100%" />
+          </NFormItem>
+          <NFormItem v-if="quotaForm.mode === 'manual'" :label="t('accounts.add_dialog.quota_remaining_label')">
+            <NInputNumber v-model:value="quotaForm.remaining" :min="0" :placeholder="t('accounts.add_dialog.quota_remaining_placeholder')" style="width:100%" />
           </NFormItem>
         </NForm>
         <div v-if="previewData.length" class="mt-2">

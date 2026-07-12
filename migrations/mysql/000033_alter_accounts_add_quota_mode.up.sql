@@ -1,0 +1,1 @@
+ALTER TABLE accounts ADD COLUMN quota_mode VARCHAR(8) NOT NULL DEFAULT 'auto' AFTER tier;

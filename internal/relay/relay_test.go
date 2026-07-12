@@ -3,6 +3,7 @@ package relay_test
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -21,11 +22,13 @@ type fakeAdapter struct {
 	gotCred  adapter.Credential
 	resp     *ir.ChatResponse
 	errToRet error
+	// chunks 非空时,ChatStream 返回一个依次吐这些 chunk、末尾 io.EOF 的 reader。
+	chunks []*ir.ChatChunk
 }
 
-func (f *fakeAdapter) Name() string                   { return f.name }
+func (f *fakeAdapter) Name() string                     { return f.name }
 func (f *fakeAdapter) Capabilities() adapter.Capability { return adapter.CapChat }
-func (f *fakeAdapter) SupportedModels() []string       { return []string{"any"} }
+func (f *fakeAdapter) SupportedModels() []string        { return []string{"any"} }
 func (f *fakeAdapter) Chat(_ context.Context, _ *ir.ChatRequest, cred adapter.Credential) (*ir.ChatResponse, error) {
 	f.gotCred = cred
 	if f.errToRet != nil {
@@ -33,21 +36,45 @@ func (f *fakeAdapter) Chat(_ context.Context, _ *ir.ChatRequest, cred adapter.Cr
 	}
 	return f.resp, nil
 }
-func (f *fakeAdapter) ChatStream(_ context.Context, _ *ir.ChatRequest, _ adapter.Credential) (adapter.StreamReader, error) {
-	return nil, errors.New("stream not implemented in fake")
+func (f *fakeAdapter) ChatStream(_ context.Context, _ *ir.ChatRequest, cred adapter.Credential) (adapter.StreamReader, error) {
+	f.gotCred = cred
+	if f.errToRet != nil {
+		return nil, f.errToRet
+	}
+	return &fakeStreamReader{chunks: f.chunks}, nil
 }
 func (f *fakeAdapter) Embed(_ context.Context, _ *ir.EmbedRequest, _ adapter.Credential) (*ir.EmbedResponse, error) {
 	return nil, errors.New("embed not implemented in fake")
 }
 
+// fakeStreamReader 依次吐 chunks,读完返回 io.EOF。模拟 OpenAI 系"usage 仅在末尾 chunk"。
+type fakeStreamReader struct {
+	chunks []*ir.ChatChunk
+	i      int
+	closed bool
+}
+
+func (r *fakeStreamReader) Next(_ context.Context) (*ir.ChatChunk, error) {
+	if r.i >= len(r.chunks) {
+		return nil, io.EOF
+	}
+	c := r.chunks[r.i]
+	r.i++
+	return c, nil
+}
+func (r *fakeStreamReader) Close() error { r.closed = true; return nil }
+
 // fakeFacade 记录 Select / ReportSuccess / ReportFailure 调用次数。
 type fakeFacade struct {
-	acc           *account.Account
-	selectErr     error
-	successCalls  int
-	failureCalls  int
-	lastReportID  int64
-	lastReportErr error
+	acc            *account.Account
+	selectErr      error
+	successCalls   int
+	failureCalls   int
+	lastReportID   int64
+	lastReportErr  error
+	usageCalls     int
+	lastUsageID    int64
+	lastUsageToken int64
 }
 
 func (f *fakeFacade) Select(_ context.Context, _ *channel.Channel, _ account.SelectHint) (*account.Account, error) {
@@ -64,6 +91,11 @@ func (f *fakeFacade) ReportFailure(id int64, err error, _ http.Header) {
 	f.failureCalls++
 	f.lastReportID = id
 	f.lastReportErr = err
+}
+func (f *fakeFacade) ReportUsage(id int64, tokens int64) {
+	f.usageCalls++
+	f.lastUsageID = id
+	f.lastUsageToken = tokens
 }
 
 func newRegistry(t *testing.T, a adapter.Adapter) adapter.Registry {
@@ -192,4 +224,100 @@ func TestService_Chat_SelectErrorPropagates(t *testing.T) {
 	require.ErrorIs(t, err, selErr)
 	require.Equal(t, 0, facade.successCalls)
 	require.Equal(t, 0, facade.failureCalls, "Select error must not trigger ReportFailure (account not selected)")
+}
+
+// TestService_Chat_ReportsUsageOnSuccess 验证非流式调用成功后按 TotalTokens 上报用量
+// (供 manual 账号扣减手动额度)。
+func TestService_Chat_ReportsUsageOnSuccess(t *testing.T) {
+	fakeAd := &fakeAdapter{name: "openai", resp: &ir.ChatResponse{
+		ID:    "r",
+		Usage: ir.Usage{PromptTokens: 30, CompletionTokens: 70, TotalTokens: 100},
+	}}
+	reg := newRegistry(t, fakeAd)
+	facade := &fakeFacade{acc: &account.Account{ID: 55, Cred: account.AccountCred{APIKey: "k"}}}
+	s := relay.New(reg, facade)
+	ch := &channel.Channel{Provider: "openai", Cred: channel.Credential{}, PoolEnabled: 1}
+
+	_, accID, err := s.Chat(context.Background(), &ir.ChatRequest{Model: "m"}, ch)
+	require.NoError(t, err)
+	require.Equal(t, int64(55), accID)
+	require.Equal(t, 1, facade.usageCalls)
+	require.Equal(t, int64(55), facade.lastUsageID)
+	require.Equal(t, int64(100), facade.lastUsageToken)
+}
+
+// TestService_Chat_NoUsageReportWhenPoolDisabled 验证未启用账号池时不上报用量。
+func TestService_Chat_NoUsageReportWhenPoolDisabled(t *testing.T) {
+	fakeAd := &fakeAdapter{name: "openai", resp: &ir.ChatResponse{
+		ID:    "r",
+		Usage: ir.Usage{TotalTokens: 100},
+	}}
+	reg := newRegistry(t, fakeAd)
+	facade := &fakeFacade{acc: &account.Account{ID: 55}}
+	s := relay.New(reg, facade)
+	ch := &channel.Channel{Provider: "openai", Cred: channel.Credential{APIKey: "k"}, PoolEnabled: 0}
+
+	_, _, err := s.Chat(context.Background(), &ir.ChatRequest{Model: "m"}, ch)
+	require.NoError(t, err)
+	require.Equal(t, 0, facade.usageCalls, "pool disabled 不应上报用量")
+}
+
+// TestService_ChatStream_ReportsUsageAtEOF 验证流式调用在流末尾(EOF)按末尾 chunk 的
+// usage 上报一次用量。usage 仅在最后一个 chunk 出现(OpenAI 系语义)。
+func TestService_ChatStream_ReportsUsageAtEOF(t *testing.T) {
+	fakeAd := &fakeAdapter{name: "openai", chunks: []*ir.ChatChunk{
+		{ID: "c1", Delta: ir.Delta{Content: "hel"}},
+		{ID: "c2", Delta: ir.Delta{Content: "lo"}},
+		{ID: "c3", Usage: &ir.Usage{PromptTokens: 12, CompletionTokens: 8, TotalTokens: 20}},
+	}}
+	reg := newRegistry(t, fakeAd)
+	facade := &fakeFacade{acc: &account.Account{ID: 66, Cred: account.AccountCred{APIKey: "k"}}}
+	s := relay.New(reg, facade)
+	ch := &channel.Channel{Provider: "openai", Cred: channel.Credential{}, PoolEnabled: 1}
+
+	reader, accID, err := s.ChatStream(context.Background(), &ir.ChatRequest{Model: "m"}, ch)
+	require.NoError(t, err)
+	require.Equal(t, int64(66), accID)
+
+	// 未消费完流之前不应上报。
+	require.Equal(t, 0, facade.usageCalls)
+
+	ctx := context.Background()
+	for {
+		_, nerr := reader.Next(ctx)
+		if nerr == io.EOF {
+			break
+		}
+		require.NoError(t, nerr)
+	}
+	require.NoError(t, reader.Close())
+
+	require.Equal(t, 1, facade.usageCalls, "流末尾应恰好上报一次")
+	require.Equal(t, int64(66), facade.lastUsageID)
+	require.Equal(t, int64(20), facade.lastUsageToken)
+}
+
+// TestService_ChatStream_NoUsageReportWhenPoolDisabled 验证未启用账号池时流式不包装、不上报。
+func TestService_ChatStream_NoUsageReportWhenPoolDisabled(t *testing.T) {
+	fakeAd := &fakeAdapter{name: "openai", chunks: []*ir.ChatChunk{
+		{ID: "c1", Usage: &ir.Usage{TotalTokens: 20}},
+	}}
+	reg := newRegistry(t, fakeAd)
+	facade := &fakeFacade{acc: &account.Account{ID: 66}}
+	s := relay.New(reg, facade)
+	ch := &channel.Channel{Provider: "openai", Cred: channel.Credential{APIKey: "k"}, PoolEnabled: 0}
+
+	reader, accID, err := s.ChatStream(context.Background(), &ir.ChatRequest{Model: "m"}, ch)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), accID)
+	ctx := context.Background()
+	for {
+		_, nerr := reader.Next(ctx)
+		if nerr == io.EOF {
+			break
+		}
+		require.NoError(t, nerr)
+	}
+	require.NoError(t, reader.Close())
+	require.Equal(t, 0, facade.usageCalls)
 }

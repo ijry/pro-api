@@ -133,6 +133,7 @@
       "provider": "Provider",
       "tier": "Tier",
       "cred_type": "Cred Type",
+      "quota_mode": "Quota Mode",
       "status": "Status",
       "quota_5h": "5h Quota",
       "quota_week": "Week Quota",
@@ -151,6 +152,11 @@
       "oauth": "OAuth",
       "apikey": "API Key",
       "token_pasted": "Token Paste"
+    },
+    "quota_mode": {
+      "auto": "Auto (probe)",
+      "manual": "Manual quota",
+      "none": "No tracking"
     },
     "actions": {
       "add": "+ Add Account",
@@ -199,7 +205,14 @@
       "cancel": "Cancel",
       "imported": "Imported {n} account(s)",
       "preview_total": "Parsed {n} account(s)",
-      "preview_errors": "{n} failed to parse"
+      "preview_errors": "{n} failed to parse",
+      "quota_mode_label": "Quota Mode",
+      "quota_manual_hint": "Manual mode: set a quota below; it is deducted per token used and this account is excluded from background probing. Use for relay/proxy keys.",
+      "quota_none_hint": "No-tracking mode: no probing and no quota; always treated as full when selecting. Use for relay/proxy keys without a quota API.",
+      "quota_total_label": "Total Quota",
+      "quota_total_placeholder": "e.g. 1000000 (tokens)",
+      "quota_remaining_label": "Remaining Quota",
+      "quota_remaining_placeholder": "Defaults to total if left empty"
     },
     "detail": {
       "basic": "Basic Info",
@@ -220,6 +233,7 @@
       "peek_warning": "Viewing credentials is recorded in audit log",
       "peek_credentials": "Credentials",
       "tag_saved": "Tag saved",
+      "quota_saved": "Quota settings saved",
       "back": "Back to list"
     },
     "confirm": {

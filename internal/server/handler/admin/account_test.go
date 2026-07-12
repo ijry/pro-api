@@ -137,6 +137,25 @@ func (f *fakeRepo) ListForReaper(context.Context, time.Time, int) ([]*account.Ac
 	return nil, nil
 }
 
+func (f *fakeRepo) ListForProbe(context.Context, time.Time, int) ([]*account.Account, error) {
+	return nil, nil
+}
+
+func (f *fakeRepo) DeductManualQuota(_ context.Context, id int64, tokens int64) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	a, ok := f.items[id]
+	if !ok || a.QuotaMode != account.QuotaModeManual || a.Quota5hRemaining == nil {
+		return nil
+	}
+	rem := *a.Quota5hRemaining - tokens
+	if rem < 0 {
+		rem = 0
+	}
+	a.Quota5hRemaining = &rem
+	return nil
+}
+
 func (f *fakeRepo) Delete(_ context.Context, id int64) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -208,18 +227,21 @@ func (f *fakeImporter) Parse(payload []byte, format string) ([]*account.Account,
 	}, nil
 }
 
-// fakeProbe never errors; records each Run call.
+// fakeProbe never errors; records each ProbeOne call.
 type fakeProbe struct {
 	mu    sync.Mutex
 	calls []int64
 }
 
-func (f *fakeProbe) Run(_ context.Context, a *account.Account) error {
+func (f *fakeProbe) ProbeOne(_ context.Context, a *account.Account) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.calls = append(f.calls, a.ID)
 	return nil
 }
+
+func (f *fakeProbe) Run(context.Context) error { return nil }
+func (f *fakeProbe) Close() error              { return nil }
 
 // fakeRefresher records RefreshOne calls.
 type fakeRefresher struct {

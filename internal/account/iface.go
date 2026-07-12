@@ -44,6 +44,13 @@ type Repo interface {
 	ListByChannel(ctx context.Context, channelID int64) ([]*Account, error)
 	ListForRefresher(ctx context.Context, before time.Time, limit int) ([]*Account, error)
 	ListForReaper(ctx context.Context, now time.Time, limit int) ([]*Account, error)
+	// ListForProbe 返回额度陈旧的 active 账号:quota_synced_at 为空,或早于 staleBefore。
+	// 供后台定时探测调度器周期拉取。
+	ListForProbe(ctx context.Context, staleBefore time.Time, limit int) ([]*Account, error)
+	// DeductManualQuota 原子扣减 quota_mode='manual' 账号的 quota_5h_remaining
+	// (按 token 用量),下限截断到 0。非 manual 账号或 tokens<=0 时不做任何写入。
+	// 用 SQL 表达式原地更新,避免读改写竞态。
+	DeductManualQuota(ctx context.Context, accountID int64, tokens int64) error
 	Delete(ctx context.Context, id int64) error
 	AppendEvent(ctx context.Context, accountID int64, eventType string, payload any) error
 	// ListEvents 返回某账号的事件,按 id DESC 排序,支持 page/size 分页。
@@ -84,9 +91,15 @@ type Refresher interface {
 	Close() error
 }
 
-// Probe 入池探测。
+// Probe 入池探测 + 后台定时探测。
 type Probe interface {
-	Run(ctx context.Context, account *Account) error
+	// ProbeOne 探测单个账号:请求上游、回填额度、追加 probed 事件。
+	// 不做状态标记(供建号 / OAuth 入池 / 手动 Test 调用,失败仅返回 error)。
+	ProbeOne(ctx context.Context, account *Account) error
+	// Run 后台循环:周期扫描额度陈旧的 active 账号并探测,失败时按类型标记
+	// (429→cooldown / 401→expired / 403→invalid)。
+	Run(ctx context.Context) error
+	Close() error
 }
 
 // Importer 解析粘贴/文件多种格式。

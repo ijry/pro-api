@@ -8,6 +8,7 @@ package relay
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -24,6 +25,8 @@ type AccountFacade interface {
 	Select(ctx context.Context, ch *channel.Channel, hint account.SelectHint) (*account.Account, error)
 	ReportSuccess(accountID int64, latency time.Duration)
 	ReportFailure(accountID int64, err error, headers http.Header)
+	// ReportUsage 按 token 用量扣减账号手动额度(仅 quota_mode='manual' 生效)。
+	ReportUsage(accountID int64, tokens int64)
 }
 
 // Service 是 relay 编排服务。
@@ -79,6 +82,15 @@ func (s *Service) report(accID int64, err error, latency time.Duration, headers 
 	s.accountFacade.ReportSuccess(accID, latency)
 }
 
+// reportUsage 在调用成功后上报 token 用量(用于 manual 模式账号的手动额度扣减)。
+// accID==0(未启用账号池)或 tokens<=0 时为 no-op。
+func (s *Service) reportUsage(accID int64, tokens int) {
+	if accID == 0 || tokens <= 0 || s.accountFacade == nil {
+		return
+	}
+	s.accountFacade.ReportUsage(accID, int64(tokens))
+}
+
 // Chat 执行非流式 chat completion。
 func (s *Service) Chat(ctx context.Context, req *ir.ChatRequest, ch *channel.Channel) (*ir.ChatResponse, int64, error) {
 	cred, accID, err := s.resolveCred(ctx, ch, account.SelectHint{Model: req.Model})
@@ -92,6 +104,9 @@ func (s *Service) Chat(ctx context.Context, req *ir.ChatRequest, ch *channel.Cha
 	start := time.Now()
 	resp, err := a.Chat(ctx, req, cred)
 	s.report(accID, err, time.Since(start), nil)
+	if err == nil && resp != nil {
+		s.reportUsage(accID, resp.Usage.TotalTokens)
+	}
 	return resp, accID, err
 }
 
@@ -114,8 +129,51 @@ func (s *Service) ChatStream(ctx context.Context, req *ir.ChatRequest, ch *chann
 		s.report(accID, err, 0, nil)
 		return nil, accID, err
 	}
+	// 账号池命中时包装 reader:在流末尾(EOF)按累计 usage 扣减 manual 额度。
+	// 未启用账号池(accID==0)直接透传,零开销。
+	if accID != 0 {
+		return &usageDeductReader{inner: reader, svc: s, accID: accID}, accID, nil
+	}
 	return reader, accID, nil
 }
+
+// usageDeductReader 包装上游 StreamReader,在流正常结束时按最终 usage 扣减
+// manual 模式账号的手动额度。它对每个 chunk 记录最后一次非空 Usage(OpenAI 系
+// 仅末尾 chunk 带 usage),在 Next 返回 io.EOF 时上报一次;非 EOF 错误不扣减。
+// 只上报一次由 reported 保证(Close 与 EOF 竞态下不重复扣)。
+type usageDeductReader struct {
+	inner    adapter.StreamReader
+	svc      *Service
+	accID    int64
+	lastTok  int
+	reported bool
+}
+
+func (r *usageDeductReader) Next(ctx context.Context) (*ir.ChatChunk, error) {
+	chunk, err := r.inner.Next(ctx)
+	if err == io.EOF {
+		r.flush()
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	if chunk != nil && chunk.Usage != nil && chunk.Usage.TotalTokens > 0 {
+		r.lastTok = chunk.Usage.TotalTokens
+	}
+	return chunk, nil
+}
+
+// flush 上报累计 usage,幂等(仅第一次生效)。
+func (r *usageDeductReader) flush() {
+	if r.reported {
+		return
+	}
+	r.reported = true
+	r.svc.reportUsage(r.accID, r.lastTok)
+}
+
+func (r *usageDeductReader) Close() error { return r.inner.Close() }
 
 // Embed 执行 embedding 请求。
 func (s *Service) Embed(ctx context.Context, req *ir.EmbedRequest, ch *channel.Channel) (*ir.EmbedResponse, int64, error) {
@@ -130,6 +188,9 @@ func (s *Service) Embed(ctx context.Context, req *ir.EmbedRequest, ch *channel.C
 	start := time.Now()
 	resp, err := a.Embed(ctx, req, cred)
 	s.report(accID, err, time.Since(start), nil)
+	if err == nil && resp != nil {
+		s.reportUsage(accID, resp.Usage.TotalTokens)
+	}
 	return resp, accID, err
 }
 

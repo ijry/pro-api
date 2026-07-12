@@ -134,6 +134,7 @@
       "tier": "套餐",
       "cred_type": "凭证类型",
       "status": "状态",
+      "quota_mode": "额度模式",
       "quota_5h": "5h 余量",
       "quota_week": "周余量",
       "consec_failures": "连续失败",
@@ -151,6 +152,11 @@
       "oauth": "OAuth",
       "apikey": "API Key",
       "token_pasted": "Token 粘贴"
+    },
+    "quota_mode": {
+      "auto": "自动探测",
+      "manual": "手动额度",
+      "none": "不追踪"
     },
     "actions": {
       "add": "+ 添加账号",
@@ -199,7 +205,14 @@
       "cancel": "取消",
       "imported": "导入成功 {n} 个账号",
       "preview_total": "解析到 {n} 个账号",
-      "preview_errors": "其中 {n} 个解析失败"
+      "preview_errors": "其中 {n} 个解析失败",
+      "quota_mode_label": "额度模式",
+      "quota_manual_hint": "手动额度:不做后台探测,按 token 用量扣减剩余额度。适合无额度接口的中转站 Key。",
+      "quota_none_hint": "不追踪额度:不做后台探测,调度时视为满额。适合纯直连的中转站 Key。",
+      "quota_total_label": "总额度(token)",
+      "quota_total_placeholder": "如:1000000",
+      "quota_remaining_label": "剩余额度(token,可选)",
+      "quota_remaining_placeholder": "留空则默认等于总额度"
     },
     "detail": {
       "basic": "基本信息",
@@ -220,6 +233,7 @@
       "peek_warning": "查看凭证将被记入审计日志",
       "peek_credentials": "凭证内容",
       "tag_saved": "标签已保存",
+      "quota_saved": "额度设置已保存",
       "back": "返回列表"
     },
     "confirm": {

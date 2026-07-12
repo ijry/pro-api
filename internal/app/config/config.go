@@ -39,6 +39,12 @@ type AccountConfig struct {
 	OAuthOpenAIScopes         []string `mapstructure:"oauth_openai_scopes"`
 	AnthropicProbeBase        string   `mapstructure:"anthropic_probe_base"`
 	OpenAIProbeBase           string   `mapstructure:"openai_probe_base"`
+	// ProbeLoop* 控制后台定时探测循环(周期扫描额度陈旧的 active 账号并回填额度、
+	// 按失败类型标记)。0 值由 accountwire 兜底为内置默认。
+	ProbeLoopTickSeconds  int `mapstructure:"probe_loop_tick_seconds"`  // 扫描间隔,默认 300
+	ProbeLoopStaleSeconds int `mapstructure:"probe_loop_stale_seconds"` // 额度陈旧阈值,默认 600
+	ProbeLoopBatchLimit   int `mapstructure:"probe_loop_batch_limit"`   // 单轮最多探测数,默认 100
+	ProbeLoopConcurrency  int `mapstructure:"probe_loop_concurrency"`   // 单轮最大并发,默认 8
 }
 
 // ServerConfig 描述 HTTP server 启动参数。

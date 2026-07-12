@@ -172,6 +172,14 @@ const columns = computed<DataTableColumns<Account>>(() => [
     title: t('accounts.columns.status'), key: 'status', width: 90,
     render: (row) => h(NTag, { type: statusTagType(row.status), size: 'small' }, { default: () => t(`accounts.status.${row.status}`) }),
   },
+  {
+    title: t('accounts.columns.quota_mode'), key: 'quota_mode', width: 90,
+    render: (row) => {
+      const mode = row.quota_mode || 'auto'
+      const type = mode === 'manual' ? 'warning' : mode === 'none' ? 'default' : 'success'
+      return h(NTag, { size: 'small', type }, { default: () => t(`accounts.quota_mode.${mode}`) })
+    },
+  },
   { title: t('accounts.columns.quota_5h'), key: 'quota_5h', width: 90, render: (row) => fmtPct(row.quota_5h) },
   { title: t('accounts.columns.quota_week'), key: 'quota_week', width: 90, render: (row) => fmtPct(row.quota_week) },
   { title: t('accounts.columns.consec_failures'), key: 'consec_failures', width: 90 },
@@ -247,7 +255,7 @@ const kpi = computed(() => {
       :columns="columns"
       :data="data"
       :loading="loading"
-      :scroll-x="1700"
+      :scroll-x="1800"
       size="small"
       :row-key="(row: Account) => row.id"
       :pagination="false"

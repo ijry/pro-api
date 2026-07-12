@@ -161,6 +161,7 @@ type listItem struct {
 	Name                 string     `json:"name"`
 	Provider             string     `json:"provider"`
 	Tier                 string     `json:"tier"`
+	QuotaMode            string     `json:"quota_mode"`
 	CredType             string     `json:"cred_type"`
 	Email                string     `json:"email"`
 	Status               int8       `json:"status"`
@@ -201,6 +202,7 @@ func accountToListItem(a *account.Account) listItem {
 		Name:                 a.Name,
 		Provider:             a.Provider,
 		Tier:                 a.Tier,
+		QuotaMode:            a.QuotaMode,
 		CredType:             a.CredType,
 		Email:                account.MaskEmail(a.Email),
 		Status:               int8(a.Status),
@@ -324,11 +326,48 @@ type acctCreateReq struct {
 	DryRun    bool   `json:"dry_run"`
 	Priority  int16  `json:"priority"`
 	Weight    int    `json:"weight"`
+	// QuotaMode: auto(默认,探测回填) / manual(手填额度、按用量扣减) / none(不探测、恒满额)。
+	// 空串按 auto 处理。中转站 apikey 一般填 manual 或 none。
+	QuotaMode string `json:"quota_mode"`
+	// QuotaTotal / QuotaRemaining 仅在 quota_mode=manual 时有意义:手动设定的 5h 额度
+	// (复用 quota_5h_total / quota_5h_remaining)。QuotaRemaining 省略时默认等于 QuotaTotal。
+	QuotaTotal     *int64 `json:"quota_total"`
+	QuotaRemaining *int64 `json:"quota_remaining"`
 }
 
 type acctOAuthStartReq struct {
 	Provider  string `json:"provider"`
 	ChannelID int64  `json:"channel_id"`
+}
+
+// normalizeQuotaMode 校验并归一化 quota_mode。空串归为 auto;非法值返回 ok=false。
+func normalizeQuotaMode(m string) (string, bool) {
+	switch m {
+	case "":
+		return account.QuotaModeAuto, true
+	case account.QuotaModeAuto, account.QuotaModeManual, account.QuotaModeNone:
+		return m, true
+	default:
+		return "", false
+	}
+}
+
+// applyManualQuota 把请求里手填的 5h 额度落到账号(仅 quota_mode=manual 时)。
+// remaining 省略时默认等于 total,便于"填个总额即开跑"。total 为 nil 时不改动
+// (允许先建号、后单独 PATCH 补额度)。
+func applyManualQuota(a *account.Account, mode string, total, remaining *int64) {
+	if mode != account.QuotaModeManual || total == nil {
+		return
+	}
+	t := *total
+	a.Quota5hTotal = &t
+	if remaining != nil {
+		r := *remaining
+		a.Quota5hRemaining = &r
+	} else {
+		r := t
+		a.Quota5hRemaining = &r
+	}
 }
 
 // Create POST /accounts — 单条创建,与 Import 类似但只取第一条。dry_run 时不落库。
@@ -389,6 +428,13 @@ func (h *AccountHandler) Create(c *gin.Context) {
 	if req.Weight != 0 {
 		a.Weight = req.Weight
 	}
+	mode, modeOK := normalizeQuotaMode(req.QuotaMode)
+	if !modeOK {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "quota_mode 非法(取值 auto/manual/none)"))
+		return
+	}
+	a.QuotaMode = mode
+	applyManualQuota(a, mode, req.QuotaTotal, req.QuotaRemaining)
 	if req.DryRun {
 		c.JSON(http.StatusOK, gin.H{"data": gin.H{"preview": accountToListItem(a)}})
 		return
@@ -403,7 +449,7 @@ func (h *AccountHandler) Create(c *gin.Context) {
 	if h.Facade.Probe != nil {
 		cc := c.Copy()
 		go func(acc *account.Account) {
-			_ = h.Facade.Probe.Run(cc.Request.Context(), acc)
+			_ = h.Facade.Probe.ProbeOne(cc.Request.Context(), acc)
 		}(a)
 	}
 	h.auditOne(c, "account.create", a.ID, nil, map[string]any{
@@ -476,7 +522,7 @@ func (h *AccountHandler) OAuthCallback(c *gin.Context) {
 	if h.Facade.Probe != nil {
 		cc := c.Copy()
 		go func(acc *account.Account) {
-			_ = h.Facade.Probe.Run(cc.Request.Context(), acc)
+			_ = h.Facade.Probe.ProbeOne(cc.Request.Context(), acc)
 		}(a)
 	}
 	h.auditOne(c, "account.oauth_callback", a.ID, nil, map[string]any{
@@ -559,6 +605,12 @@ func (h *AccountHandler) Import(c *gin.Context) {
 		chProvider = h.resolveChannelProvider(req.ChannelID)
 	}
 
+	quotaMode, ok := normalizeQuotaMode(req.QuotaMode)
+	if !ok {
+		middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "quota_mode 必须为 auto/manual/none"))
+		return
+	}
+
 	previews := make([]listItem, 0, len(list))
 	imported := make([]int64, 0, len(list))
 	errs := []gin.H{}
@@ -566,6 +618,8 @@ func (h *AccountHandler) Import(c *gin.Context) {
 	for i, a := range list {
 		a.ChannelID = req.ChannelID
 		a.Tag = req.Tag
+		a.QuotaMode = quotaMode
+		applyManualQuota(a, quotaMode, req.QuotaTotal, req.QuotaRemaining)
 		if chProvider != "" {
 			a.Provider = chProvider
 		}
@@ -614,6 +668,10 @@ type acctPatchReq struct {
 	Priority *int16  `json:"priority"`
 	Weight   *int    `json:"weight"`
 	Status   *int8   `json:"status"`
+	// QuotaMode / QuotaTotal / QuotaRemaining 支持后期调整额度模式与手填额度。
+	QuotaMode      *string `json:"quota_mode"`
+	QuotaTotal     *int64  `json:"quota_total"`
+	QuotaRemaining *int64  `json:"quota_remaining"`
 }
 
 // Patch PATCH /accounts/:id
@@ -649,6 +707,16 @@ func (h *AccountHandler) Patch(c *gin.Context) {
 	if p.Status != nil {
 		cur.Status = account.Status(*p.Status)
 	}
+	if p.QuotaMode != nil {
+		mode, ok := normalizeQuotaMode(*p.QuotaMode)
+		if !ok {
+			middleware.SetErr(c, apierr.New(apierr.CodeInvalidParam, "quota_mode 仅支持 auto / manual / none"))
+			return
+		}
+		cur.QuotaMode = mode
+	}
+	// 手填额度:以 patch 后的模式判定。允许在已是 manual 的账号上单独补/改额度。
+	applyManualQuota(cur, cur.QuotaMode, p.QuotaTotal, p.QuotaRemaining)
 	// Patch 不动 Cred:Get 已把明文 hydrate 到 cur.Cred,
 	// Repo.Update 会按 hydrate 出的值原样重新加密,等价于"不改凭证"。
 	if err := h.Facade.Repo.Update(c.Request.Context(), cur); err != nil {
@@ -733,7 +801,7 @@ func (h *AccountHandler) ClearCooldown(c *gin.Context) {
 
 // --- probe / refresh / events / peek / stats ---
 
-// Test POST /accounts/:id/test — 调用 Probe.Run。
+// Test POST /accounts/:id/test — 调用 Probe.ProbeOne。
 func (h *AccountHandler) Test(c *gin.Context) {
 	id, ok := parseIDParam(c)
 	if !ok {
@@ -748,7 +816,7 @@ func (h *AccountHandler) Test(c *gin.Context) {
 		middleware.SetErr(c, apierr.New(apierr.CodeInternal, "probe 未就绪"))
 		return
 	}
-	if err := h.Facade.Probe.Run(c.Request.Context(), a); err != nil {
+	if err := h.Facade.Probe.ProbeOne(c.Request.Context(), a); err != nil {
 		writeAcctErr(c, err)
 		return
 	}

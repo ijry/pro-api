@@ -62,18 +62,27 @@ func WireAccount(ctx context.Context, a *app.Application) error {
 
 	tracker := quota.NewTracker(repo)
 
+	br := account.NewBreaker(repo, a.Cache, a.Log)
+	go func() { _ = br.Run(ctx) }()
+
 	var anthropicProbeBase, openaiProbeBase string
+	var probeCfg account.ProbeConfig
 	if a.Config != nil {
 		anthropicProbeBase = a.Config.Account.AnthropicProbeBase
 		openaiProbeBase = a.Config.Account.OpenAIProbeBase
+		probeCfg = account.ProbeConfig{
+			Tick:        time.Duration(a.Config.Account.ProbeLoopTickSeconds) * time.Second,
+			StaleAfter:  time.Duration(a.Config.Account.ProbeLoopStaleSeconds) * time.Second,
+			BatchLimit:  a.Config.Account.ProbeLoopBatchLimit,
+			Concurrency: a.Config.Account.ProbeLoopConcurrency,
+		}
 	}
-	pr := account.NewProbe(repo, tracker, map[string]account.ProviderProbe{
+	// probe 需要 breaker 做后台探测失败标记,故在 breaker 之后构造。
+	pr := account.NewProbe(repo, tracker, br, map[string]account.ProviderProbe{
 		"anthropic": probe.NewAnthropic(anthropicProbeBase),
 		"openai":    probe.NewOpenAI(openaiProbeBase),
-	})
-
-	br := account.NewBreaker(repo, a.Cache, a.Log)
-	go func() { _ = br.Run(ctx) }()
+	}, probeCfg, a.Log)
+	go func() { _ = pr.Run(ctx) }()
 
 	sel := account.NewSelector(repo, br, time.Now().UnixNano())
 	rf := account.NewRefresher(repo, a.Cache, oa, a.Log)
@@ -93,5 +102,6 @@ func WireAccount(ctx context.Context, a *app.Application) error {
 	}
 	a.AddCloser("account_breaker", br.Close)
 	a.AddCloser("account_refresher", rf.Close)
+	a.AddCloser("account_probe", pr.Close)
 	return nil
 }

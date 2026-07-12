@@ -19,6 +19,26 @@ const (
 	StatusInvalid  Status = 4
 )
 
+// 额度模式:决定账号的 5h/周额度从哪来、是否参与后台探测。
+const (
+	// QuotaModeAuto 由后台探测/转发响应头自动回填额度(官方号)。
+	QuotaModeAuto = "auto"
+	// QuotaModeManual 手动设定额度,按 token 用量扣减 remaining;不参与后台探测(中转站号)。
+	QuotaModeManual = "manual"
+	// QuotaModeNone 不探测、不追踪额度,selector 视为恒满额(纯直连中转站号)。
+	QuotaModeNone = "none"
+)
+
+// NormalizeQuotaMode 把空串或非法值归一到 QuotaModeAuto。
+func NormalizeQuotaMode(m string) string {
+	switch m {
+	case QuotaModeManual, QuotaModeNone:
+		return m
+	default:
+		return QuotaModeAuto
+	}
+}
+
 // Account 是 accounts 表的 ORM 模型与领域对象。
 type Account struct {
 	ID                   int64           `gorm:"primaryKey;column:id"                json:"id"`
@@ -27,6 +47,7 @@ type Account struct {
 	Name                 string          `gorm:"column:name;size:128"                json:"name"`
 	Provider             string          `gorm:"column:provider;size:32"             json:"provider"`
 	Tier                 string          `gorm:"column:tier;size:32"                 json:"tier"`
+	QuotaMode            string          `gorm:"column:quota_mode;size:8"            json:"quota_mode"`
 	CredType             string          `gorm:"column:cred_type;size:16"            json:"cred_type"`
 	Email                string          `gorm:"column:email;size:128"               json:"email"`
 	ExternalAccountID    string          `gorm:"column:external_account_id;size:64"  json:"external_account_id"`

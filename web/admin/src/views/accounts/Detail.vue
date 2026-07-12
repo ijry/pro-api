@@ -3,10 +3,10 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  NCard, NDescriptions, NDescriptionsItem, NSpace, NButton, NTag, NInput, NPageHeader, NSpin, NGrid, NGi,
-  useMessage,
+  NCard, NDescriptions, NDescriptionsItem, NSpace, NButton, NTag, NInput, NInputNumber, NSelect, NPageHeader, NSpin, NGrid, NGi,
+  useMessage, type SelectOption,
 } from 'naive-ui'
-import { accountApi, type AccountDetail } from '@/api/account'
+import { accountApi, type AccountDetail, type QuotaMode } from '@/api/account'
 import QuotaRing from './components/QuotaRing.vue'
 import EventTimeline from './components/EventTimeline.vue'
 import CredentialPeek from './components/CredentialPeek.vue'
@@ -46,7 +46,54 @@ async function saveTag() {
   } catch (_) { /* handled */ } finally { savingTag.value = false }
 }
 
+// quota_mode / 手动额度 行内编辑
+const editingQuota = ref(false)
+const savingQuota = ref(false)
+const quotaDraft = ref({
+  mode: 'auto' as QuotaMode,
+  total: null as number | null,
+  remaining: null as number | null,
+})
+function startEditQuota() {
+  if (!data.value) return
+  quotaDraft.value = {
+    mode: data.value.quota_mode ?? 'auto',
+    total: data.value.quota_5h?.total ?? null,
+    remaining: data.value.quota_5h?.remaining ?? null,
+  }
+  editingQuota.value = true
+}
+async function saveQuota() {
+  if (!data.value) return
+  savingQuota.value = true
+  try {
+    // 仅 manual 模式提交手填额度;auto/none 只改模式(后端对非 manual 会忽略额度)。
+    const payload = {
+      quota_mode: quotaDraft.value.mode,
+      ...(quotaDraft.value.mode === 'manual'
+        ? { quota_total: quotaDraft.value.total, quota_remaining: quotaDraft.value.remaining }
+        : {}),
+    }
+    const updated = await accountApi.patch(data.value.id, payload)
+    data.value = updated
+    editingQuota.value = false
+    message.success(t('accounts.detail.quota_saved'))
+  } catch (_) { /* handled */ } finally { savingQuota.value = false }
+}
+
 const actions = useAccountActions(load)
+
+const quotaModeOptions = computed<SelectOption[]>(() => [
+  { label: t('accounts.quota_mode.auto'), value: 'auto' },
+  { label: t('accounts.quota_mode.manual'), value: 'manual' },
+  { label: t('accounts.quota_mode.none'), value: 'none' },
+])
+
+function quotaModeTagType(m?: QuotaMode): 'success' | 'warning' | 'default' {
+  if (m === 'manual') return 'warning'
+  if (m === 'none') return 'default'
+  return 'success'
+}
 
 function statusTagType(s: number): 'success' | 'warning' | 'error' | 'default' {
   if (s === 0) return 'success'
@@ -108,6 +155,25 @@ function refreshValidType(v?: 0 | 1 | 2): 'success' | 'error' | 'default' {
               <NDescriptionsItem :label="t('accounts.columns.provider')">{{ data.provider }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.tier')">{{ data.tier }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.cred_type')">{{ t(`accounts.cred_type.${data.cred_type}`) }}</NDescriptionsItem>
+              <NDescriptionsItem :label="t('accounts.columns.quota_mode')">
+                <NSpace v-if="!editingQuota" size="small" align="center">
+                  <NTag size="small" :type="quotaModeTagType(data.quota_mode)">
+                    {{ t(`accounts.quota_mode.${data.quota_mode || 'auto'}`) }}
+                  </NTag>
+                  <NButton text size="tiny" @click="startEditQuota">{{ t('accounts.actions.edit') }}</NButton>
+                </NSpace>
+                <NSpace v-else vertical size="small">
+                  <NSelect v-model:value="quotaDraft.mode" :options="quotaModeOptions" size="tiny" style="width:160px" />
+                  <template v-if="quotaDraft.mode === 'manual'">
+                    <NInputNumber v-model:value="quotaDraft.total" :min="0" size="tiny" style="width:160px" :placeholder="t('accounts.add_dialog.quota_total_label')" />
+                    <NInputNumber v-model:value="quotaDraft.remaining" :min="0" size="tiny" style="width:160px" :placeholder="t('accounts.add_dialog.quota_remaining_label')" />
+                  </template>
+                  <NSpace size="small" align="center">
+                    <NButton text size="tiny" type="primary" :loading="savingQuota" @click="saveQuota">{{ t('accounts.add_dialog.submit') }}</NButton>
+                    <NButton text size="tiny" @click="editingQuota = false">{{ t('accounts.add_dialog.cancel') }}</NButton>
+                  </NSpace>
+                </NSpace>
+              </NDescriptionsItem>
               <NDescriptionsItem label="email">{{ data.email || '--' }}</NDescriptionsItem>
               <NDescriptionsItem :label="t('accounts.columns.status')">
                 <NTag :type="statusTagType(data.status)" size="small">{{ t(`accounts.status.${data.status}`) }}</NTag>

@@ -7,6 +7,8 @@ export interface QuotaWindow {
   pct?: number | null
 }
 
+export type QuotaMode = 'auto' | 'manual' | 'none'
+
 export interface Account {
   id: number
   name: string
@@ -14,6 +16,7 @@ export interface Account {
   channel_id: number
   provider: 'anthropic' | 'openai'
   tier: string
+  quota_mode: QuotaMode
   cred_type: 'oauth' | 'apikey' | 'token_pasted'
   email: string
   status: 0 | 1 | 2 | 3 | 4
@@ -59,6 +62,9 @@ export interface CreatePayload {
   priority?: number
   weight?: number
   dry_run?: boolean
+  quota_mode?: QuotaMode
+  quota_total?: number | null
+  quota_remaining?: number | null
 }
 
 export interface ImportPayload {
@@ -67,6 +73,9 @@ export interface ImportPayload {
   tag?: string
   format?: string
   dry_run?: boolean
+  quota_mode?: QuotaMode
+  quota_total?: number | null
+  quota_remaining?: number | null
 }
 
 export interface ImportResp {
@@ -111,6 +120,13 @@ export interface OAuthStartResp {
   state: string
 }
 
+// PatchPayload 是 PATCH body:在账号可编辑字段之外,额外支持 quota_mode 与手填额度
+// (quota_total / quota_remaining,仅 quota_mode='manual' 时有意义)。
+export type PatchPayload = Partial<Account> & {
+  quota_total?: number | null
+  quota_remaining?: number | null
+}
+
 export const accountApi = {
   list:  (p: ListParams) => get<ListResp>('/api/admin/accounts', p as Record<string, unknown>),
   get:   (id: number) => get<AccountDetail>(`/api/admin/accounts/${id}`),
@@ -118,7 +134,7 @@ export const accountApi = {
   import:(payload: ImportPayload) => post<ImportResp>('/api/admin/accounts/import', payload),
   oauthStart: async (payload: OAuthStartPayload) =>
     (await post<{ data: OAuthStartResp }>('/api/admin/accounts/oauth/start', payload)).data,
-  patch: (id: number, p: Partial<Account>) => patch<AccountDetail>(`/api/admin/accounts/${id}`, p),
+  patch: (id: number, p: PatchPayload) => patch<AccountDetail>(`/api/admin/accounts/${id}`, p),
   delete:(id: number) => del<{ id: number }>(`/api/admin/accounts/${id}`),
   enable:(id: number) => post<{ id: number; status: number }>(`/api/admin/accounts/${id}/enable`, {}),
   disable:(id: number) => post<{ id: number; status: number }>(`/api/admin/accounts/${id}/disable`, {}),

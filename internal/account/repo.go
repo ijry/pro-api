@@ -162,6 +162,44 @@ func (r *repo) ListForReaper(ctx context.Context, now time.Time, limit int) ([]*
 	return out, nil
 }
 
+// ListForProbe 返回额度陈旧的 active 账号:quota_synced_at 为空(从未探测/跑过流量),
+// 或早于 staleBefore。用于后台定时探测,避免长期空闲账号额度停留在导入那一刻。
+func (r *repo) ListForProbe(ctx context.Context, staleBefore time.Time, limit int) ([]*Account, error) {
+	var out []*Account
+	// 仅探测 quota_mode='auto' 的账号:manual(手填额度、按用量扣减)与 none
+	// (中转站等无额度接口)不做后台探测,从根上避免对它们空探与误标记。
+	// 空串按 auto 处理,兼容 default 生效前插入的历史行。
+	err := r.db.WithContext(ctx).
+		Where("status = ? AND deleted_at IS NULL AND (quota_mode = ? OR quota_mode = '') AND (quota_synced_at IS NULL OR quota_synced_at < ?)",
+			StatusActive, QuotaModeAuto, staleBefore).
+		// COALESCE 保证从未探测(NULL)的账号在 MySQL 与 Postgres 上都排最前;
+		// 直接写 NULLS FIRST 在 MySQL 上是语法错误。
+		Order("COALESCE(quota_synced_at, '1970-01-01') ASC").
+		Limit(limit).Find(&out).Error
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range out {
+		if err := r.hydrate(a); err != nil && r.log != nil {
+			r.log.Warn("account: hydrate failed", zap.Int64("account_id", a.ID), zap.Error(err))
+		}
+	}
+	return out, nil
+}
+
+// DeductManualQuota 原子扣减 quota_mode='manual' 账号的 quota_5h_remaining。
+// 用 GREATEST(..., 0) 就地钳到 0(MySQL 与 Postgres 均支持),避免读改写竞态;
+// 仅对 manual 模式生效(auto 由探测回填、none 不追踪,都不应被扣)。
+// tokens <= 0 或 remaining 为 NULL(未设手动额度)时不产生副作用。
+func (r *repo) DeductManualQuota(ctx context.Context, id int64, tokens int64) error {
+	if tokens <= 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Model(&Account{}).
+		Where("id = ? AND quota_mode = ? AND quota_5h_remaining IS NOT NULL", id, QuotaModeManual).
+		UpdateColumn("quota_5h_remaining", gorm.Expr("GREATEST(quota_5h_remaining - ?, 0)", tokens)).Error
+}
+
 func (r *repo) Delete(ctx context.Context, id int64) error {
 	now := r.clock.Now().UTC()
 	return r.db.WithContext(ctx).Model(&Account{}).
