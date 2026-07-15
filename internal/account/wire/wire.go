@@ -79,8 +79,10 @@ func WireAccount(ctx context.Context, a *app.Application) error {
 	}
 	// probe 需要 breaker 做后台探测失败标记,故在 breaker 之后构造。
 	pr := account.NewProbe(repo, tracker, br, map[string]account.ProviderProbe{
-		"anthropic": probe.NewAnthropic(anthropicProbeBase),
-		"openai":    probe.NewOpenAI(openaiProbeBase),
+		"anthropic":  probe.NewAnthropic(anthropicProbeBase),
+		"openai":     probe.NewOpenAI(openaiProbeBase),
+		"grok-build": probe.NewGrokBuild(""),
+		"grok-web":   probe.NewGrokWeb(""),
 	}, probeCfg, a.Log)
 	go func() { _ = pr.Run(ctx) }()
 
