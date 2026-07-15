@@ -1,6 +1,6 @@
 # proapi
 
-一站式大模型 API 中转网关 · 三协议互转 · 18+ 上游 · 企业级 SSO · 完整计费体系
+一站式大模型 API 中转网关 · 三协议互转 · 20+ 上游 · 企业级 SSO · 完整计费体系
 
 [English](./README.md) · [文档站](./docs-site)
 
@@ -11,7 +11,8 @@
 **已就绪**
 
 - **三协议入口与互转**:OpenAI `/v1`、Anthropic `/v1/messages`、Gemini `/v1beta`,任意入口可路由到任意上游
-- **18 个上游适配器**:openai / azure / anthropic / gemini / deepseek / moonshot / 智谱 / 通义 / 豆包 / groq / mistral / 零一 / openrouter / huggingface / minimax / 腾讯混元 / Cohere / 讯飞星火
+- **20 个上游适配器**:openai / azure / anthropic / gemini / deepseek / moonshot / 智谱 / 通义 / 豆包 / groq / grok-build / grok-web / mistral / 零一 / openrouter / huggingface / minimax / 腾讯混元 / Cohere / 讯飞星火
+- Grok 支持:`grok-build` 使用 xAI API Key;`grok-web` 使用 Grok Web SSO token,存放在渠道或账号的 API Key 字段。
 - **多模态**:对话(含流式)· 图像生成 · TTS · STT · Embeddings
 - **计费**:Redis Lua 预扣 / 提交 / 退款 · 模型倍率 · 分组倍率
 - **渠道**:CRUD + 优先级 + 权重 + 模型映射 + 熔断;账号池

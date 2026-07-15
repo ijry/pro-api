@@ -10,6 +10,8 @@ import (
 	"github.com/ijry/pro-api/internal/adapter/deepseek"
 	"github.com/ijry/pro-api/internal/adapter/doubao"
 	"github.com/ijry/pro-api/internal/adapter/gemini"
+	"github.com/ijry/pro-api/internal/adapter/grokbuild"
+	"github.com/ijry/pro-api/internal/adapter/grokweb"
 	"github.com/ijry/pro-api/internal/adapter/groq"
 	"github.com/ijry/pro-api/internal/adapter/huggingface"
 	"github.com/ijry/pro-api/internal/adapter/minimax"
@@ -25,7 +27,7 @@ import (
 	"github.com/ijry/pro-api/internal/util/tokenize"
 )
 
-// WireAdapters 向 Registry 注册所有 18 家 adapter，并注册 tokenizers。
+// WireAdapters 向 Registry 注册所有 20 家 adapter，并注册 tokenizers。
 //
 // 用法：
 //
@@ -47,8 +49,10 @@ func WireAdapters(reg adapter.Registry, tokReg *tokenize.Registry) {
 	reg.Register(qwen.New())
 	reg.Register(doubao.New())
 
-	// M2a 新增 7 家 adapter
+	// M2a + Grok 新增 9 家 adapter
 	reg.Register(groq.New())
+	reg.Register(grokbuild.New())
+	reg.Register(grokweb.New())
 	reg.Register(mistral.New())
 	reg.Register(yi.New())
 	reg.Register(openrouter.New())

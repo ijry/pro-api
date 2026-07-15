@@ -39,5 +39,22 @@ INSERT INTO model_catalogs (id, name, family, capabilities, default_input_ratio,
 (30, 'text-embedding-v3',          'embed', JSON_ARRAY('embed'),                              0.49,  0.0,  NULL, NULL,    8192, 0, 'qwen',      NOW(3), NOW(3)),
 -- Doubao
 (31, 'doubao-pro-32k',             'chat',  JSON_ARRAY('chat','stream','tool_use'),           0.8,   2.0,  NULL, NULL,   32768, 0, 'doubao',    NOW(3), NOW(3)),
-(32, 'doubao-pro-128k',            'chat',  JSON_ARRAY('chat','stream','tool_use'),           5.0,  10.0,  NULL, NULL,  131072, 0, 'doubao',    NOW(3), NOW(3))
+(32, 'doubao-pro-128k',            'chat',  JSON_ARRAY('chat','stream','tool_use'),           5.0,  10.0,  NULL, NULL,  131072, 0, 'doubao',    NOW(3), NOW(3)),
+-- Grok Build
+(33, 'grok-4',                     'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(3), NOW(3)),
+(34, 'grok-3',                     'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(3), NOW(3)),
+(35, 'grok-3-mini',                'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(3), NOW(3)),
+(36, 'grok-3-mini-fast',           'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(3), NOW(3)),
+-- Grok Web
+(37, 'grok-web/grok-3',            'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(38, 'grok-web/grok-3-mini',       'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(39, 'grok-web/grok-3-thinking',   'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(40, 'grok-web/grok-4',            'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(41, 'grok-web/grok-4-mini',       'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(42, 'grok-web/grok-4-thinking',   'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(43, 'grok-web/grok-4-heavy',      'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(44, 'grok-web/grok-4.1-mini',     'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(45, 'grok-web/grok-4.1-fast',     'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(46, 'grok-web/grok-4.1-expert',   'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3)),
+(47, 'grok-web/grok-4.1-thinking', 'chat',  JSON_ARRAY('chat','stream'),                       0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(3), NOW(3))
 ON DUPLICATE KEY UPDATE family = VALUES(family);

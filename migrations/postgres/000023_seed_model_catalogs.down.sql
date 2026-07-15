@@ -1,1 +1,1 @@
-DELETE FROM model_catalogs WHERE id BETWEEN 1 AND 32;
+DELETE FROM model_catalogs WHERE id BETWEEN 1 AND 47;

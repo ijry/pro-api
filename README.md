@@ -1,6 +1,6 @@
 # pro-api
 
-All-in-one LLM API Gateway · 3-protocol interop · 18+ providers · Enterprise SSO · Full billing
+All-in-one LLM API Gateway · 3-protocol interop · 20+ providers · Enterprise SSO · Full billing
 
 [中文](./README_zh.md) · [Docs](./docs-site)
 
@@ -13,7 +13,8 @@ All-in-one LLM API Gateway · 3-protocol interop · 18+ providers · Enterprise 
 **Ready**
 
 - **3-protocol ingress + interop**: OpenAI `/v1`, Anthropic `/v1/messages`, Gemini `/v1beta` — any ingress can route to any upstream
-- **18 upstream adapters**: openai / azure / anthropic / gemini / deepseek / moonshot / zhipu / qwen / doubao / groq / mistral / yi / openrouter / huggingface / minimax / tencent / cohere / xunfei
+- **20 upstream adapters**: openai / azure / anthropic / gemini / deepseek / moonshot / zhipu / qwen / doubao / groq / grok-build / grok-web / mistral / yi / openrouter / huggingface / minimax / tencent / cohere / xunfei
+- Grok support: `grok-build` uses xAI API keys; `grok-web` uses a Grok Web SSO token stored in the channel/account API key field.
 - **Multimodal**: chat (incl. streaming) · image generation · TTS · STT · embeddings
 - **Billing**: Redis Lua reserve / commit / refund · per-model ratio · per-group ratio
 - **Channels**: CRUD + priority + weight + model mapping + circuit breaker; account pool

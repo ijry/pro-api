@@ -39,5 +39,22 @@ INSERT INTO model_catalogs (id, name, family, capabilities, default_input_ratio,
 (30, 'text-embedding-v3',          'embed', '["embed"]'::jsonb,                               0.49,  0.0,  NULL, NULL,    8192, 0, 'qwen',      NOW(), NOW()),
 -- Doubao
 (31, 'doubao-pro-32k',             'chat',  '["chat","stream","tool_use"]'::jsonb,             0.8,   2.0,  NULL, NULL,   32768, 0, 'doubao',    NOW(), NOW()),
-(32, 'doubao-pro-128k',            'chat',  '["chat","stream","tool_use"]'::jsonb,             5.0,  10.0,  NULL, NULL,  131072, 0, 'doubao',    NOW(), NOW())
+(32, 'doubao-pro-128k',            'chat',  '["chat","stream","tool_use"]'::jsonb,             5.0,  10.0,  NULL, NULL,  131072, 0, 'doubao',    NOW(), NOW()),
+-- Grok Build
+(33, 'grok-4',                     'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(), NOW()),
+(34, 'grok-3',                     'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(), NOW()),
+(35, 'grok-3-mini',                'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(), NOW()),
+(36, 'grok-3-mini-fast',           'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-build', NOW(), NOW()),
+-- Grok Web
+(37, 'grok-web/grok-3',            'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(38, 'grok-web/grok-3-mini',       'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(39, 'grok-web/grok-3-thinking',   'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(40, 'grok-web/grok-4',            'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(41, 'grok-web/grok-4-mini',       'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(42, 'grok-web/grok-4-thinking',   'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(43, 'grok-web/grok-4-heavy',      'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(44, 'grok-web/grok-4.1-mini',     'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(45, 'grok-web/grok-4.1-fast',     'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(46, 'grok-web/grok-4.1-expert',   'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW()),
+(47, 'grok-web/grok-4.1-thinking', 'chat',  '["chat","stream"]'::jsonb,                         0.0,   0.0,  NULL, NULL,  131072, 0, 'grok-web',   NOW(), NOW())
 ON CONFLICT (name) DO UPDATE SET family = EXCLUDED.family;

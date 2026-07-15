@@ -18,7 +18,7 @@ outline: deep
 
 适配器层把这些差异封装,让 channel / billing / log / ratelimit 等业务模块**完全 provider-agnostic** —— 增加一家新厂商不需要改这些模块。
 
-## M1 已支持的 9 家
+## 已支持的 20 家
 
 | Provider | 支持端点 | 流式 | 主要模型 | 备注 |
 |---|---|---|---|---|
@@ -31,8 +31,19 @@ outline: deep
 | zhipu | chat | ✅ | glm-4 / glm-4-flash | |
 | qwen | chat / embeddings | ✅ | qwen-turbo / -plus / -max | |
 | doubao | chat | ✅ | doubao-pro / -lite | |
+| groq | chat | ✅ | llama-3* / mixtral / gemma2 | OpenAI-compatible API |
+| grok-build | chat | ✅ | grok-4 / grok-3 / grok-3-mini | xAI 官方 OpenAI-compatible API,API Key |
+| grok-web | chat | ✅ | grok-4 / grok-4.1-* / grok-3* | Grok Web SSO Cookie 反代 |
+| mistral | chat | ✅ | mistral-large / mistral-small / open-mistral | OpenAI-compatible API |
+| yi | chat | ✅ | yi-large / yi-medium / yi-vision | OpenAI-compatible API |
+| openrouter | chat | ✅ | openai/* / anthropic/* / google/* | OpenAI-compatible API |
+| huggingface | chat | ✅ | meta-llama / mistral | Inference OpenAI-compatible API |
+| minimax | chat | ✅ | abab6.5 / minimax-text | OpenAI-compatible API |
+| tencent | chat | ✅ | hunyuan | OpenAI-compatible API |
+| cohere | chat / embeddings | ✅ | command-* / embed-* | OpenAI-compatible API |
+| xunfei | chat | ✅ | spark | OpenAI-compatible API |
 
-更多 provider 在 M2 加入(Groq、Mistral、Cohere、xAI 等)。
+新增 provider 按 OpenAI-compatible 优先复用基础适配器,再按厂商差异添加请求头、认证或响应转换。
 
 ## IR(中间表示)
 
