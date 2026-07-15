@@ -26,6 +26,7 @@
 3. 两个 provider 都能在 `adapterreg` 注册,可被 channel/provider 选择器识别。
 4. `model_catalogs` 增加 Grok 对应模型,让前端和 channel 配置可以直接选择。
 5. 错误分类要和现有 relay / breaker 逻辑对齐,避免把临时网络错误误标成账号失效。
+6. 账号池探测支持 `grok-build` 与 `grok-web`,用于手动探测和后台可用性检查。
 
 ## 非目标
 
@@ -174,6 +175,22 @@ capabilities 先只写 chat / stream,避免把未验证的接口能力提前暴�
 
 响应里若出现 `xai:tool_usage_card` 或其他 Grok 特殊标签,已知结构化标签做过滤/降噪;未知标签按普通文本保留,避免解析器因上游新增标签而中断。
 
+## 账号探测
+
+`grok-build` 新增轻量 probe:
+
+- 默认 base URL 为 `https://api.x.ai`
+- 请求 `GET /v1/models`
+- 认证头为 `Authorization: Bearer <api_key>`
+
+`grok-web` 新增轻量 probe:
+
+- 默认 base URL 为 `https://grok.com`
+- 请求 `GET /rest/rate-limits`
+- 认证头为 `Cookie: sso=<token>; sso-rw=<token>`
+
+本次只判断探测请求是否成功,不解析配额。401 / 403 / 429 的状态分类继续交给现有 breaker 逻辑处理。
+
 ## 测试
 
 ### 单测
@@ -191,6 +208,9 @@ capabilities 先只写 chat / stream,避免把未验证的接口能力提前暴�
   - 空行、坏行、缺字段时的容错
 - `adapterreg`:
   - 注册后可按 name 取到两个 provider
+- `account/probe`:
+  - `grok-build` probe 使用 Bearer token 请求 `/v1/models`
+  - `grok-web` probe 使用 SSO Cookie 请求 `/rest/rate-limits`
 
 ### 结构测试
 
@@ -205,6 +225,9 @@ capabilities 先只写 chat / stream,避免把未验证的接口能力提前暴�
 |---|---|---|
 | 新增 | `internal/adapter/grokbuild/*` | xAI 官方 OpenAI-compatible provider |
 | 新增 | `internal/adapter/grokweb/*` | Grok Web 反代 provider |
+| 新增 | `internal/account/probe/grok_build.go` | `grok-build` 账号可用性探测 |
+| 新增 | `internal/account/probe/grok_web.go` | `grok-web` 账号可用性探测 |
+| 修改 | `internal/account/wire/wire.go` | 注册 Grok probe |
 | 修改 | `internal/adapterreg/wire.go` | 注册 `grok-build` / `grok-web` |
 | 修改 | `migrations/mysql/000023_seed_model_catalogs.up.sql` | 追加 Grok 模型 |
 | 修改 | `migrations/mysql/000023_seed_model_catalogs.down.sql` | 删除 Grok seed 模型 |
@@ -220,5 +243,6 @@ capabilities 先只写 chat / stream,避免把未验证的接口能力提前暴�
 2. `grok-build` 能通过现有 OpenAI 入口完成 chat / stream。
 3. `grok-web` 能通过现有 OpenAI 入口完成 chat / stream,并稳定处理 Grok Web 的逐行 JSON。
 4. Grok 相关模型能出现在 `model_catalogs` 中并在前后端可选。
-5. 新增测试通过,且不影响现有 provider 的测试结果。
-6. `go test ./...` 通过,并且没有引入额外运行时配置依赖。
+5. `grok-build` 和 `grok-web` 账号能通过 probe 做轻量可用性检查。
+6. 新增测试通过,且不影响现有 provider 的测试结果。
+7. `go test ./...` 通过,并且没有引入额外运行时配置依赖。
